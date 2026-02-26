@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-background: #f8f9fb;
+  --color-foreground: #0c0e12;
+  --color-card: #ffffff;
+  --color-card-foreground: #0c0e12;
+  --color-primary: #3b5bdb;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f3f9;
+  --color-secondary-foreground: #3b4252;
+  --color-muted: #e9ecf2;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #f97316;
+  --color-accent-foreground: #ffffff;
+  --color-border: #e2e5eb;
+  --color-ring: #3b5bdb;
+  --color-destructive: #ef4444;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) transparent;
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+/* Focus visible styles */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, input, select, textarea {
+  transition: all 0.2s ease;
+}
