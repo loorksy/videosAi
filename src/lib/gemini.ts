@@ -1147,6 +1147,8 @@ ${sanitizedPrompt}`;
           referenceImages: referenceImages,
           resolution: resolution,
           aspectRatio: aspectRatio,
+          personGeneration: 'allow_all', // Allow all people including children
+          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
 
