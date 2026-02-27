@@ -1146,18 +1146,44 @@ ${sanitizedPrompt}`;
       console.log('Prompt:', enhancedPrompt.substring(0, 200) + '...');
       console.log('Reference images count:', referenceImages?.length || 0);
       
-      let operation = await ai.models.generateVideos({
-        model: 'veo-3.1-generate-preview',
-        prompt: enhancedPrompt,
-        config: {
-          numberOfVideos: 1,
-          referenceImages: referenceImages,
-          resolution: resolution,
-          aspectRatio: aspectRatio,
-          personGeneration: 'allow_all', // Allow all people including children
-          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
+      let operation;
+      
+      // Try with reference images first
+      try {
+        operation = await ai.models.generateVideos({
+          model: 'veo-3.1-generate-preview',
+          prompt: enhancedPrompt,
+          config: {
+            numberOfVideos: 1,
+            referenceImages: referenceImages,
+            resolution: resolution,
+            aspectRatio: aspectRatio,
+            personGeneration: 'allow_all',
+            safetySettings: PERMISSIVE_SAFETY_SETTINGS,
+          }
+        });
+      } catch (refError: any) {
+        console.error('Reference images error:', refError);
+        // If reference images fail with INVALID_ARGUMENT, try without them
+        if (refError?.message?.includes('INVALID_ARGUMENT') || 
+            refError?.message?.includes('400') ||
+            refError?.message?.includes('خطأ في المعاملات')) {
+          console.log('Reference images failed, trying without them...');
+          operation = await ai.models.generateVideos({
+            model: 'veo-3.1-generate-preview',
+            prompt: enhancedPrompt,
+            config: {
+              numberOfVideos: 1,
+              resolution: resolution,
+              aspectRatio: aspectRatio,
+              personGeneration: 'allow_all',
+              safetySettings: PERMISSIVE_SAFETY_SETTINGS,
+            }
+          });
+        } else {
+          throw refError;
         }
-      });
+      }
 
       console.log('Initial operation:', JSON.stringify(operation).substring(0, 500));
 
