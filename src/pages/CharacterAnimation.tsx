@@ -28,7 +28,7 @@ export default function CharacterAnimation() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [prompt, setPrompt] = useState('');
-  const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16">("16:9");
+  const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16">("9:16");
   const [resolution, setResolution] = useState<'720p' | '1080p'>('1080p');
   const [videoType, setVideoType] = useState('funny');
   const [dialogueLanguage, setDialogueLanguage] = useState('arabic');
