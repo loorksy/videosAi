@@ -1038,7 +1038,7 @@ export const GeminiService = {
     characters: {
       name: string;
       visualTraits: string;
-      images: { front?: string; left?: string; right?: string; threeQuarter?: string };
+      images: { front?: string; back?: string; closeup?: string; left?: string; right?: string; threeQuarter?: string; reference?: string };
     }[];
     prompt: string;
     aspectRatio: "16:9" | "9:16";
@@ -1048,15 +1048,18 @@ export const GeminiService = {
     const { characters, prompt, aspectRatio, resolution = '1080p' } = params;
 
     // Build reference images array (max 3 per Veo 3.1 limit)
-    // Priority: front > threeQuarter > right > left (front is best for identity anchoring)
+    // Priority: front > closeup > threeQuarter > back > right > left (front is best for identity anchoring)
     const allImages: string[] = [];
     for (const char of characters) {
       const imgs = char.images;
-      // Prioritize front-facing (best for identity), then three-quarter, then sides
+      // Prioritize front-facing (best for identity), then closeup, then other angles
       if (imgs.front) allImages.push(imgs.front);
+      if (imgs.closeup) allImages.push(imgs.closeup);
       if (imgs.threeQuarter) allImages.push(imgs.threeQuarter);
+      if (imgs.back) allImages.push(imgs.back);
       if (imgs.right) allImages.push(imgs.right);
       if (imgs.left) allImages.push(imgs.left);
+      if (imgs.reference) allImages.push(imgs.reference);
     }
     // Take max 3 (Veo limit) - prioritize diversity of angles
     const selectedImages = allImages.slice(0, 3);
