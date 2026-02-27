@@ -208,23 +208,32 @@ export const GeminiService = {
   },
 
   // 3. Generate Script & Scenes (Thinking Mode)
-  async generateScriptAndScenes(idea: string, characters: {name: string, description: string}[]): Promise<{script: string, scenes: {description: string, characters: string[], dialogue: string}[]}> {
+  async generateScriptAndScenes(idea: string, characters: {name: string, description: string, visualTraits?: string}[]): Promise<{script: string, scenes: {description: string, characters: string[], dialogue: string}[]}> {
     try {
       const ai = getAI();
-      const charContext = characters.map(c => `${c.name}: ${c.description}`).join("\n");
-      const prompt = `
-        Create a short video script based on this idea: "${idea}".
-        
-        Available Characters:
-        ${charContext}
-        
-        Output a JSON object with:
-        1. "script": The full script text (in Arabic).
-        2. "scenes": An array of scenes, where each scene has:
-           - "description": visual description for image generation.
-           - "characters": list of character names present in the scene.
-           - "dialogue": The spoken text or voiceover for this scene (in Arabic). Leave empty if no dialogue.
-      `;
+      const charContext = characters.map(c => `- ${c.name}: ${c.description}${c.visualTraits ? `. المظهر: ${c.visualTraits}` : ''}`).join("\n");
+      const prompt = `أنت مخرج أفلام ومصور سينمائي محترف. أنشئ سيناريو قصير بناءً على هذه الفكرة: "${idea}".
+
+الشخصيات المتاحة:
+${charContext}
+
+القواعد المهمة:
+1. كل مشهد يجب أن يكون وصفاً بصرياً مفصلاً جداً يشمل: زاوية الكاميرا، الإضاءة، تعابير الوجه، الملابس، الخلفية بالتفصيل، الألوان، المسافة من الشخصيات
+2. يجب أن يكون المشهد الأول هو المشهد المرجعي - صف فيه البيئة والأجواء بتفصيل شديد
+3. المشاهد اللاحقة يجب أن تشير إلى نفس البيئة/المكان من المشهد الأول مع تغيير زاوية الكاميرا والحركة
+4. اذكر اسم كل شخصية ومظهرها في كل مشهد تظهر فيه
+5. فكر كمخرج: من أين ستصور؟ قريب أم بعيد؟ من خلف الشخصية أم أمامها؟
+6. 4-6 مشاهد كحد أقصى
+
+مثال لوصف مشهد جيد:
+"لقطة متوسطة (Medium Shot) لجاد (طفل بشعر بني قصير، يرتدي قميصاً أزرق) يمشي في حديقة خضراء واسعة بأشجار صنوبر طويلة، ضوء الشمس الذهبي يتسلل بين الأوراق، الكاميرا تتبعه من الجانب الأيمن، تعبير وجهه فضولي ومبتسم قليلاً"
+
+أخرج JSON:
+1. "script": السيناريو الكامل بالعربية
+2. "scenes": مصفوفة من المشاهد، كل مشهد يحتوي:
+   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (لتوليد الصور)
+   - "characters": أسماء الشخصيات في المشهد
+   - "dialogue": الحوار بالعربية (فارغ إن لم يوجد)`;
 
       const result = await ai.models.generateContent({
         model: "gemini-3.1-pro-preview",
