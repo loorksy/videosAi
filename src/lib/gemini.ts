@@ -1483,8 +1483,226 @@ Output a JSON object:
       return extractImage(result);
     } catch (error: any) {
       if (isRateLimitError(error)) handleCommonErrors(error, "");
-      if (isPermissionError(error)) throw new Error("فشل توليد الإعلان (403). تأكد من صلاحيا�� مفتاح API.");
+      if (isPermissionError(error)) throw new Error("فشل توليد الإعلان (403). تأكد من صلاحيات مفتاح API.");
       handleCommonErrors(error, "فشل تصميم الإعلان.");
+      throw error;
+    }
+  },
+
+  // Character Sheet Generation - Create multiple views from a reference image
+  async generateCharacterSheet(params: {
+    referenceImage: string;
+    characterType: 'human' | 'animal' | 'object' | 'fantasy';
+    characterName: string;
+    onProgress?: (progress: number) => void;
+  }): Promise<{ front: string; back: string; closeup: string }> {
+    const ai = getAI();
+    const { referenceImage, characterType, characterName, onProgress } = params;
+
+    const typeDescriptions: Record<string, string> = {
+      human: 'a human person/child',
+      animal: 'an animal/creature',
+      object: 'an object/item',
+      fantasy: 'a fantasy/fictional character'
+    };
+
+    const typeDesc = typeDescriptions[characterType] || 'a character';
+    
+    // Extract base64 from data URL
+    const base64Match = referenceImage.match(/^data:image\/\w+;base64,(.+)$/);
+    const imageData = base64Match ? base64Match[1] : referenceImage;
+    const mimeType = referenceImage.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg';
+
+    const results: { front: string; back: string; closeup: string } = {
+      front: '',
+      back: '',
+      closeup: ''
+    };
+
+    // Generate Front View
+    onProgress?.(10);
+    console.log('Generating front view...');
+    
+    const frontPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY full-body front view.
+    
+IMPORTANT REQUIREMENTS:
+- EXACT same face/features as the reference image - preserve all facial details precisely
+- Full body visible from head to toe
+- Front-facing pose, looking at camera
+- Same clothing style and colors if visible in reference
+- Clean white background
+- Professional photography style lighting
+- High resolution, 4K quality
+- Natural proportions and realistic body
+
+The character should be instantly recognizable as the same ${typeDesc} from the reference.`;
+
+    try {
+      const frontResult = await ai.models.generateContent({
+        model: "gemini-2.0-flash-exp",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType, data: imageData } },
+              { text: frontPrompt }
+            ]
+          }
+        ],
+        config: {
+          responseModalities: ["image", "text"],
+          temperature: 0.7,
+        }
+      });
+      results.front = extractImage(frontResult);
+      console.log('Front view generated successfully');
+    } catch (error: any) {
+      console.error('Front view error:', error);
+      throw new Error(`فشل توليد الصورة الأمامية: ${error.message}`);
+    }
+
+    onProgress?.(40);
+
+    // Generate Back View
+    console.log('Generating back view...');
+    
+    const backPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY full-body BACK view.
+    
+IMPORTANT REQUIREMENTS:
+- Same character as the reference - same body type, hair style, clothing
+- Full body visible from head to toe
+- Character facing AWAY from camera (back view)
+- Same clothing from the back perspective
+- Clean white background
+- Professional photography style lighting
+- High resolution, 4K quality
+- Natural proportions
+
+Show the back of the character with consistent details (hair, clothing, body shape).`;
+
+    try {
+      const backResult = await ai.models.generateContent({
+        model: "gemini-2.0-flash-exp",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType, data: imageData } },
+              { inlineData: { mimeType: 'image/png', data: results.front.split(',')[1] } },
+              { text: backPrompt }
+            ]
+          }
+        ],
+        config: {
+          responseModalities: ["image", "text"],
+          temperature: 0.7,
+        }
+      });
+      results.back = extractImage(backResult);
+      console.log('Back view generated successfully');
+    } catch (error: any) {
+      console.error('Back view error:', error);
+      throw new Error(`فشل توليد الصورة الخلفية: ${error.message}`);
+    }
+
+    onProgress?.(70);
+
+    // Generate Closeup View
+    console.log('Generating closeup view...');
+    
+    const closeupPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY closeup portrait.
+    
+IMPORTANT REQUIREMENTS:
+- EXACT same face/features as the reference image - this is critical
+- Close-up of face and upper shoulders only
+- Slightly tilted or angled pose for visual interest (like looking up or 3/4 view)
+- Same facial features, eyes, nose, mouth - perfectly preserved
+- Clean white background
+- Soft professional lighting
+- High resolution, 4K quality
+- Show personality in the expression
+
+The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone, hair.`;
+
+    try {
+      const closeupResult = await ai.models.generateContent({
+        model: "gemini-2.0-flash-exp",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType, data: imageData } },
+              { inlineData: { mimeType: 'image/png', data: results.front.split(',')[1] } },
+              { text: closeupPrompt }
+            ]
+          }
+        ],
+        config: {
+          responseModalities: ["image", "text"],
+          temperature: 0.7,
+        }
+      });
+      results.closeup = extractImage(closeupResult);
+      console.log('Closeup view generated successfully');
+    } catch (error: any) {
+      console.error('Closeup view error:', error);
+      throw new Error(`فشل توليد صورة الوجه: ${error.message}`);
+    }
+
+    onProgress?.(100);
+    return results;
+  },
+
+  // Regenerate a single view
+  async regenerateCharacterView(params: {
+    referenceImage: string;
+    existingImages: { front: string; back: string; closeup: string };
+    viewToRegenerate: 'front' | 'back' | 'closeup';
+    characterType: 'human' | 'animal' | 'object' | 'fantasy';
+    characterName: string;
+  }): Promise<string> {
+    const ai = getAI();
+    const { referenceImage, existingImages, viewToRegenerate, characterType, characterName } = params;
+
+    const typeDescriptions: Record<string, string> = {
+      human: 'a human person/child',
+      animal: 'an animal/creature', 
+      object: 'an object/item',
+      fantasy: 'a fantasy/fictional character'
+    };
+
+    const typeDesc = typeDescriptions[characterType] || 'a character';
+    
+    const base64Match = referenceImage.match(/^data:image\/\w+;base64,(.+)$/);
+    const imageData = base64Match ? base64Match[1] : referenceImage;
+    const mimeType = referenceImage.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg';
+
+    const prompts: Record<string, string> = {
+      front: `Regenerate a HIGH QUALITY full-body front view of ${typeDesc} "${characterName}". Full body, front-facing, white background, same features as reference.`,
+      back: `Regenerate a HIGH QUALITY full-body back view of ${typeDesc} "${characterName}". Full body from behind, white background, same clothing and body as reference.`,
+      closeup: `Regenerate a HIGH QUALITY closeup portrait of ${typeDesc} "${characterName}". Face and shoulders, slightly angled pose, white background, EXACT same facial features.`
+    };
+
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-2.0-flash-exp",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType, data: imageData } },
+              { text: prompts[viewToRegenerate] }
+            ]
+          }
+        ],
+        config: {
+          responseModalities: ["image", "text"],
+          temperature: 0.8,
+        }
+      });
+      return extractImage(result);
+    } catch (error: any) {
+      handleCommonErrors(error, "فشل إعادة توليد الصورة.");
       throw error;
     }
   }
