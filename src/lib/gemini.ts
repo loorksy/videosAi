@@ -1148,22 +1148,6 @@ ${sanitizedPrompt}`;
       console.log('Reference images count:', referenceImages?.length || 0);
       console.log('Aspect ratio:', aspectRatio);
       
-      // For 9:16 with reference images, use kie.ai if available (Veo API has issues with 9:16)
-      if (aspectRatio === '9:16' && referenceImages.length > 0 && KieService.isConfigured()) {
-        console.log('Using kie.ai for 9:16 vertical video with reference images...');
-        try {
-          const kieResult = await KieService.generateCharacterVideo({
-            referenceImages: selectedImages, // Use original base64 images
-            prompt: sanitizedPrompt,
-            aspectRatio: aspectRatio,
-          });
-          return kieResult;
-        } catch (kieError: any) {
-          console.error('kie.ai failed:', kieError);
-          // Fall through to try Veo anyway
-        }
-      }
-      
       let operation = await ai.models.generateVideos({
         model: 'veo-3.1-generate-preview',
         prompt: enhancedPrompt,
