@@ -16,7 +16,6 @@ import CreatureCharacterCreate from './pages/CreatureCharacterCreate';
 import HybridCharacterCreate from './pages/HybridCharacterCreate';
 import ViralIdeasGenerator from './pages/ViralIdeasGenerator';
 import ThumbnailCreate from './pages/ThumbnailCreate';
-import CharacterAnimation from './pages/CharacterAnimation';
 import ProductStudio from './pages/ProductStudio';
 import AdCampaignStudio from './pages/AdCampaignStudio';
 import KlingMotionControl from './pages/KlingMotionControl';
@@ -66,7 +65,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
             <Route path="/creature-characters/new" element={<CreatureCharacterCreate />} />
             <Route path="/hybrid-characters/new" element={<HybridCharacterCreate />} />
             <Route path="/viral-ideas" element={<ViralIdeasGenerator />} />
-            <Route path="/character-animation" element={<CharacterAnimation />} />
+            <Route path="/character-animation" element={<Navigate to="/" replace />} />
             <Route path="/product-studio" element={<ProductStudio />} />
             <Route path="/ad-campaign-studio" element={<AdCampaignStudio />} />
             <Route path="/kling-motion" element={<KlingMotionControl />} />
