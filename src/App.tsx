@@ -121,5 +121,9 @@ export default function App() {
     return <Login onLogin={handleLogin} />;
   }
 
-  return <AuthenticatedApp onLogout={handleLogout} />;
+  return (
+    <ToastProvider>
+      <AuthenticatedApp onLogout={handleLogout} />
+    </ToastProvider>
+  );
 }
