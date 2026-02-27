@@ -1,55 +1,60 @@
 # PRD - تطبيق إنشاء القصص بالذكاء الاصطناعي
 
 ## المشكلة الأصلية
-تشغيل الموقع وإضافة واجهة تسجيل دخول
+تشغيل الموقع وإضافة واجهة تسجيل دخول وأدوات إنشاء شخصيات وفيديوهات بالذكاء الاصطناعي
 
 ## تاريخ البدء
 26 يناير 2026
 
 ## التقنيات المستخدمة
 - React 19 + TypeScript
-- Vite 6
+- Vite 6 (production build + vite preview)
 - Tailwind CSS 4
 - Framer Motion
 - React Router DOM 7
 - Lucide React Icons
-- Google Gemini AI Integration
-- Fal.ai Integration
+- Google Gemini AI (@google/genai SDK)
+- Google Veo 3.1 API (video generation)
+- IndexedDB (idb library) for in-browser storage
+
+## الهندسة المعمارية
+- تطبيق client-side بالكامل (لا يوجد backend مخصص)
+- واجهات API مباشرة إلى Google Gemini/Veo
+- تخزين محلي عبر IndexedDB
+- يعمل بوضع الإنتاج: yarn build → vite preview
+- مفتاح API يُحفظ في localStorage
 
 ## ما تم تنفيذه
-- [x] تثبيت الحزم (yarn install)
-- [x] إصلاح مشكلة allowedHosts في vite.config.ts
 - [x] تشغيل الموقع على المنفذ 3000
-- [x] إضافة واجهة تسجيل دخول شخصية (27 يناير 2026)
-- [x] إضافة زر تسجيل الخروج في صفحة الإعدادات
-- [x] إضافة نظام Toast لعرض رسائل الخطأ بشكل جميل (27 يناير 2026)
+- [x] واجهة تسجيل دخول شخصية (كلمة مرور: Ahmetlork0009)
+- [x] زر تسجيل الخروج في الإعدادات
+- [x] نظام Toast (react-hot-toast)
+- [x] إنشاء شخصيات متنوعة (خيالية، بشري مضحك، مخلوقات، هجينة)
+- [x] منشئ ورقة الشخصية (Character Sheet Generator)
+- [x] أفكار فيروسية (Viral Ideas Generator)
+- [x] استوديو تحريك الشخصيات (Veo 3.1)
+- [x] استوديو المنتجات والهوية البصرية
+- [x] استوديو الإعلانات
+- [x] إنشاء صور مصغرة (Thumbnails)
+- [x] القصص المصورة (Storyboards) مع retry logic
+- [x] معرض الفيديوهات (Video Gallery)
+- [x] **إصلاح خلل توليد الفيديو P0** (27 فبراير 2026)
+  - تصحيح صيغة referenceImages من inlineData إلى image.imageBytes + referenceType
+  - تحسين مجمّع الصور المرجعية ليكون أكثر متانة
+  - إصلاح HybridCharacterCreate (visualTraits + مفتاح side)
 
-## الميزات الموجودة
-1. **نظام تسجيل الدخول** - كلمة مرور شخصية محمية
-2. **نظام Toast** - رسائل خطأ ونجاح جميلة
-3. الصفحة الرئيسية (Home)
-4. إنشاء شخصيات متنوعة:
-   - شخصيات خيالية (Surreal)
-   - بشري مضحك (Funny Human)
-   - مخلوقات (Creatures)
-   - شخصيات هجينة (Hybrid)
-5. أفكار فيروسية (Viral Ideas Generator)
-6. تحريك الشخصيات (Character Animation)
-7. استوديو المنتجات (Product Studio)
-8. استوديو الإعلانات (Ad Campaign Studio)
-9. Motion Control (Kling AI)
-10. إنشاء صور مصغرة (Thumbnails)
-11. القصص المصورة (Storyboards)
-12. معرض الفيديوهات (Video Gallery)
-13. الإعدادات (Settings)
+## الملفات الرئيسية
+- `src/lib/gemini.ts` - جميع واجهات Gemini/Veo API
+- `src/lib/db.ts` - مخطط IndexedDB والعمليات
+- `src/pages/CharacterAnimation.tsx` - استوديو التحريك
+- `src/pages/StoryboardCreate.tsx` - أداة القصص المصورة
 
 ## المتطلبات المعلقة
-- P0: إضافة مفتاح Gemini API لتفعيل الذكاء الاصطناعي ⚠️ **مطلوب من المستخدم**
-- P1: اختبار جميع الوظائف بعد إضافة المفتاح
-- P2: إضافة ميزة مشاركة الإبداعات
+- P1: التحقق من تحسينات أداة Storyboard
+- P2: حل مشكلة حظر سياسة المحتوى من Google (خاصة الشخصيات الطفولية)
 
-## الملاحظات
+## ملاحظات مهمة
 - التطبيق عربي RTL
-- يستخدم IndexedDB للتخزين المحلي
-- كلمة المرور محفوظة في الكود (تطبيق شخصي)
-- **يجب إدخال مفتاح Gemini API في الإعدادات لتعمل أدوات التوليد**
+- يجب استخدام yarn build ثم supervisor restart بعد كل تغيير
+- لا تستخدم yarn dev (غير مستقر)
+- مفتاح Gemini API: يُدخل من صفحة الإعدادات
