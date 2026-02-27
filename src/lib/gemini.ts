@@ -414,7 +414,7 @@ export const GeminiService = {
         if (isPermissionError(error)) {
           throw new Error("فشل توليد الصورة (403). تأكد من صلاحيات مفتاح API لنموذج gemini-3-pro-image-preview.");
         }
-        handleCommonErrors(error, "��شل توليد الصورة.");
+        handleCommonErrors(error, "فشل توليد الصورة.");
         throw error;
       }
     };
