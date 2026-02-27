@@ -86,48 +86,58 @@ const handleCommonErrors = (error: any, defaultMessage: string) => {
 
 // Helper function to convert URL or data URL to base64
 const imageToBase64 = async (imageSource: string): Promise<string> => {
+  console.log("[v0] imageToBase64 called with:", imageSource.substring(0, 80) + "...");
+  
   // If it's already a data URL, extract base64
   if (imageSource.startsWith('data:')) {
+    console.log("[v0] Image is data URL");
     const matches = imageSource.match(/^data:[^;]+;base64,(.+)$/);
     if (matches) {
+      console.log("[v0] Extracted base64, length:", matches[1].length);
       return matches[1];
     }
     // If it has comma, split and return
     if (imageSource.includes(',')) {
-      return imageSource.split(',')[1];
+      const base64 = imageSource.split(',')[1];
+      console.log("[v0] Split base64, length:", base64.length);
+      return base64;
     }
   }
   
   // If it's a URL, fetch and convert
   if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+    console.log("[v0] Image is URL, fetching...");
     try {
       const response = await fetch(imageSource);
       if (!response.ok) {
-        console.warn(`Failed to fetch image: ${response.status}`);
+        console.warn(`[v0] Failed to fetch image: ${response.status}`);
         return '';
       }
       const blob = await response.blob();
+      console.log("[v0] Fetched blob, size:", blob.size, "type:", blob.type);
       
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const result = reader.result as string;
           const base64 = result.split(',')[1];
-          resolve(base64);
+          console.log("[v0] Converted to base64, length:", base64?.length || 0);
+          resolve(base64 || '');
         };
         reader.onerror = () => {
-          console.warn('Failed to read image blob');
+          console.warn('[v0] Failed to read image blob');
           resolve('');
         };
         reader.readAsDataURL(blob);
       });
     } catch (e) {
-      console.warn('Error fetching image:', e);
+      console.warn('[v0] Error fetching image:', e);
       return '';
     }
   }
   
   // Assume it's already base64
+  console.log("[v0] Image assumed to be raw base64, length:", imageSource.length);
   return imageSource;
 };
 
@@ -367,7 +377,9 @@ ${charContext}
     const parts: any[] = [];
     
     // === STEP 1: Character reference images FIRST (highest priority) ===
+    console.log("[v0] generateStoryboardFrame - characterImages received:", characterImages.length);
     if (characterImages.length > 0) {
+      console.log("[v0] Character image URLs/data:", characterImages.map(img => img.substring(0, 100) + "..."));
       parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
       
       // Convert all character images to base64 (handles URLs and data URLs)
@@ -375,11 +387,15 @@ ${charContext}
         characterImages.slice(0, 3).map(img => imageToBase64(img))
       );
       
+      console.log("[v0] Converted images count:", convertedImages.filter(img => img && img.length > 100).length);
+      
       for (const base64Data of convertedImages) {
         if (base64Data && base64Data.length > 100) {
           parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
         }
       }
+    } else {
+      console.log("[v0] WARNING: No character images provided!");
     }
 
     // === STEP 2: Scene reference images ===
@@ -928,7 +944,7 @@ RULES:
       - eyeColor: (e.g., "بني غامق", "أزرق فاتح", "أخضر زمردي", "عسلي")
       - bodyType: (e.g., "رياضي مفتول العضلات", "نحيف", "متوسط البنية", "ممتلئ")
       - clothing: (e.g., "ملابس سايبربانك مستقبلية مضيئة", "بدلة رسمية أنيقة", "ملابس كاجوال يومية", "درع فارس من العصور الوسطى", "ملابس نينجا")
-      - expression: (e.g., "نظرة حادة وواثقة", "ابتسامة لطيفة", "ملامح غاضبة وجادة", "نظرة حزينة")
+      - expression: (e.g., "نظرة حادة وواثقة", "ابتسامة لطيفة", "ملامح غاضبة وجادة", "نظر�� حزينة")
       - style: (e.g., "واقعي جداً (Hyperrealistic)", "أنمي (Anime)", "بيكسار 3D (Pixar 3D)", "سينمائي (Cinematic)")
       - environment: (e.g., "شارع مدينة ممطر ليلاً", "خلفية استوديو رمادية", "غابة مشمسة", "مقهى كلاسيكي")
       - cameraAngle: (e.g., "لقطة قريبة للوجه (Close-up)", "لقطة متوسطة (Medium shot)", "لقطة كاملة للجسم (Full body)")
