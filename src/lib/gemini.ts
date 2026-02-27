@@ -1219,7 +1219,7 @@ ${sanitizedPrompt}`;
       sad: 'Emotional slow movements, contemplative gazes, single tear moments, dramatic shallow depth of field. Desaturated cool color grading with blue undertones.',
       action: 'Fast dynamic movements, intense facial expressions, dramatic camera swoops, motion blur on quick actions. High-contrast color grading with teal and orange.',
       romantic: 'Soft gentle movements, warm eye contact, slow-motion hair movement, intimate close-ups. Warm golden-hour color grading with soft highlights.',
-      horror: 'Slow creeping movements, wide terrified eyes, dark shadows, sudden reveals. Dark desaturated grading with deep blacks and sickly green undertones.',
+      horror: 'Mysterious atmosphere, suspenseful slow movements, dramatic shadows, intriguing reveals. Moody cinematic grading with deep shadows and cool undertones.',
       educational: 'Clear purposeful gestures, direct-to-camera address, well-lit demonstration angles. Clean bright color grading with neutral tones.',
       dramatic: 'Intense emotional performances, meaningful pauses, dramatic lighting shifts, powerful silhouettes. Rich cinematic color grading with deep shadows.',
       inspirational: 'Uplifting movements, confident posture, warm natural light, sunrise/sunset atmosphere. Warm vibrant color grading with golden highlights.',
