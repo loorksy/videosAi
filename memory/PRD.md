@@ -1,4 +1,4 @@
-# PRD - تطبيق إنشاء القصص بالذكاء الاصطناعي
+# PRD - تطبيق إنشاء القصص بالذكاء الاصطناعي (StoryWeaver AI)
 
 ## المشكلة الأصلية
 تشغيل الموقع وإضافة واجهة تسجيل دخول وأدوات إنشاء شخصيات وفيديوهات بالذكاء الاصطناعي
@@ -7,15 +7,13 @@
 26 يناير 2026
 
 ## التقنيات المستخدمة
-- React 19 + TypeScript
-- Vite 6 (production build + vite preview)
-- Tailwind CSS 4
-- Framer Motion
-- React Router DOM 7
-- Lucide React Icons
+- React 19 + TypeScript + Vite 6
+- Tailwind CSS 4 + Framer Motion
+- React Router DOM 7 + Lucide React Icons
 - Google Gemini AI (@google/genai SDK)
 - Google Veo 3.1 API (video generation)
 - IndexedDB (idb library) for in-browser storage
+- react-hot-toast for notifications
 
 ## الهندسة المعمارية
 - تطبيق client-side بالكامل (لا يوجد backend مخصص)
@@ -40,8 +38,12 @@
 - [x] معرض الفيديوهات (Video Gallery)
 - [x] **إصلاح خلل توليد الفيديو P0** (27 فبراير 2026)
   - تصحيح صيغة referenceImages من inlineData إلى image.imageBytes + referenceType
-  - تحسين مجمّع الصور المرجعية ليكون أكثر متانة
-  - إصلاح HybridCharacterCreate (visualTraits + مفتاح side)
+  - إضافة ضغط تلقائي للصور (1024px max, JPEG)
+  - إستراتيجية ذكية: referenceImages لـ 16:9، Start Frame لـ 9:16
+  - Fallback تلقائي من referenceImages إلى Start Frame عند فشل INVALID_ARGUMENT
+  - إزالة safetySettings غير المدعومة من Veo config
+  - تحسين مجمّع الصور المرجعية (يقبل أي مفتاح)
+  - إصلاح HybridCharacterCreate (visualTraits + مفتاح side → left)
 
 ## الملفات الرئيسية
 - `src/lib/gemini.ts` - جميع واجهات Gemini/Veo API
@@ -55,6 +57,8 @@
 
 ## ملاحظات مهمة
 - التطبيق عربي RTL
-- يجب استخدام yarn build ثم supervisor restart بعد كل تغيير
+- يجب استخدام yarn build ثم supervisorctl restart frontend بعد كل تغيير
 - لا تستخدم yarn dev (غير مستقر)
 - مفتاح Gemini API: يُدخل من صفحة الإعدادات
+- referenceImages تدعم فقط 16:9 حالياً (قيد Google)
+- الصور يجب أن تكون أقل من 1MB لكل صورة
