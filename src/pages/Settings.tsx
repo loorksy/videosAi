@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, AlertCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle, XCircle, Loader2, LogOut } from 'lucide-react';
 import { GeminiService } from '../lib/gemini';
 
-export default function SettingsPage() {
+interface SettingsPageProps {
+  onLogout?: () => void;
+}
+
+export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const [apiKey, setApiKey] = useState('');
   const [klingApiKey, setKlingApiKey] = useState('');
   const [saved, setSaved] = useState(false);
