@@ -458,12 +458,7 @@ export default function CharacterAnimation() {
               عرضي (YouTube)
             </button>
           </div>
-          {aspectRatio === "9:16" && selectedCharacters.length > 0 && (
-            <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg mb-4">
-              ⚠️ الصور المرجعية تعمل فقط مع الأبعاد العرضية (16:9). اختر "عرضي" للحفاظ على ملامح الشخصية.
-            </p>
-          )}
-          {aspectRatio === "16:9" && selectedCharacters.length > 0 && (
+          {selectedCharacters.length > 0 && (
             <p className="text-xs text-emerald-600 bg-emerald-50 p-2 rounded-lg mb-4">
               ✓ سيتم استخدام الصور المرجعية للحفاظ على ملامح الشخصية.
             </p>
