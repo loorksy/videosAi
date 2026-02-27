@@ -415,7 +415,10 @@ export const GeminiService = {
         const result = await ai.models.generateContent({
           model: "gemini-3-pro-image-preview",
           contents: [{ role: "user", parts: [{ text: promptText }] }],
-          config: { imageConfig: { aspectRatio: "3:4" } }
+          config: { 
+            imageConfig: { aspectRatio: "3:4" },
+            safetySettings: PERMISSIVE_SAFETY_SETTINGS,
+          }
         });
         return extractImage(result);
       } catch (error: any) {
