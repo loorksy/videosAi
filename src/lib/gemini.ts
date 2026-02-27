@@ -1094,6 +1094,10 @@ IMPORTANT: The character(s) in this video MUST exactly match the provided refere
 ${prompt}`;
 
     try {
+      console.log('Starting video generation with Veo 3.1...');
+      console.log('Prompt:', enhancedPrompt.substring(0, 200) + '...');
+      console.log('Reference images count:', referenceImages?.length || 0);
+      
       let operation = await ai.models.generateVideos({
         model: 'veo-3.1-generate-preview',
         prompt: enhancedPrompt,
@@ -1105,13 +1109,25 @@ ${prompt}`;
         }
       });
 
-      while (!operation.done) {
+      console.log('Initial operation:', JSON.stringify(operation).substring(0, 500));
+
+      let pollCount = 0;
+      const maxPolls = 60; // 10 minutes max
+      
+      while (!operation.done && pollCount < maxPolls) {
         await new Promise(resolve => setTimeout(resolve, 10000));
         operation = await ai.operations.getVideosOperation({ operation: operation });
+        pollCount++;
+        console.log(`Poll ${pollCount}: done=${operation.done}`);
       }
 
+      console.log('Final operation response:', JSON.stringify(operation).substring(0, 1000));
+
       const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-      if (!downloadLink) throw new Error("لم يتم ارجاع رابط الفيديو من Veo.");
+      if (!downloadLink) {
+        console.error('No video URI in response:', JSON.stringify(operation.response));
+        throw new Error("لم يتم ارجاع رابط الفيديو من Veo.");
+      }
       
       const storedKey = localStorage.getItem('GEMINI_API_KEY');
       const apiKey = storedKey || process.env.GEMINI_API_KEY;
