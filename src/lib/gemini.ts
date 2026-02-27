@@ -350,7 +350,7 @@ CRITICAL RULES:
     if (previousSceneImage && sceneIndex > 0) {
       const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
       parts.push({ inlineData: { mimeType: 'image/png', data: prevData } });
-      parts.push({ text: 'Above is the PREVIOUS SCENE - maintain the same visual world, lighting and style.' });
+      parts.push({ text: 'PREVIOUS SCENE IMAGE (8 seconds before this moment). Keep the EXACT same world, lighting, background. Characters have moved slightly as described.' });
     }
     
     // Add character reference images
