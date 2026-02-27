@@ -93,15 +93,16 @@ ${idea ? `ملاحظة المستخدم: ${idea}` : ''}
   };
 
   const generateScript = async () => {
-    if (!idea || selectedCharIds.length === 0) return;
+    if (selectedCharIds.length === 0) return;
     setIsProcessing(true);
     setProcessingStatus('جاري كتابة السيناريو وتقسيم المشاهد...');
     
     try {
       const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
+      const genre = contentType === 'مخصص' ? customContentType : contentType;
       
-      // Enhance idea with style context
-      const enhancedIdea = `${idea}. Visual Style: ${style}. Format: ${aspectRatio}.`;
+      // Enhance idea with all context
+      const enhancedIdea = `${idea || 'أنشئ قصة مناسبة للشخصيات'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}.`;
       
       const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
         name: c.name,
