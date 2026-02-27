@@ -123,8 +123,10 @@ export default function App() {
   }
 
   return (
-    <ToastProvider>
-      <AuthenticatedApp onLogout={handleLogout} />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthenticatedApp onLogout={handleLogout} />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
