@@ -1082,34 +1082,29 @@ export const GeminiService = {
     }
 
     // Convert images to proper format for Veo 3.1 reference images
-    // Images are accepted in any dimensions - no resizing needed
+    // Correct format: { inlineData: { mimeType, data } }
     const referenceImages = selectedImages.map((imgBase64, index) => {
       const base64Data = imgBase64.includes(',') ? imgBase64.split(',')[1] : imgBase64;
-      const mimeType = imgBase64.includes(',')
+      let mimeType = imgBase64.includes(',')
         ? imgBase64.substring(imgBase64.indexOf(':') + 1, imgBase64.indexOf(';'))
         : "image/png";
       
-      console.log(`Reference image ${index + 1}:`, {
-        mimeType,
-        base64Length: base64Data.length,
-        base64Preview: base64Data.substring(0, 50) + '...',
-      });
+      // Ensure supported mimeType (only jpeg and png supported)
+      if (!['image/jpeg', 'image/png'].includes(mimeType)) {
+        mimeType = 'image/png';
+      }
+      
+      console.log(`Reference image ${index + 1}: mimeType=${mimeType}, dataLength=${base64Data.length}`);
       
       return {
-        image: {
+        inlineData: {
           mimeType: mimeType,
-          bytesBase64Encoded: base64Data,
-        },
-        referenceType: "asset",
+          data: base64Data,
+        }
       };
     });
     
-    console.log('Reference images prepared:', referenceImages.length, '- any dimensions accepted');
-    console.log('Full referenceImages structure:', JSON.stringify(referenceImages.map(r => ({
-      mimeType: r.image.mimeType,
-      referenceType: r.referenceType,
-      dataLength: r.image.bytesBase64Encoded.length
-    }))));
+    console.log('Reference images prepared:', referenceImages.length);
     
 
     // Build character bible prefix for the prompt
