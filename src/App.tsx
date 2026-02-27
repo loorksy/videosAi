@@ -4,6 +4,7 @@ import { Users, Clapperboard, Film, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from './lib/utils';
 import { ToastProvider } from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import CharacterList from './pages/CharacterList';
