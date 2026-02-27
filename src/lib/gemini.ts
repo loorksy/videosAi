@@ -84,6 +84,53 @@ const handleCommonErrors = (error: any, defaultMessage: string) => {
   throw new Error(defaultMessage);
 };
 
+// Helper function to convert URL or data URL to base64
+const imageToBase64 = async (imageSource: string): Promise<string> => {
+  // If it's already a data URL, extract base64
+  if (imageSource.startsWith('data:')) {
+    const matches = imageSource.match(/^data:[^;]+;base64,(.+)$/);
+    if (matches) {
+      return matches[1];
+    }
+    // If it has comma, split and return
+    if (imageSource.includes(',')) {
+      return imageSource.split(',')[1];
+    }
+  }
+  
+  // If it's a URL, fetch and convert
+  if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+    try {
+      const response = await fetch(imageSource);
+      if (!response.ok) {
+        console.warn(`Failed to fetch image: ${response.status}`);
+        return '';
+      }
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = () => {
+          console.warn('Failed to read image blob');
+          resolve('');
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.warn('Error fetching image:', e);
+      return '';
+    }
+  }
+  
+  // Assume it's already base64
+  return imageSource;
+};
+
 const extractImage = (result: any) => {
   const candidate = result.candidates?.[0];
   if (!candidate) {
@@ -234,7 +281,7 @@ ${charContext}
 ⚡ قاعدة الاستمرارية: كل مشهد مدته 8 ثوانٍ. المشاهد هي لقطات متتالية متصلة مثل فيلم حقيقي.
 - المشهد الثاني يبدأ من حيث انتهى الأول بالضبط
 - إذا كانت الشخصية تمشي نحو اليمين في المشهد 1، يجب أن تكون أقرب لليمين في المشهد 2
-- الكاميرا تنتقل بسلاسة بين اللقطات (مثلاً: لقطة واسعة ← متوسطة ← قريبة ← فوق الكتف)
+- الكاميرا تنتقل بسلاسة بين اللقطات (مثلاً: لقطة وا��عة ← متوسطة ← قريبة ← فوق الكتف)
 
 ⚡ وصف الحركة: لكل مشهد اذكر:
 - ماذا تفعل الشخصية بالضبط (تمشي، تلتفت، تجلس، تشير بيدها)
@@ -322,10 +369,17 @@ ${charContext}
     // === STEP 1: Character reference images FIRST (highest priority) ===
     if (characterImages.length > 0) {
       parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
-      characterImages.slice(0, 3).forEach((img) => {
-        const base64Data = img.includes(',') ? img.split(',')[1] : img;
-        parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
-      });
+      
+      // Convert all character images to base64 (handles URLs and data URLs)
+      const convertedImages = await Promise.all(
+        characterImages.slice(0, 3).map(img => imageToBase64(img))
+      );
+      
+      for (const base64Data of convertedImages) {
+        if (base64Data && base64Data.length > 100) {
+          parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+        }
+      }
     }
 
     // === STEP 2: Scene reference images ===
@@ -333,15 +387,19 @@ ${charContext}
       // Always include FIRST scene (establishing shot) as base reference
       if (firstSceneImage) {
         parts.push({ text: `\nESTABLISHING SHOT (Scene 1) - BASE REFERENCE for the entire story. Same world, art style, color palette:` });
-        const firstData = firstSceneImage.includes(',') ? firstSceneImage.split(',')[1] : firstSceneImage;
-        parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
+        const firstData = await imageToBase64(firstSceneImage);
+        if (firstData && firstData.length > 100) {
+          parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
+        }
       }
       
       // Include PREVIOUS scene for direct continuity (skip if same as first)
       if (previousSceneImage && previousSceneImage !== firstSceneImage) {
         parts.push({ text: `\nPREVIOUS SCENE (Scene ${sceneIndex}) - Continue directly from here:` });
-        const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
-        parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
+        const prevData = await imageToBase64(previousSceneImage);
+        if (prevData && prevData.length > 100) {
+          parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
+        }
       }
     }
 
@@ -1559,7 +1617,7 @@ Output a JSON object:
     
     اكتب لي:
     1. عنوان رئيسي جذاب وقصير جد��ً (largeText)
-    2. نص فرعي أو وصف مشوق وقصير (smallText)
+    2. نص فرعي أو وصف مشوق وقصي�� (smallText)
     
     يجب أن يكون الرد بصيغة JSON فقط يحتوي على المفتاحين largeText و smallText.`;
     
