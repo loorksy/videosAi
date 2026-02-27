@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, AlertCircle, CheckCircle, XCircle, Loader2, LogOut } from 'lucide-react';
 import { GeminiService } from '../lib/gemini';
-import { KieService } from '../lib/kie';
 
 interface SettingsPageProps {
   onLogout?: () => void;
@@ -10,7 +9,6 @@ interface SettingsPageProps {
 export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const [apiKey, setApiKey] = useState('');
   const [klingApiKey, setKlingApiKey] = useState('');
-  const [kieApiKey, setKieApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -20,8 +18,6 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
     if (stored) setApiKey(stored);
     const storedKling = localStorage.getItem('KLING_API_KEY');
     if (storedKling) setKlingApiKey(storedKling);
-    const storedKie = localStorage.getItem('KIE_API_KEY');
-    if (storedKie) setKieApiKey(storedKie);
   }, []);
 
   const handleSave = () => {
@@ -37,12 +33,6 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
       localStorage.setItem('KLING_API_KEY', klingApiKey.trim());
     } else {
       localStorage.removeItem('KLING_API_KEY');
-    }
-
-    if (kieApiKey.trim()) {
-      localStorage.setItem('KIE_API_KEY', kieApiKey.trim());
-    } else {
-      localStorage.removeItem('KIE_API_KEY');
     }
       
     setSaved(true);
