@@ -9,7 +9,7 @@ const VIDEO_TYPES = [
   { id: 'sad', label: 'حزين', icon: '😢' },
   { id: 'action', label: 'اكشن', icon: '💥' },
   { id: 'romantic', label: 'رومانسي', icon: '💕' },
-  { id: 'horror', label: 'رعب', icon: '👻' },
+  { id: 'mystery', label: 'غموض/إثارة', icon: '🔍' },
   { id: 'educational', label: 'تعليمي', icon: '📚' },
   { id: 'dramatic', label: 'درامي', icon: '🎭' },
   { id: 'inspirational', label: 'ملهم', icon: '✨' },
