@@ -1080,7 +1080,7 @@ export const GeminiService = {
     }
 
     // Convert images to proper format for Veo 3.1 reference images
-    // Format: { image: { mimeType, bytesBase64Encoded }, referenceType: "asset" }
+    // Images are accepted in any dimensions - no resizing needed
     const referenceImages = selectedImages.map((imgBase64) => {
       const base64Data = imgBase64.includes(',') ? imgBase64.split(',')[1] : imgBase64;
       const mimeType = imgBase64.includes(',')
@@ -1092,11 +1092,11 @@ export const GeminiService = {
           mimeType: mimeType,
           bytesBase64Encoded: base64Data,
         },
-        referenceType: "asset", // "asset" for character/object consistency
+        referenceType: "asset",
       };
     });
     
-    console.log('Reference images prepared:', referenceImages.length);
+    console.log('Reference images prepared:', referenceImages.length, '- any dimensions accepted');
 
     // Build character bible prefix for the prompt
     // This anchors the identity in the prompt to match the reference images
