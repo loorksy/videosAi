@@ -52,23 +52,30 @@ export default function SurrealCharacterCreate() {
     if (!objectName) return;
     setIsProcessing(true);
     setStep('generating');
+    setImageLoadError(false);
     
     try {
+      console.log('Starting image generation...');
       const images = await GeminiService.generateSurrealObject({
         objectName, emotion, style, body, limbs, hair, cameraAngle, lighting, environment, generateNormal
       });
+      
+      console.log('Images received from API');
       
       // Validate images before setting state
       if (!images || !images.surreal) {
         throw new Error('لم يتم استلام صورة من الخادم');
       }
       
-      // Use setTimeout to prevent potential race conditions
-      setTimeout(() => {
+      console.log('Setting generated images to state...');
+      
+      // Use requestAnimationFrame to ensure smooth UI update
+      requestAnimationFrame(() => {
         setGeneratedImages(images);
         setStep('review');
         setIsProcessing(false);
-      }, 100);
+        console.log('State updated successfully');
+      });
       
     } catch (error: any) {
       console.error('Generation error:', error);
