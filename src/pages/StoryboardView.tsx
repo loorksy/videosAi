@@ -88,15 +88,24 @@ export default function StoryboardView() {
     try {
       // Fetch character images to use as references
       const referenceImages: string[] = [];
-      for (const charId of scene.characterIds) {
+      // Use scene character IDs, or fallback to all storyboard characters
+      const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : storyboard.characters;
+      console.log("[v0] Scene character IDs:", scene.characterIds);
+      console.log("[v0] Using character IDs:", charIdsToUse);
+      
+      for (const charId of charIdsToUse) {
         const char = await db.getCharacter(charId);
-        if (char) {
-          // Support all image types from character sheet
-          if (char.images.front) referenceImages.push(char.images.front);
-          else if (char.images.closeup) referenceImages.push(char.images.closeup);
-          else if (char.images.reference) referenceImages.push(char.images.reference);
+        if (char && char.images) {
+          // Get the first available image from all possible fields
+          const imgs = char.images as Record<string, string | undefined>;
+          const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
+          if (imageValue) {
+            referenceImages.push(imageValue);
+            console.log("[v0] Found image for character:", char.name);
+          }
         }
       }
+      console.log("[v0] Total reference images found:", referenceImages.length);
 
       // Get first scene image for reference
       const firstSceneImage = storyboard.scenes[0]?.frameImage;
@@ -221,15 +230,21 @@ export default function StoryboardView() {
           
           const scene = currentStoryboard.scenes[i];
           const referenceImages: string[] = [];
-          for (const charId of scene.characterIds) {
+          // Use scene character IDs, or fallback to all storyboard characters
+          const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : currentStoryboard.characters;
+          
+          for (const charId of charIdsToUse) {
             const char = await db.getCharacter(charId);
-            if (char) {
-              // Support all image types
-              if (char.images.front) referenceImages.push(char.images.front);
-              else if (char.images.closeup) referenceImages.push(char.images.closeup);
-              else if (char.images.reference) referenceImages.push(char.images.reference);
+            if (char && char.images) {
+              // Get the first available image from all possible fields
+              const imgs = char.images as Record<string, string | undefined>;
+              const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
+              if (imageValue) {
+                referenceImages.push(imageValue);
+              }
             }
           }
+          console.log("[v0] AutoPilot - Scene", i, "using", referenceImages.length, "reference images");
 
           // Get first scene image for reference
           const firstSceneImage = currentStoryboard.scenes[0]?.frameImage;
@@ -369,7 +384,7 @@ export default function StoryboardView() {
                       onClick={() => generateImageForScene(idx)}
                       disabled={isGenerating || isAutoPilotRunning}
                       className="absolute top-2 left-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors disabled:opacity-50"
-                      title="إعادة توليد"
+                      title="إعادة ��وليد"
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>
