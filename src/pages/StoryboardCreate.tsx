@@ -55,7 +55,11 @@ export default function StoryboardCreate() {
       // Enhance idea with style context
       const enhancedIdea = `${idea}. Visual Style: ${style}. Format: ${aspectRatio}.`;
       
-      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars);
+      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
+        name: c.name,
+        description: c.description,
+        visualTraits: c.visualTraits,
+      })));
       
       setScript(result.script);
       setScenes(result.scenes.map(s => ({
