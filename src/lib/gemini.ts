@@ -1201,26 +1201,15 @@ ${sanitizedPrompt}`;
       console.error('Veo generation error:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
 
-      // Check if kie.ai is configured as fallback
+      // Check if safety block
       const isSafetyBlock = error?.message?.includes('safety') || 
                            error?.message?.includes('blocked') ||
                            error?.message?.includes('policy') ||
                            error?.message?.includes('SAFETY') ||
                            error?.message?.includes('لم يتم ارجاع رابط الفيديو');
       
-      if (isSafetyBlock && KieService.isConfigured()) {
-        console.log('Veo blocked by content policy, trying kie.ai as fallback...');
-        try {
-          const kieResult = await KieService.generateCharacterVideo({
-            referenceImages: selectedImages,
-            prompt: sanitizedPrompt,
-            aspectRatio: aspectRatio,
-          });
-          return kieResult;
-        } catch (kieError: any) {
-          console.error('kie.ai fallback also failed:', kieError);
-          throw new Error(`فشل Veo و kie.ai: ${kieError.message}`);
-        }
+      if (isSafetyBlock) {
+        throw new Error("تم حظر المحتوى بسبب سياسات الأمان. جرب وصفاً مختلفاً.");
       }
 
       if (isRateLimitError(error)) handleCommonErrors(error, "");
@@ -1230,11 +1219,6 @@ ${sanitizedPrompt}`;
       }
       if (error?.message?.includes('INVALID_ARGUMENT')) {
         throw new Error("خطأ في المعاملات. تأكد من أن الصور المرجعية بصيغة صحيحة.");
-      }
-      
-      // If safety block but kie.ai not configured, suggest it
-      if (isSafetyBlock) {
-        throw new Error("تم حظر المحتوى من Veo. أضف مفتاح kie.ai في الإعدادات لاستخدامه كبديل.");
       }
       
       handleCommonErrors(error, `فشل تحريك الشخصية: ${error?.message || 'خطأ غير معروف'}`);
