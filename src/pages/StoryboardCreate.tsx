@@ -186,7 +186,7 @@ export default function StoryboardCreate() {
                     selectedCharIds.includes(char.id) ? "border-indigo-600 ring-2 ring-indigo-100" : "border-transparent"
                   )}
                 >
-                  <img src={char.images.front} className="w-full h-full object-cover" />
+                  <img src={char.images.front || char.images.normal || Object.values(char.images).find(v => v && typeof v === 'string' && (v as string).length > 100) as string} className="w-full h-full object-cover" />
                   {selectedCharIds.includes(char.id) && (
                     <div className="absolute inset-0 bg-indigo-900/20 flex items-center justify-center">
                       <Check className="w-8 h-8 text-white drop-shadow-md" />
