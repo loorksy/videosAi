@@ -18,7 +18,7 @@ export default function StoryboardCreate() {
   const [processingStatus, setProcessingStatus] = useState('');
 
   // New Professional Options
-  const [style, setStyle] = useState('Cinematic');
+  const [style, setStyle] = useState('Cinematic Realistic');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [contentType, setContentType] = useState('قصة درامية');
   const [customContentType, setCustomContentType] = useState('');
@@ -33,12 +33,18 @@ export default function StoryboardCreate() {
   ];
 
   const styles = [
+    { value: 'Cinematic Realistic', label: 'سينمائي واقعي' },
     { value: 'Cinematic', label: 'سينمائي' },
     { value: 'Anime', label: 'أنمي' },
-    { value: '3D Render', label: 'ثلاثي الأبعاد' },
+    { value: 'Pixar 3D Animation', label: 'بيكسار / 3D كرتوني' },
+    { value: '3D Render Realistic', label: 'ثلاثي الأبعاد واقعي' },
     { value: 'Watercolor', label: 'ألوان مائية' },
-    { value: 'Cyberpunk', label: 'سايبربانك' },
-    { value: 'Minimalist', label: 'بسيط (Minimalist)' }
+    { value: 'Oil Painting', label: 'رسم زيتي' },
+    { value: 'Comic Book', label: 'كوميك / مانجا' },
+    { value: 'Cyberpunk Neon', label: 'سايبربانك' },
+    { value: 'Fantasy Epic', label: 'فانتازيا ملحمية' },
+    { value: 'Horror Dark', label: 'رعب مظلم' },
+    { value: 'Minimalist Clean', label: 'بسيط ونظيف' }
   ];
   const ratios = [
     { id: '16:9', label: 'عرضي (يوتيوب)', icon: '▭' },
@@ -195,6 +201,7 @@ export default function StoryboardCreate() {
       characters: selectedCharIds,
       scenes,
       aspectRatio,
+      style,
       createdAt: Date.now()
     };
     await db.saveStoryboard(storyboard);

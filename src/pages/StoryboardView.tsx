@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle } from 'lucide-react';
+import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle, FolderDown, Image, FileVideo, FileAudio, Package } from 'lucide-react';
 import { db, Storyboard, Scene } from '../lib/db';
 import { GeminiService } from '../lib/gemini';
 
@@ -19,6 +19,24 @@ export default function StoryboardView() {
   const [cameraMotion, setCameraMotion] = useState('Static');
   const [sceneStatuses, setSceneStatuses] = useState<Record<number, SceneStatus>>({});
   const [sceneErrors, setSceneErrors] = useState<Record<number, string>>({});
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showExportMenu]);
 
   const cameraMotions = [
     { value: 'Static', label: 'ثابت' },
@@ -86,23 +104,42 @@ export default function StoryboardView() {
     });
 
     try {
-      // Fetch character images to use as references
+      // Fetch character images and build DNA
       const referenceImages: string[] = [];
+      const characterDNAParts: string[] = [];
+      
       for (const charId of scene.characterIds) {
         const char = await db.getCharacter(charId);
         if (char) {
-          // Support all image types from character sheet
-          if (char.images.front) referenceImages.push(char.images.front);
-          else if (char.images.closeup) referenceImages.push(char.images.closeup);
-          else if (char.images.reference) referenceImages.push(char.images.reference);
+          // Add to DNA
+          characterDNAParts.push(`${char.name}: ${char.visualTraits || char.description}`);
+          
+          // Collect ALL available images for better reference
+          const imgs = char.images as Record<string, string | undefined>;
+          for (const value of Object.values(imgs)) {
+            if (value && typeof value === 'string' && value.length > 100) {
+              referenceImages.push(value);
+              break; // One image per character is enough
+            }
+          }
         }
       }
 
-      const imageUrl = await GeminiService.generateStoryboardFrame(
-        scene.description,
-        referenceImages,
-        storyboard.aspectRatio || '16:9'
-      );
+      // Get first scene image (establishing shot) and previous scene
+      const firstSceneImage = storyboard.scenes[0]?.frameImage;
+      const previousSceneImage = sceneIndex > 0 ? storyboard.scenes[sceneIndex - 1]?.frameImage : undefined;
+
+      const imageUrl = await GeminiService.generateStoryboardFrame({
+        sceneDescription: scene.description,
+        characterImages: referenceImages,
+        firstSceneImage,
+        previousSceneImage,
+        sceneIndex,
+        totalScenes: storyboard.scenes.length,
+        style: storyboard.style || 'cinematic realistic',
+        aspectRatio: storyboard.aspectRatio || '16:9',
+        characterDNA: characterDNAParts.join('\n'),
+      });
       
       const newScenes = [...storyboard.scenes];
       newScenes[sceneIndex].frameImage = imageUrl;
@@ -211,22 +248,38 @@ export default function StoryboardView() {
           
           const scene = currentStoryboard.scenes[i];
           const referenceImages: string[] = [];
+          const characterDNAParts: string[] = [];
+          
           for (const charId of scene.characterIds) {
             const char = await db.getCharacter(charId);
             if (char) {
-              // Support all image types
-              if (char.images.front) referenceImages.push(char.images.front);
-              else if (char.images.closeup) referenceImages.push(char.images.closeup);
-              else if (char.images.reference) referenceImages.push(char.images.reference);
+              characterDNAParts.push(`${char.name}: ${char.visualTraits || char.description}`);
+              const imgs = char.images as Record<string, string | undefined>;
+              for (const value of Object.values(imgs)) {
+                if (value && typeof value === 'string' && value.length > 100) {
+                  referenceImages.push(value);
+                  break;
+                }
+              }
             }
           }
 
+          // Get first scene and previous scene for consistency
+          const firstSceneImage = currentStoryboard.scenes[0]?.frameImage;
+          const previousSceneImage = i > 0 ? currentStoryboard.scenes[i - 1]?.frameImage : undefined;
+
           const imageUrl = await generateWithRetry(
-            () => GeminiService.generateStoryboardFrame(
-              scene.description,
-              referenceImages,
-              currentStoryboard.aspectRatio || '16:9'
-            ),
+            () => GeminiService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: referenceImages,
+              firstSceneImage,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: currentStoryboard.scenes.length,
+              style: currentStoryboard.style || 'cinematic realistic',
+              aspectRatio: currentStoryboard.aspectRatio || '16:9',
+              characterDNA: characterDNAParts.join('\n'),
+            }),
             i
           );
 
@@ -305,16 +358,290 @@ export default function StoryboardView() {
     }
   };
 
+  // === EXPORT FUNCTIONS ===
+  
+  const downloadFile = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportAllImages = async () => {
+    if (!storyboard) return;
+    setIsExporting(true);
+    setExportProgress('جاري تصدير الصور...');
+    
+    try {
+      for (let i = 0; i < storyboard.scenes.length; i++) {
+        const scene = storyboard.scenes[i];
+        if (scene.frameImage) {
+          setExportProgress(`تصدير صورة المشهد ${i + 1}...`);
+          downloadFile(scene.frameImage, `${storyboard.title}_scene_${i + 1}.png`);
+          await new Promise(r => setTimeout(r, 500)); // Small delay between downloads
+        }
+      }
+      setExportProgress('تم تصدير جميع الصور!');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportProgress('حدث خطأ أثناء التصدير');
+    } finally {
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress('');
+      }, 2000);
+    }
+  };
+
+  const exportAllVideos = async () => {
+    if (!storyboard) return;
+    setIsExporting(true);
+    setExportProgress('جاري تصدير الفيديوهات...');
+    
+    try {
+      for (let i = 0; i < storyboard.scenes.length; i++) {
+        const scene = storyboard.scenes[i];
+        if (scene.videoClip) {
+          setExportProgress(`تصدير فيديو المشهد ${i + 1}...`);
+          downloadFile(scene.videoClip, `${storyboard.title}_video_${i + 1}.mp4`);
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+      setExportProgress('تم تصدير جميع الفيديوهات!');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportProgress('حدث خطأ أثناء التصدير');
+    } finally {
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress('');
+      }, 2000);
+    }
+  };
+
+  const exportAllAudio = async () => {
+    if (!storyboard) return;
+    setIsExporting(true);
+    setExportProgress('جاري تصدير الصوتيات...');
+    
+    try {
+      for (let i = 0; i < storyboard.scenes.length; i++) {
+        const scene = storyboard.scenes[i];
+        if (scene.audioClip) {
+          setExportProgress(`تصدير صوت المشهد ${i + 1}...`);
+          downloadFile(scene.audioClip, `${storyboard.title}_audio_${i + 1}.wav`);
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+      setExportProgress('تم تصدير جميع الصوتيات!');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportProgress('حدث خطأ أثناء التصدير');
+    } finally {
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress('');
+      }, 2000);
+    }
+  };
+
+  const exportProjectData = () => {
+    if (!storyboard) return;
+    setIsExporting(true);
+    setExportProgress('جاري تصدير بيانات المشروع...');
+    
+    try {
+      const projectData = {
+        ...storyboard,
+        exportedAt: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      downloadFile(url, `${storyboard.title}_project.json`);
+      URL.revokeObjectURL(url);
+      
+      setExportProgress('تم تصدير بيانات المشروع!');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportProgress('حدث خطأ أثناء التصدير');
+    } finally {
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress('');
+      }, 2000);
+    }
+  };
+
+  const exportEverything = async () => {
+    if (!storyboard) return;
+    setIsExporting(true);
+    setShowExportMenu(false);
+    
+    try {
+      // Export images
+      setExportProgress('تصدير الصور...');
+      for (let i = 0; i < storyboard.scenes.length; i++) {
+        const scene = storyboard.scenes[i];
+        if (scene.frameImage) {
+          downloadFile(scene.frameImage, `${storyboard.title}_scene_${i + 1}.png`);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+      
+      // Export videos
+      setExportProgress('تصدير الفيديوهات...');
+      for (let i = 0; i < storyboard.scenes.length; i++) {
+        const scene = storyboard.scenes[i];
+        if (scene.videoClip) {
+          downloadFile(scene.videoClip, `${storyboard.title}_video_${i + 1}.mp4`);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+      
+      // Export audio
+      setExportProgress('تصدير الصوتيات...');
+      for (let i = 0; i < storyboard.scenes.length; i++) {
+        const scene = storyboard.scenes[i];
+        if (scene.audioClip) {
+          downloadFile(scene.audioClip, `${storyboard.title}_audio_${i + 1}.wav`);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+      
+      // Export project data
+      setExportProgress('تصدير بيانات المشروع...');
+      const projectData = {
+        ...storyboard,
+        exportedAt: new Date().toISOString(),
+        version: '1.0'
+      };
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      downloadFile(url, `${storyboard.title}_project.json`);
+      URL.revokeObjectURL(url);
+      
+      setExportProgress('تم تصدير كل شيء بنجاح!');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportProgress('حدث خطأ أثناء التصدير');
+    } finally {
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress('');
+      }, 3000);
+    }
+  };
+
+  // Calculate export stats
+  const exportStats = storyboard ? {
+    images: storyboard.scenes.filter(s => s.frameImage).length,
+    videos: storyboard.scenes.filter(s => s.videoClip).length,
+    audio: storyboard.scenes.filter(s => s.audioClip).length,
+  } : { images: 0, videos: 0, audio: 0 };
+
   if (!storyboard) return <div className="p-8 text-center">جاري التحميل...</div>;
 
   return (
     <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
-      <div className="flex items-center mb-6 pt-2">
-        <button onClick={() => navigate('/storyboards')} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronRight className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-bold mr-2 truncate text-foreground">{storyboard.title}</h1>
+      <div className="flex items-center justify-between mb-6 pt-2">
+        <div className="flex items-center">
+          <button onClick={() => navigate('/storyboards')} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronRight className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-bold mr-2 truncate text-foreground">{storyboard.title}</h1>
+        </div>
+        
+        {/* Export Button */}
+        <div className="relative" ref={exportMenuRef}>
+          <button
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            disabled={isExporting}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FolderDown className="w-4 h-4" />
+            )}
+            <span>تصدير</span>
+          </button>
+          
+          {/* Export Menu Dropdown */}
+          {showExportMenu && !isExporting && (
+            <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+              <div className="px-3 py-2 border-b border-slate-100">
+                <p className="text-xs font-medium text-slate-500">محتوى متاح للتصدير</p>
+                <div className="flex gap-3 mt-1 text-xs text-slate-600">
+                  <span>{exportStats.images} صورة</span>
+                  <span>{exportStats.videos} فيديو</span>
+                  <span>{exportStats.audio} صوت</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => { exportAllImages(); setShowExportMenu(false); }}
+                disabled={exportStats.images === 0}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Image className="w-4 h-4 text-blue-500" />
+                <span>تصدير جميع الصور</span>
+                <span className="mr-auto text-xs text-slate-400">({exportStats.images})</span>
+              </button>
+              
+              <button
+                onClick={() => { exportAllVideos(); setShowExportMenu(false); }}
+                disabled={exportStats.videos === 0}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <FileVideo className="w-4 h-4 text-purple-500" />
+                <span>تصدير جميع الفيديوهات</span>
+                <span className="mr-auto text-xs text-slate-400">({exportStats.videos})</span>
+              </button>
+              
+              <button
+                onClick={() => { exportAllAudio(); setShowExportMenu(false); }}
+                disabled={exportStats.audio === 0}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <FileAudio className="w-4 h-4 text-green-500" />
+                <span>تصدير جميع الصوتيات</span>
+                <span className="mr-auto text-xs text-slate-400">({exportStats.audio})</span>
+              </button>
+              
+              <div className="border-t border-slate-100 mt-1 pt-1">
+                <button
+                  onClick={() => { exportProjectData(); setShowExportMenu(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <Download className="w-4 h-4 text-slate-500" />
+                  <span>تصدير بيانات المشروع (JSON)</span>
+                </button>
+                
+                <button
+                  onClick={exportEverything}
+                  disabled={exportStats.images === 0 && exportStats.videos === 0 && exportStats.audio === 0}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Package className="w-4 h-4" />
+                  <span>تصدير كل شيء</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+      
+      {/* Export Progress Indicator */}
+      {isExporting && exportProgress && (
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+          <span className="text-sm text-emerald-700">{exportProgress}</span>
+        </div>
+      )}
 
       <div className="space-y-6">
         <div className="bg-indigo-50 p-4 rounded-xl">

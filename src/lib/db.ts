@@ -25,7 +25,8 @@ export interface Storyboard {
   script: string;
   characters: string[]; // Character IDs
   scenes: Scene[];
-  aspectRatio?: '16:9' | '9:16';
+  aspectRatio?: '16:9' | '9:16' | '1:1';
+  style?: string; // Visual style for consistency across scenes
   createdAt: number;
 }
 
