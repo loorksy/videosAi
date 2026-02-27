@@ -86,33 +86,29 @@ export default function StoryboardView() {
     });
 
     try {
-      // Fetch character images and details to use as references (Director Strategy)
+      // Fetch ALL character images from storyboard (Director Strategy)
       const referenceImages: string[] = [];
       const characterDescriptions: string[] = [];
-      // Use scene character IDs, or fallback to all storyboard characters
-      const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : storyboard.characters;
+      
+      // ALWAYS use ALL storyboard characters for consistency
+      const charIdsToUse = storyboard.characters || [];
       
       let charIndex = 0;
       for (const charId of charIdsToUse) {
         const char = await db.getCharacter(charId);
         if (char && char.images) {
-          // Get the first available image from all possible fields
           const imgs = char.images as Record<string, string | undefined>;
           const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
           if (imageValue) {
             referenceImages.push(imageValue);
             charIndex++;
-            // Build detailed character description for DNA
-            characterDescriptions.push(`Character ${charIndex} - "${char.name}":
-  - Visual: ${char.visualTraits || char.description || 'See reference image'}
-  - MUST match reference image ${charIndex} EXACTLY`);
+            characterDescriptions.push(`${char.name}: ${char.visualTraits || char.description || 'الشخصية الرئيسية'}`);
           }
         }
       }
       
-      // Build detailed characterDNA for director strategy
       const characterDNA = characterDescriptions.length > 0 
-        ? characterDescriptions.join('\n\n')
+        ? characterDescriptions.join('\n')
         : '';
 
       // Get first scene image for reference
@@ -241,30 +237,21 @@ export default function StoryboardView() {
           const scene = currentStoryboard.scenes[i];
           const referenceImages: string[] = [];
           const characterDescriptions: string[] = [];
-          // Use scene character IDs, or fallback to all storyboard characters
-          const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : currentStoryboard.characters;
           
-          let charIndex = 0;
-          for (const charId of charIdsToUse) {
+          // ALWAYS use ALL storyboard characters for consistency
+          for (const charId of (currentStoryboard.characters || [])) {
             const char = await db.getCharacter(charId);
             if (char && char.images) {
-              // Get the first available image from all possible fields
               const imgs = char.images as Record<string, string | undefined>;
               const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
               if (imageValue) {
                 referenceImages.push(imageValue);
-                charIndex++;
-                characterDescriptions.push(`Character ${charIndex} - "${char.name}":
-  - Visual: ${char.visualTraits || char.description || 'See reference image'}
-  - MUST match reference image ${charIndex} EXACTLY`);
+                characterDescriptions.push(`${char.name}: ${char.visualTraits || char.description || 'الشخصية الرئيسية'}`);
               }
             }
           }
           
-          // Build detailed characterDNA for director strategy
-          const characterDNA = characterDescriptions.length > 0 
-            ? characterDescriptions.join('\n\n')
-            : '';
+          const characterDNA = characterDescriptions.join('\n');
 
           // Get first scene image for reference
           const firstSceneImage = currentStoryboard.scenes[0]?.frameImage;

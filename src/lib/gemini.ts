@@ -87,39 +87,28 @@ const handleCommonErrors = (error: any, defaultMessage: string) => {
 // Helper function to convert URL or data URL to base64
 const imageToBase64 = async (imageSource: string): Promise<string> => {
   if (!imageSource || imageSource.length < 50) {
-    console.warn("[v0] imageToBase64: Invalid image source, length:", imageSource?.length);
     return '';
   }
   
-  console.log("[v0] imageToBase64 processing:", imageSource.substring(0, 80));
-  
   // If it's already a data URL, extract base64
   if (imageSource.startsWith('data:')) {
-    const matches = imageSource.match(/^data:[^;]+;base64,(.+)$/);
-    if (matches) {
-      console.log("[v0] Extracted base64 from data URL, length:", matches[1].length);
-      return matches[1];
+    // Match the base64 part after the comma
+    const commaIndex = imageSource.indexOf(',');
+    if (commaIndex !== -1) {
+      return imageSource.substring(commaIndex + 1);
     }
-    // If it has comma, split and return
-    if (imageSource.includes(',')) {
-      const base64 = imageSource.split(',')[1];
-      console.log("[v0] Split base64 from data URL, length:", base64?.length);
-      return base64 || '';
-    }
+    return '';
   }
   
-  // If it's a URL, fetch and convert using blob + FileReader for browser compatibility
+  // If it's a URL, fetch and convert
   if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
     try {
-      console.log("[v0] Fetching image from URL...");
       const response = await fetch(imageSource);
       if (!response.ok) {
-        console.warn(`[v0] Failed to fetch image: ${response.status}`);
         return '';
       }
       
       const blob = await response.blob();
-      console.log("[v0] Fetched blob, size:", blob.size, "type:", blob.type);
       
       // Use FileReader for browser-safe base64 conversion
       return new Promise((resolve) => {
@@ -127,28 +116,20 @@ const imageToBase64 = async (imageSource: string): Promise<string> => {
         reader.onloadend = () => {
           const dataUrl = reader.result as string;
           if (dataUrl && dataUrl.includes(',')) {
-            const base64 = dataUrl.split(',')[1];
-            console.log("[v0] Converted to base64, length:", base64?.length);
-            resolve(base64 || '');
+            resolve(dataUrl.split(',')[1] || '');
           } else {
-            console.warn("[v0] FileReader returned invalid result");
             resolve('');
           }
         };
-        reader.onerror = () => {
-          console.warn("[v0] FileReader error");
-          resolve('');
-        };
+        reader.onerror = () => resolve('');
         reader.readAsDataURL(blob);
       });
-    } catch (e) {
-      console.warn('[v0] Error fetching image:', e);
+    } catch {
       return '';
     }
   }
   
-  // Assume it's already base64
-  console.log("[v0] Assuming raw base64, length:", imageSource.length);
+  // Assume it's already raw base64
   return imageSource;
 };
 
@@ -386,111 +367,73 @@ ${charContext}
     
     const parts: any[] = [];
     
-    console.log("[v0] generateStoryboardFrame called:");
-    console.log("[v0] - characterImages count:", characterImages.length);
-    console.log("[v0] - sceneIndex:", sceneIndex);
-    console.log("[v0] - characterDNA:", characterDNA?.substring(0, 100));
-    
     // === DIRECTOR STRATEGY: Think like a film director ===
     
     // STEP 1: CHARACTER REFERENCE IMAGES (HIGHEST PRIORITY - MANDATORY)
     // These are the "actors" - they must look EXACTLY the same in every scene
+    let validImagesCount = 0;
+    
     if (characterImages.length > 0) {
-      parts.push({ text: `🎬 CHARACTER CASTING SHEET - MANDATORY REFERENCE:
-These are your ACTORS. You MUST copy their EXACT appearance in every detail:
-- Face structure, eyes, nose, mouth - IDENTICAL
-- Hair style, color, texture - IDENTICAL  
-- Skin tone - IDENTICAL
-- Clothing, accessories - IDENTICAL
-- Body proportions - IDENTICAL
-
-DO NOT create new characters. These actors MUST appear exactly as shown:` });
+      // Add instruction FIRST
+      parts.push({ text: `[CHARACTER REFERENCE - MANDATORY]
+IMPORTANT: The following images show the EXACT characters that MUST appear in this scene.
+You MUST copy their appearance EXACTLY:
+- Same face, same eyes, same hair
+- Same clothing and colors
+- Same body proportions
+- DO NOT create different looking characters` });
       
-      const convertedImages = await Promise.all(
-        characterImages.slice(0, 3).map(img => imageToBase64(img))
-      );
-      
-      let validImagesCount = 0;
-      for (let i = 0; i < convertedImages.length; i++) {
-        const base64Data = convertedImages[i];
-        console.log(`[v0] Character image ${i + 1} base64 length:`, base64Data?.length || 0);
-        if (base64Data && base64Data.length > 100) {
+      // Convert and add each character image
+      for (const img of characterImages.slice(0, 3)) {
+        const base64Data = await imageToBase64(img);
+        if (base64Data && base64Data.length > 1000) {
           parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
           validImagesCount++;
         }
       }
       
-      console.log("[v0] Valid character images added to prompt:", validImagesCount);
-      if (validImagesCount === 0) {
-        console.warn("[v0] WARNING: No valid character images could be converted!");
+      if (validImagesCount > 0) {
+        parts.push({ text: `[END CHARACTER REFERENCE - ${validImagesCount} character(s) shown above]` });
       }
-    } else {
-      console.warn("[v0] WARNING: No character images provided to generateStoryboardFrame!");
     }
 
     // STEP 2: SCENE 1 AS MASTER REFERENCE (for scenes 2+)
-    // Scene 1 establishes the visual world - all other scenes must match
     if (sceneIndex > 0 && firstSceneImage) {
-      parts.push({ text: `\n🎥 MASTER REFERENCE - SCENE 1 (Establishing Shot):
-This is the visual foundation of the story. Match these elements EXACTLY:
-- Art style and rendering technique
-- Color grading and palette
-- Lighting mood and direction
-- Environment design and atmosphere
-- Character proportions and style` });
-      
+      parts.push({ text: `\n[SCENE 1 - MASTER REFERENCE]\nMatch the art style, colors, and atmosphere from this establishing shot:` });
       const firstData = await imageToBase64(firstSceneImage);
-      if (firstData && firstData.length > 100) {
+      if (firstData && firstData.length > 1000) {
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
       }
     }
     
-    // STEP 3: PREVIOUS SCENE FOR CONTINUITY (for scenes 2+)
+    // STEP 3: PREVIOUS SCENE FOR CONTINUITY
     if (sceneIndex > 0 && previousSceneImage && previousSceneImage !== firstSceneImage) {
-      parts.push({ text: `\n🎞️ PREVIOUS SCENE (Scene ${sceneIndex}) - Direct Continuity:
-Continue the action from this frame. Maintain:
-- Same location/environment (unless script says otherwise)
-- Consistent character positions and poses
-- Matching lighting and time of day
-- Visual flow and narrative connection` });
-      
+      parts.push({ text: `\n[PREVIOUS SCENE]\nContinue from this frame:` });
       const prevData = await imageToBase64(previousSceneImage);
-      if (prevData && prevData.length > 100) {
+      if (prevData && prevData.length > 1000) {
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
       }
     }
 
-    // STEP 4: DIRECTOR'S BRIEF - The actual scene to generate
-    const directorBrief = `
-🎬 DIRECTOR'S BRIEF - SCENE ${sceneIndex + 1} OF ${totalScenes}
-═══════════════════════════════════════════════════════
+    // STEP 4: SCENE DESCRIPTION
+    const scenePrompt = `
+[GENERATE SCENE ${sceneIndex + 1} OF ${totalScenes}]
 
-📋 CHARACTER DNA (Who appears in this scene):
-${characterDNA || 'Use the character reference images above.'}
-
-🎯 SCENE ACTION:
+SCENE DESCRIPTION:
 ${sceneDescription}
 
-🎨 VISUAL STYLE: ${style}
+STYLE: ${style}
 
-📐 COMPOSITION (Think like a cinematographer):
-- Frame the shot to emphasize the story moment
-- Use appropriate camera angle (wide/medium/close-up based on emotion)
-- Consider depth of field and focal points
-- Lighting should match the mood
+${characterDNA ? `CHARACTERS IN THIS SCENE:\n${characterDNA}` : ''}
 
-⚠️ CRITICAL RULES:
-1. Characters MUST be PIXEL-PERFECT copies of the reference images above
-2. DO NOT redesign, reimagine, or stylize the characters differently
-3. ${sceneIndex === 0 
-    ? 'ESTABLISHING SHOT: Define the world clearly - this becomes the reference for all future scenes' 
-    : 'CONTINUITY: Must visually connect to the previous scene(s) shown above'}
-4. Think like a film director - every element serves the story
-5. Maintain consistent proportions, lighting, and atmosphere
+CRITICAL INSTRUCTIONS:
+${validImagesCount > 0 ? `- The ${validImagesCount} character reference image(s) above show EXACTLY how the characters must look
+- Copy their face, hair, clothing, and colors EXACTLY - do not redesign them` : ''}
+${sceneIndex === 0 ? '- This is the ESTABLISHING SHOT - define the visual world clearly' : '- Continue from the previous scene(s) shown above'}
+- Frame the shot cinematically
+- Generate the image now`;
 
-Generate this cinematic frame now.`;
-
-    parts.push({ text: directorBrief });
+    parts.push({ text: scenePrompt });
 
     try {
       const result = await ai.models.generateContent({

@@ -125,19 +125,15 @@ export default function StoryboardCreate() {
 
     // Collect ALL character reference images
     const allCharImages: string[] = [];
-    console.log("[v0] Selected characters:", selectedChars.map(c => c.name));
     for (const char of selectedChars) {
-      console.log("[v0] Processing character:", char.name, "images:", char.images);
       const imgs = char.images as Record<string, string | undefined>;
-      for (const [key, value] of Object.entries(imgs)) {
+      for (const value of Object.values(imgs)) {
         if (value && typeof value === 'string' && value.length > 100) {
-          console.log(`[v0] Found image for ${char.name}, key: ${key}, length: ${value.length}`);
           allCharImages.push(value);
           break; // one per character
         }
       }
     }
-    console.log("[v0] Total character images collected:", allCharImages.length);
 
     try {
       let firstSceneImage: string | undefined;
@@ -150,12 +146,9 @@ export default function StoryboardCreate() {
         
         const scene = newScenes[i];
         
-        // Get character images specific to this scene
-        const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
-        const sceneCharImages = sceneChars.length > 0 ? sceneChars.map(c => {
-          const imgs = c.images as Record<string, string | undefined>;
-          return Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100) || '';
-        }).filter(Boolean) : allCharImages;
+        // ALWAYS use all selected character images for consistency
+        // This ensures characters look the same across all scenes
+        const sceneCharImages = allCharImages.length > 0 ? allCharImages : [];
 
         try {
           const frameImage = await GeminiService.generateStoryboardFrame({
