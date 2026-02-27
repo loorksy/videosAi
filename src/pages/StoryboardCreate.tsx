@@ -116,10 +116,12 @@ export default function StoryboardCreate() {
     const newScenes = [...scenes];
     const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
     
-    // Build character DNA string
-    const characterDNA = selectedChars.map(c => 
-      `${c.name}: ${c.visualTraits || c.description}`
-    ).join('\n');
+    // Build detailed character DNA string for director strategy
+    const characterDNA = selectedChars.map((c, idx) => 
+      `Character ${idx + 1} - "${c.name}":
+  - Visual: ${c.visualTraits || c.description || 'See reference image'}
+  - MUST match reference image ${idx + 1} EXACTLY`
+    ).join('\n\n');
 
     // Collect ALL character reference images
     const allCharImages: string[] = [];
@@ -138,7 +140,9 @@ export default function StoryboardCreate() {
       let previousSceneImage: string | undefined;
 
       for (let i = 0; i < newScenes.length; i++) {
-        setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i === 0 ? ' (المشهد المرجعي الأساسي)' : ''}`);
+        setProcessingStatus(i === 0 
+          ? `جاري إنشاء المشهد المرجعي الأساسي (1/${newScenes.length})...`
+          : `جاري رسم المشهد ${i + 1}/${newScenes.length} (باستخدام المشهد المرجعي)...`);
         
         const scene = newScenes[i];
         

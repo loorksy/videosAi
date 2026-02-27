@@ -350,7 +350,7 @@ ${charContext}
     }
   },
 
-  // 4. Generate Storyboard Frame - character refs + first scene + previous scene for max consistency
+  // 4. Generate Storyboard Frame - Director Strategy with character consistency
   async generateStoryboardFrame(params: {
     sceneDescription: string;
     characterImages: string[];
@@ -367,57 +367,101 @@ ${charContext}
     
     const parts: any[] = [];
     
-    // === STEP 1: Character reference images FIRST (highest priority) ===
+    // === DIRECTOR STRATEGY: Think like a film director ===
+    
+    // STEP 1: CHARACTER REFERENCE IMAGES (HIGHEST PRIORITY - MANDATORY)
+    // These are the "actors" - they must look EXACTLY the same in every scene
     if (characterImages.length > 0) {
-      parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
+      parts.push({ text: `🎬 CHARACTER CASTING SHEET - MANDATORY REFERENCE:
+These are your ACTORS. You MUST copy their EXACT appearance in every detail:
+- Face structure, eyes, nose, mouth - IDENTICAL
+- Hair style, color, texture - IDENTICAL  
+- Skin tone - IDENTICAL
+- Clothing, accessories - IDENTICAL
+- Body proportions - IDENTICAL
+
+DO NOT create new characters. These actors MUST appear exactly as shown:` });
       
-      // Convert all character images to base64 (handles URLs and data URLs)
       const convertedImages = await Promise.all(
         characterImages.slice(0, 3).map(img => imageToBase64(img))
       );
       
+      let validImagesCount = 0;
       for (const base64Data of convertedImages) {
         if (base64Data && base64Data.length > 100) {
           parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
-        }
-      }
-    }
-
-    // === STEP 2: Scene reference images ===
-    if (sceneIndex > 0) {
-      // Always include FIRST scene (establishing shot) as base reference
-      if (firstSceneImage) {
-        parts.push({ text: `\nESTABLISHING SHOT (Scene 1) - BASE REFERENCE for the entire story. Same world, art style, color palette:` });
-        const firstData = await imageToBase64(firstSceneImage);
-        if (firstData && firstData.length > 100) {
-          parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
+          validImagesCount++;
         }
       }
       
-      // Include PREVIOUS scene for direct continuity (skip if same as first)
-      if (previousSceneImage && previousSceneImage !== firstSceneImage) {
-        parts.push({ text: `\nPREVIOUS SCENE (Scene ${sceneIndex}) - Continue directly from here:` });
-        const prevData = await imageToBase64(previousSceneImage);
-        if (prevData && prevData.length > 100) {
-          parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
-        }
+      if (validImagesCount === 0) {
+        console.warn("[v0] No valid character images could be converted");
       }
     }
 
-    // === STEP 3: Scene description ===
-    let promptText = `\nGenerate scene ${sceneIndex + 1} of ${totalScenes}. Style: ${style}.
+    // STEP 2: SCENE 1 AS MASTER REFERENCE (for scenes 2+)
+    // Scene 1 establishes the visual world - all other scenes must match
+    if (sceneIndex > 0 && firstSceneImage) {
+      parts.push({ text: `\n🎥 MASTER REFERENCE - SCENE 1 (Establishing Shot):
+This is the visual foundation of the story. Match these elements EXACTLY:
+- Art style and rendering technique
+- Color grading and palette
+- Lighting mood and direction
+- Environment design and atmosphere
+- Character proportions and style` });
+      
+      const firstData = await imageToBase64(firstSceneImage);
+      if (firstData && firstData.length > 100) {
+        parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
+      }
+    }
+    
+    // STEP 3: PREVIOUS SCENE FOR CONTINUITY (for scenes 2+)
+    if (sceneIndex > 0 && previousSceneImage && previousSceneImage !== firstSceneImage) {
+      parts.push({ text: `\n🎞️ PREVIOUS SCENE (Scene ${sceneIndex}) - Direct Continuity:
+Continue the action from this frame. Maintain:
+- Same location/environment (unless script says otherwise)
+- Consistent character positions and poses
+- Matching lighting and time of day
+- Visual flow and narrative connection` });
+      
+      const prevData = await imageToBase64(previousSceneImage);
+      if (prevData && prevData.length > 100) {
+        parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
+      }
+    }
 
-CHARACTER DNA:
-${characterDNA}
+    // STEP 4: DIRECTOR'S BRIEF - The actual scene to generate
+    const directorBrief = `
+🎬 DIRECTOR'S BRIEF - SCENE ${sceneIndex + 1} OF ${totalScenes}
+═══════════════════════════════════════════════════════
 
-SCENE DESCRIPTION:
+📋 CHARACTER DNA (Who appears in this scene):
+${characterDNA || 'Use the character reference images above.'}
+
+🎯 SCENE ACTION:
 ${sceneDescription}
 
-RULES:
-- The characters MUST be identical copies of the reference images above. Do NOT redesign them.
-- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly.' : 'Continue from the scene images above. Same location, same lighting, same world.'}`;
+🎨 VISUAL STYLE: ${style}
 
-    parts.push({ text: promptText });
+📐 COMPOSITION (Think like a cinematographer):
+- Frame the shot to emphasize the story moment
+- Use appropriate camera angle (wide/medium/close-up based on emotion)
+- Consider depth of field and focal points
+- Lighting should match the mood
+
+⚠️ CRITICAL RULES:
+1. Characters MUST be PIXEL-PERFECT copies of the reference images above
+2. DO NOT redesign, reimagine, or stylize the characters differently
+3. ${sceneIndex === 0 
+    ? 'ESTABLISHING SHOT: Define the world clearly - this becomes the reference for all future scenes' 
+    : 'CONTINUITY: Must visually connect to the previous scene(s) shown above'}
+4. Think like a film director - every element serves the story
+5. Maintain consistent proportions, lighting, and atmosphere
+
+Generate this cinematic frame now.`;
+
+    parts.push({ text: directorBrief });
 
     try {
       const result = await ai.models.generateContent({

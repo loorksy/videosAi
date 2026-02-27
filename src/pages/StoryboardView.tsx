@@ -86,12 +86,13 @@ export default function StoryboardView() {
     });
 
     try {
-      // Fetch character images and details to use as references
+      // Fetch character images and details to use as references (Director Strategy)
       const referenceImages: string[] = [];
       const characterDescriptions: string[] = [];
       // Use scene character IDs, or fallback to all storyboard characters
       const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : storyboard.characters;
       
+      let charIndex = 0;
       for (const charId of charIdsToUse) {
         const char = await db.getCharacter(charId);
         if (char && char.images) {
@@ -100,15 +101,18 @@ export default function StoryboardView() {
           const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
           if (imageValue) {
             referenceImages.push(imageValue);
-            // Build character description for DNA
-            characterDescriptions.push(`- ${char.name}: ${char.description || 'الشخصية الرئيسية'}`);
+            charIndex++;
+            // Build detailed character description for DNA
+            characterDescriptions.push(`Character ${charIndex} - "${char.name}":
+  - Visual: ${char.visualTraits || char.description || 'See reference image'}
+  - MUST match reference image ${charIndex} EXACTLY`);
           }
         }
       }
       
-      // Build detailed characterDNA
+      // Build detailed characterDNA for director strategy
       const characterDNA = characterDescriptions.length > 0 
-        ? `CRITICAL: The following characters appear in this scene. You MUST use the reference images above and make them look IDENTICAL:\n${characterDescriptions.join('\n')}\n\nDo NOT redesign or change any character. Copy their exact appearance from the reference images.`
+        ? characterDescriptions.join('\n\n')
         : '';
 
       // Get first scene image for reference
@@ -226,10 +230,12 @@ export default function StoryboardView() {
     try {
       let currentStoryboard = { ...storyboard };
 
-      // 1. Generate Images
+      // 1. Generate Images (Director Strategy)
       for (let i = 0; i < currentStoryboard.scenes.length; i++) {
         if (!currentStoryboard.scenes[i].frameImage) {
-          setAutoPilotStatus(`توليد صورة المشهد ${i + 1}...`);
+          setAutoPilotStatus(i === 0 
+            ? `إنشاء المشهد المرجعي الأساسي (1/${currentStoryboard.scenes.length})...`
+            : `توليد المشهد ${i + 1}/${currentStoryboard.scenes.length} (باستخدام المرجع)...`);
           setCurrentGeneratingIndex(i);
           
           const scene = currentStoryboard.scenes[i];
@@ -238,6 +244,7 @@ export default function StoryboardView() {
           // Use scene character IDs, or fallback to all storyboard characters
           const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : currentStoryboard.characters;
           
+          let charIndex = 0;
           for (const charId of charIdsToUse) {
             const char = await db.getCharacter(charId);
             if (char && char.images) {
@@ -246,14 +253,17 @@ export default function StoryboardView() {
               const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
               if (imageValue) {
                 referenceImages.push(imageValue);
-                characterDescriptions.push(`- ${char.name}: ${char.description || 'الشخصية الرئيسية'}`);
+                charIndex++;
+                characterDescriptions.push(`Character ${charIndex} - "${char.name}":
+  - Visual: ${char.visualTraits || char.description || 'See reference image'}
+  - MUST match reference image ${charIndex} EXACTLY`);
               }
             }
           }
           
-          // Build detailed characterDNA
+          // Build detailed characterDNA for director strategy
           const characterDNA = characterDescriptions.length > 0 
-            ? `CRITICAL: The following characters appear in this scene. You MUST use the reference images above and make them look IDENTICAL:\n${characterDescriptions.join('\n')}\n\nDo NOT redesign or change any character. Copy their exact appearance from the reference images.`
+            ? characterDescriptions.join('\n\n')
             : '';
 
           // Get first scene image for reference
