@@ -229,21 +229,39 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
 الشخصيات المتاحة:
 ${charContext}
 
-القواعد المهمة:
-1. كل مشهد يجب أن يكون وصفاً بصرياً مفصلاً جداً يشمل: زاوية الكاميرا، الإضاءة، تعابير الوجه، الملابس، الخلفية بالتفصيل، الألوان، المسافة من الشخصيات
-2. يجب أن يكون المشهد الأول هو المشهد المرجعي - صف فيه البيئة والأجواء بتفصيل شديد
-3. المشاهد اللاحقة يجب أن تشير إلى نفس البيئة/المكان من المشهد الأول مع تغيير زاوية الكاميرا والحركة
-4. اذكر اسم كل شخصية ومظهرها في كل مشهد تظهر فيه
-5. فكر كمخرج: من أين ستصور؟ قريب أم بعيد؟ من خلف الشخصية أم أمامها؟
-6. 4-6 مشاهد كحد أقصى
+القواعد المهمة - فكر كمخرج سينمائي يخطط للقطات متتالية:
 
-مثال لوصف مشهد جيد:
-"لقطة متوسطة (Medium Shot) لجاد (طفل بشعر بني قصير، يرتدي قميصاً أزرق) يمشي في حديقة خضراء واسعة بأشجار صنوبر طويلة، ضوء الشمس الذهبي يتسلل بين الأوراق، الكاميرا تتبعه من الجانب الأيمن، تعبير وجهه فضولي ومبتسم قليلاً"
+⚡ قاعدة الاستمرارية: كل مشهد مدته 8 ثوانٍ. المشاهد هي لقطات متتالية متصلة مثل فيلم حقيقي.
+- المشهد الثاني يبدأ من حيث انتهى الأول بالضبط
+- إذا كانت الشخصية تمشي نحو اليمين في المشهد 1، يجب أن تكون أقرب لليمين في المشهد 2
+- الكاميرا تنتقل بسلاسة بين اللقطات (مثلاً: لقطة واسعة ← متوسطة ← قريبة ← فوق الكتف)
+
+⚡ وصف الحركة: لكل مشهد اذكر:
+- ماذا تفعل الشخصية بالضبط (تمشي، تلتفت، تجلس، تشير بيدها)
+- من أي اتجاه تأتي/تذهب الشخصية
+- وضعية الجسم (واقف، جالس، منحنٍ، يركض)
+- تعبير الوجه (ابتسامة، دهشة، تركيز، حزن)
+
+⚡ وصف المكان: يجب أن يكون المكان واحداً ومتسقاً:
+- المشهد الأول يحدد المكان بالتفصيل (هو المرجع الأساسي)
+- المشاهد اللاحقة تصف نفس المكان من زوايا مختلفة
+- اذكر العناصر المشتركة (شجرة معينة، مبنى، لون السماء) في كل مشهد
+
+⚡ تخطيط الكاميرا: خطط اللقطات مثل مخرج محترف:
+- Establishing Shot (لقطة تأسيسية واسعة) → Medium Shot → Close-up → Over-the-shoulder → Wide reaction shot
+- لا تقفز بين لقطتين بعيدتين - اجعل الانتقال سلساً
+
+مثال لمشاهد متتالية:
+المشهد 1: "Wide establishing shot of a lush green park with tall pine trees. Golden afternoon sunlight filters through the leaves. Jad (brown short hair, blue t-shirt, jeans) walks from the LEFT side toward the center of the frame along a stone path. His expression is curious, looking around. Camera is static, positioned 10 meters away."
+المشهد 2: "Medium shot, same park, same lighting. Camera has moved closer. Jad (same outfit) has now reached the center of the path and STOPS, looking toward the RIGHT side of frame with a surprised smile. Behind him, the same pine trees visible. Camera at waist level, 3 meters away."
+المشهد 3: "Over-the-shoulder shot from behind Yazan's head (black curly hair, red hoodie). We see the same park path ahead, and Jad (blue t-shirt) standing 5 meters away, waving. Same golden light, same trees. Yazan is raising his right hand to wave back."
+
+اذكر اسم كل شخصية ومظهرها الكامل في كل مشهد.
 
 أخرج JSON:
 1. "script": السيناريو الكامل بالعربية
 2. "scenes": مصفوفة من المشاهد، كل مشهد يحتوي:
-   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (لتوليد الصور)
+   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (للتوليد). يجب أن يتضمن: نوع اللقطة، المسافة، زاوية الكاميرا، حركة الشخصيات، الاتجاهات، تعابير الوجه، الملابس، تفاصيل الخلفية
    - "characters": أسماء الشخصيات في المشهد
    - "dialogue": الحوار بالعربية (فارغ إن لم يوجد)`;
 
