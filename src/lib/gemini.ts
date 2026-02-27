@@ -1148,44 +1148,26 @@ ${sanitizedPrompt}`;
       console.log('Prompt:', enhancedPrompt.substring(0, 200) + '...');
       console.log('Reference images count:', referenceImages?.length || 0);
       
-      let operation;
+      // IMPORTANT: Reference images only support 16:9 aspect ratio currently
+      // If user selected 9:16, we'll generate without reference images
+      const canUseReferences = aspectRatio === '16:9' && referenceImages.length > 0;
       
-      // Try with reference images first
-      try {
-        operation = await ai.models.generateVideos({
-          model: 'veo-3.1-generate-preview',
-          prompt: enhancedPrompt,
-          config: {
-            numberOfVideos: 1,
-            referenceImages: referenceImages,
-            resolution: resolution,
-            aspectRatio: aspectRatio,
-            personGeneration: 'allow_all',
-            safetySettings: PERMISSIVE_SAFETY_SETTINGS,
-          }
-        });
-      } catch (refError: any) {
-        console.error('Reference images error:', refError);
-        // If reference images fail with INVALID_ARGUMENT, try without them
-        if (refError?.message?.includes('INVALID_ARGUMENT') || 
-            refError?.message?.includes('400') ||
-            refError?.message?.includes('خطأ في المعاملات')) {
-          console.log('Reference images failed, trying without them...');
-          operation = await ai.models.generateVideos({
-            model: 'veo-3.1-generate-preview',
-            prompt: enhancedPrompt,
-            config: {
-              numberOfVideos: 1,
-              resolution: resolution,
-              aspectRatio: aspectRatio,
-              personGeneration: 'allow_all',
-              safetySettings: PERMISSIVE_SAFETY_SETTINGS,
-            }
-          });
-        } else {
-          throw refError;
-        }
+      if (!canUseReferences && aspectRatio === '9:16' && referenceImages.length > 0) {
+        console.warn('Reference images not supported for 9:16 aspect ratio - proceeding without them');
       }
+      
+      let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-generate-preview',
+        prompt: enhancedPrompt,
+        config: {
+          numberOfVideos: 1,
+          referenceImages: canUseReferences ? referenceImages : undefined,
+          resolution: resolution,
+          aspectRatio: aspectRatio,
+          personGeneration: 'allow_all',
+          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
+        }
+      });
 
       console.log('Initial operation:', JSON.stringify(operation).substring(0, 500));
 
