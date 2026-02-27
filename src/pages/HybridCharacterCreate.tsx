@@ -99,10 +99,10 @@ export default function HybridCharacterCreate() {
       id: uuidv4(),
       name: generatedCharacter.name,
       description: generatedCharacter.description,
-      type: 'hybrid',
+      visualTraits: generatedCharacter.description || generatedCharacter.name,
       images: {
         front: generatedCharacter.front,
-        side: generatedCharacter.side,
+        left: generatedCharacter.side,
         back: generatedCharacter.back,
         normal: generatedCharacter.front,
       },
