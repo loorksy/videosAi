@@ -50,10 +50,13 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3, baseDelayMs = 
 
 const handleCommonErrors = (error: any, defaultMessage: string) => {
   if (isRateLimitError(error)) {
-    throw new Error("لقد تجاوزت الحد المسموح به للاستخدام (Rate Limit). يرجى الانتظار قليلاً ثم المحاولة مرة أخرى، أو التحقق من خطة الفوترة الخاصة بك.");
+    throw new Error("لقد تجاوزت الحد المسموح به للاستخدام (Rate Limit). يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.");
   }
   if (isPermissionError(error)) {
     throw new Error("تم رفض الوصول (403). تأكد من صلاحيات مفتاح API.");
+  }
+  if (isNetworkError(error)) {
+    throw new Error("خطأ في الاتصال بالشبكة. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.");
   }
   throw new Error(defaultMessage);
 };
