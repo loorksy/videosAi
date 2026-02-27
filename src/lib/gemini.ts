@@ -1539,7 +1539,7 @@ The character should be instantly recognizable as the same ${typeDesc} from the 
 
     try {
       const frontResult = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3-pro-image-preview",
         contents: [
           {
             role: "user",
@@ -1582,7 +1582,7 @@ Show the back of the character with consistent details (hair, clothing, body sha
 
     try {
       const backResult = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3-pro-image-preview",
         contents: [
           {
             role: "user",
@@ -1626,7 +1626,7 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
 
     try {
       const closeupResult = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3-pro-image-preview",
         contents: [
           {
             role: "user",
@@ -1685,7 +1685,7 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3-pro-image-preview",
         contents: [
           {
             role: "user",
