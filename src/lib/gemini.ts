@@ -426,19 +426,26 @@ ${sceneDescription}
     }
   },
 
-  // 5. Generate Video Clip (Veo3)
+  // 5. Generate Video Clip (Veo3) - With enhanced error handling for child content
   async generateVideoClip(startFrame: string, endFrame: string, aspectRatio: '16:9' | '9:16' = '16:9', cameraMotion?: string): Promise<string> {
     try {
       const ai = getAI();
       const startBase64 = startFrame.includes(',') ? startFrame.split(',')[1] : startFrame;
-      const startMime = "image/png"; // Simplified
+      const startMime = "image/png";
       
       const endBase64 = endFrame.includes(',') ? endFrame.split(',')[1] : endFrame;
       const endMime = "image/png";
 
+      // Build a safe, neutral prompt that focuses on camera motion only
+      // Avoid any description of people/characters to reduce content filtering
+      let safePrompt = "Smooth cinematic transition between frames.";
+      if (cameraMotion && cameraMotion !== 'Static') {
+        safePrompt = `Cinematic ${cameraMotion.toLowerCase()} camera movement. Smooth professional transition.`;
+      }
+
       let operation = await ai.models.generateVideos({
         model: 'veo-3.1-fast-generate-preview',
-        prompt: cameraMotion ? `Camera motion: ${cameraMotion}` : undefined,
+        prompt: safePrompt,
         image: {
           imageBytes: startBase64,
           mimeType: startMime,
@@ -454,14 +461,42 @@ ${sceneDescription}
         }
       });
 
-      // Poll for completion
-      while (!operation.done) {
+      // Poll for completion with better error detection
+      let pollCount = 0;
+      const maxPolls = 120; // 10 minutes max
+      
+      while (!operation.done && pollCount < maxPolls) {
         await new Promise(resolve => setTimeout(resolve, 5000));
-        operation = await ai.operations.getVideosOperation({operation: operation});
+        try {
+          operation = await ai.operations.getVideosOperation({operation: operation});
+        } catch (pollError: any) {
+          // Check for safety filtering during poll
+          if (pollError?.message?.includes('SAFETY') || pollError?.message?.includes('blocked') || pollError?.message?.includes('filtered')) {
+            throw new Error("CONTENT_FILTERED");
+          }
+          throw pollError;
+        }
+        pollCount++;
       }
 
-      const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
-      if (!videoUri) throw new Error("Video generation failed");
+      if (pollCount >= maxPolls) {
+        throw new Error("انتهت مهلة توليد الفيديو. حاول مرة أخرى.");
+      }
+
+      // Check if generation was blocked by safety filters
+      const generatedVideo = operation.response?.generatedVideos?.[0];
+      if (!generatedVideo || !generatedVideo.video?.uri) {
+        // Check for safety/content policy issues
+        const reason = (operation as any).response?.promptFeedback?.blockReason || 
+                       (operation as any).error?.message || '';
+        if (reason.includes('SAFETY') || reason.includes('CHILD') || reason.includes('MINOR') || 
+            reason.includes('blocked') || reason.includes('policy')) {
+          throw new Error("CONTENT_FILTERED");
+        }
+        throw new Error("GENERATION_FAILED");
+      }
+
+      const videoUri = generatedVideo.video.uri;
 
       // Fetch the actual video blob
       const storedKey = localStorage.getItem('GEMINI_API_KEY');
@@ -473,8 +508,11 @@ ${sceneDescription}
           }
       });
       
+      if (!response.ok) {
+        throw new Error(`فشل تحميل الفيديو: ${response.status}`);
+      }
+      
       const blob = await response.blob();
-      // Convert to Base64 Data URL for persistence
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -482,15 +520,38 @@ ${sceneDescription}
         reader.readAsDataURL(blob);
       });
     } catch (error: any) {
+      const errorMsg = error?.message || '';
+      
+      // Handle content filtering (child/minor content)
+      if (errorMsg === 'CONTENT_FILTERED' || 
+          errorMsg.includes('SAFETY') || 
+          errorMsg.includes('CHILD') || 
+          errorMsg.includes('MINOR') ||
+          errorMsg.includes('blocked') ||
+          errorMsg.includes('policy') ||
+          errorMsg.includes('filtered')) {
+        throw new Error(
+          "تم رفض توليد الفيديو بسبب سياسات الأمان.\n\n" +
+          "نصائح لحل المشكلة:\n" +
+          "1. إذا كانت الشخصية طفلاً، جرب تغيير العمر لشخص بالغ (18+)\n" +
+          "2. استخدم شخصيات كرتونية/أنمي بدلاً من شخصيات واقعية\n" +
+          "3. استخدم حيوانات أو مخلوقات خيالية بدلاً من البشر\n" +
+          "4. جرب Kling AI من صفحة Motion Control كبديل"
+        );
+      }
+      
+      if (errorMsg === 'GENERATION_FAILED') {
+        throw new Error("فشل توليد الفيديو. جرب تغيير زاوية الكاميرا أو أعد توليد الصورة.");
+      }
 
       if (isRateLimitError(error)) handleCommonErrors(error, "");
       if (isPermissionError(error)) {
         throw new Error("فشل توليد الفيديو (403). نموذج veo-3.1-fast-generate-preview يتطلب مشروع Google Cloud مدفوع (Paid Billing). تأكد من تفعيل الفوترة و Generative Language API.");
       }
-      if (error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
+      if (errorMsg.includes('not found') || errorMsg.includes('NOT_FOUND')) {
         throw new Error("نموذج veo-3.1-fast-generate-preview غير متاح. تأكد من أن مشروعك يدعم نماذج Veo.");
       }
-      throw new Error(`فشل توليد الفيديو: ${error?.message || 'خطأ غير معروف'}`);
+      throw new Error(`فشل توليد الفيديو: ${errorMsg || 'خطأ غير معروف'}`);
     }
   },
 
@@ -1566,7 +1627,7 @@ Output a JSON object:
     في مجال/صناعة: "${industry}"
     
     اكتب لي:
-    1. عنوان رئيسي جذاب وقصير جد��ً (largeText)
+    1. عنوان رئيسي جذاب وقصير جد����ً (largeText)
     2. نص فرعي أو وصف مشوق وقصير (smallText)
     
     يجب أن يكون الرد بصيغة JSON فقط يحتوي على المفتاحين largeText و smallText.`;

@@ -22,6 +22,7 @@ export default function StoryboardView() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState('');
+  const [videoError, setVideoError] = useState<string | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   // Close export menu when clicking outside
@@ -83,7 +84,8 @@ export default function StoryboardView() {
     } catch (error: any) {
       console.error(error);
       const msg = error.message || 'حدث خطأ غير معروف';
-      alert(`فشل توليد الفيديو: ${msg}`);
+      // Store error for display in UI
+      setVideoError(msg);
     } finally {
       setIsGenerating(false);
       setCurrentGeneratingIndex(-1);
@@ -182,6 +184,45 @@ export default function StoryboardView() {
       alert(`فشل توليد الصوت: ${error.message}`);
     } finally {
       setIsGeneratingAudio(false);
+    }
+  };
+
+  // Generate video for a single scene
+  const generateVideoForScene = async (sceneIndex: number) => {
+    if (!storyboard || sceneIndex >= storyboard.scenes.length - 1) return;
+    
+    setIsGenerating(true);
+    setCurrentGeneratingIndex(sceneIndex);
+    setVideoError(null);
+    
+    try {
+      const startFrame = storyboard.scenes[sceneIndex].frameImage;
+      const endFrame = storyboard.scenes[sceneIndex + 1].frameImage;
+      
+      if (!startFrame || !endFrame) {
+        throw new Error("يجب توليد صور المشهد الحالي والمشهد التالي أولاً");
+      }
+      
+      const motionPrompt = cameraMotion !== 'Static' ? cameraMotion : undefined;
+      const videoUrl = await GeminiService.generateVideoClip(
+        startFrame, 
+        endFrame, 
+        storyboard.aspectRatio || '16:9', 
+        motionPrompt
+      );
+      
+      const newScenes = [...storyboard.scenes];
+      newScenes[sceneIndex].videoClip = videoUrl;
+      
+      const updatedStoryboard = { ...storyboard, scenes: newScenes };
+      setStoryboard(updatedStoryboard);
+      await db.saveStoryboard(updatedStoryboard);
+    } catch (error: any) {
+      console.error(error);
+      setVideoError(error.message || 'فشل توليد الفيديو');
+    } finally {
+      setIsGenerating(false);
+      setCurrentGeneratingIndex(-1);
     }
   };
 
@@ -315,7 +356,10 @@ export default function StoryboardView() {
         }
       }
 
-      // 3. Generate Video
+      // 3. Generate Video (with better error handling for child content)
+      let videoGenerationFailed = false;
+      let videoErrorMessage = '';
+      
       for (let i = 0; i < currentStoryboard.scenes.length - 1; i++) {
         if (!currentStoryboard.scenes[i].videoClip) {
           setAutoPilotStatus(`توليد فيديو المشهد ${i + 1}...`);
@@ -326,18 +370,30 @@ export default function StoryboardView() {
 
           if (startFrame && endFrame) {
             const motionPrompt = cameraMotion !== 'Static' ? cameraMotion : undefined;
-            const videoUrl = await generateWithRetry(
-              () => GeminiService.generateVideoClip(startFrame, endFrame, currentStoryboard.aspectRatio || '16:9', motionPrompt),
-              i + 2000 // Use different index range for video
-            );
+            try {
+              const videoUrl = await generateWithRetry(
+                () => GeminiService.generateVideoClip(startFrame, endFrame, currentStoryboard.aspectRatio || '16:9', motionPrompt),
+                i + 2000
+              );
 
-            if (videoUrl) {
-              currentStoryboard.scenes[i].videoClip = videoUrl;
-              await db.saveStoryboard(currentStoryboard);
-              setStoryboard({ ...currentStoryboard });
+              if (videoUrl) {
+                currentStoryboard.scenes[i].videoClip = videoUrl;
+                await db.saveStoryboard(currentStoryboard);
+                setStoryboard({ ...currentStoryboard });
+              }
+            } catch (videoError: any) {
+              videoGenerationFailed = true;
+              videoErrorMessage = videoError.message || 'فشل توليد الفيديو';
+              // Don't stop the entire process, just skip this scene's video
+              console.error(`Video generation failed for scene ${i + 1}:`, videoError);
             }
           }
         }
+      }
+
+      // Show video error if any
+      if (videoGenerationFailed && videoErrorMessage) {
+        setVideoError(videoErrorMessage);
       }
 
       // Check if any scenes failed
@@ -643,6 +699,27 @@ export default function StoryboardView() {
         </div>
       )}
 
+      {/* Video Generation Error Alert */}
+      {videoError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-bold text-sm text-red-800 mb-2">فشل توليد الفيديو</h4>
+              <div className="text-xs text-red-700 whitespace-pre-line leading-relaxed">
+                {videoError}
+              </div>
+              <button
+                onClick={() => setVideoError(null)}
+                className="mt-3 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
         <div className="bg-indigo-50 p-4 rounded-xl">
           <h3 className="font-bold text-sm mb-2 text-indigo-900">السيناريو</h3>
@@ -725,10 +802,31 @@ export default function StoryboardView() {
               
               <p className="text-xs text-slate-600 mb-3 leading-relaxed">{scene.description}</p>
               
+              {/* Single Scene Video Generation Button */}
+              {idx < storyboard.scenes.length - 1 && scene.frameImage && storyboard.scenes[idx + 1].frameImage && !scene.videoClip && (
+                <button
+                  onClick={() => generateVideoForScene(idx)}
+                  disabled={isGenerating || isAutoPilotRunning}
+                  className="w-full mb-3 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                >
+                  {isGenerating && currentGeneratingIndex === idx ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>جاري توليد الفيديو...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Video className="w-4 h-4" />
+                      <span>توليد فيديو هذا المشهد</span>
+                    </>
+                  )}
+                </button>
+              )}
+
               {/* Dialogue & Audio */}
               {scene.dialogue && (
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <p className="text-xs font-medium text-slate-700 mb-2">💬 الحوار: "{scene.dialogue}"</p>
+                  <p className="text-xs font-medium text-slate-700 mb-2">الحوار: "{scene.dialogue}"</p>
                   
                   {scene.audioClip ? (
                     <audio src={scene.audioClip} controls className="w-full h-8" />
