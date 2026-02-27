@@ -113,7 +113,6 @@ export default function Home() {
           <QuickAction to="/creature-characters/new" icon={Cat} label="مخلوق / حيوان" gradient="bg-teal-600" />
           <QuickAction to="/hybrid-characters/new" icon={Dna} label="شخصية هجينة" gradient="bg-rose-500" />
           <QuickAction to="/viral-ideas" icon={Lightbulb} label="أفكار فيروسية" gradient="bg-amber-500" />
-          <QuickAction to="/character-animation" icon={PlaySquare} label="تحريك الشخصيات" gradient="bg-primary" />
         </motion.div>
 
         {/* Main Tools */}
