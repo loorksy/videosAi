@@ -78,13 +78,23 @@ export default function StoryboardView() {
     
     setIsGenerating(true);
     setCurrentGeneratingIndex(sceneIndex);
+    setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'generating' }));
+    setSceneErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[sceneIndex];
+      return newErrors;
+    });
+
     try {
       // Fetch character images to use as references
       const referenceImages: string[] = [];
       for (const charId of scene.characterIds) {
         const char = await db.getCharacter(charId);
-        if (char && char.images.front) {
-          referenceImages.push(char.images.front);
+        if (char) {
+          // Support all image types from character sheet
+          if (char.images.front) referenceImages.push(char.images.front);
+          else if (char.images.closeup) referenceImages.push(char.images.closeup);
+          else if (char.images.reference) referenceImages.push(char.images.reference);
         }
       }
 
