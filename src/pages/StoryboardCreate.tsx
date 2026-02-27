@@ -20,6 +20,17 @@ export default function StoryboardCreate() {
   // New Professional Options
   const [style, setStyle] = useState('Cinematic');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
+  const [contentType, setContentType] = useState('قصة درامية');
+  const [customContentType, setCustomContentType] = useState('');
+  const [sceneCount, setSceneCount] = useState(5);
+  const [isGeneratingIdea, setIsGeneratingIdea] = useState(false);
+
+  const contentTypes = [
+    'قصة درامية', 'كوميدي', 'مغامرة', 'رومانسي', 'خيال علمي', 'فانتازيا',
+    'رعب / إثارة', 'تعليمي', 'وثائقي', 'أطفال', 'موسيقي', 'رياضي',
+    'تاريخي', 'جريمة / غموض', 'حركة (أكشن)', 'عائلي', 'ديني / روحاني',
+    'سيرة ذاتية', 'اجتماعي', 'مخصص',
+  ];
 
   const styles = [
     { value: 'Cinematic', label: 'سينمائي' },
