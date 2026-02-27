@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { cn } from './lib/utils';
 import { ToastProvider } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
+import { TaskProvider } from './context/TaskContext';
+import { TaskPanel, TaskFloatingButton } from './components/TaskPanel';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import CharacterList from './pages/CharacterList';
@@ -52,10 +54,11 @@ function NavItem({ to, icon: Icon, label }: { to: string; icon: any; label: stri
 
 function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
   return (
-    <Router>
-      <div className="flex flex-col h-screen overflow-hidden bg-background font-sans">
-        <main className="flex-1 overflow-y-auto pb-20 scroll-smooth">
-          <Routes>
+    <TaskProvider>
+      <Router>
+        <div className="flex flex-col h-screen overflow-hidden bg-background font-sans">
+          <main className="flex-1 overflow-y-auto pb-20 scroll-smooth">
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/characters" element={<CharacterList />} />
             <Route path="/characters/new" element={<CharacterCreate />} />
@@ -78,18 +81,23 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
           </Routes>
         </main>
         
-        {/* Mobile Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-[0_-2px_24px_rgba(0,0,0,0.06)] z-50">
-          <div className="grid grid-cols-5 h-full max-w-lg mx-auto">
-            <NavItem to="/" icon={HomeIcon} label="الرئيسية" />
-            <NavItem to="/characters" icon={Users} label="الشخصيات" />
-            <NavItem to="/storyboards" icon={Clapperboard} label="القصص" />
-            <NavItem to="/gallery" icon={Film} label="المعرض" />
-            <NavItem to="/settings" icon={Settings} label="الإعدادات" />
-          </div>
-        </nav>
-      </div>
-    </Router>
+          {/* Mobile Bottom Navigation */}
+          <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-[0_-2px_24px_rgba(0,0,0,0.06)] z-50">
+            <div className="grid grid-cols-5 h-full max-w-lg mx-auto">
+              <NavItem to="/" icon={HomeIcon} label="الرئيسية" />
+              <NavItem to="/characters" icon={Users} label="الشخصيات" />
+              <NavItem to="/storyboards" icon={Clapperboard} label="القصص" />
+              <NavItem to="/gallery" icon={Film} label="المعرض" />
+              <NavItem to="/settings" icon={Settings} label="الإعدادات" />
+            </div>
+          </nav>
+          
+          {/* Background Task UI */}
+          <TaskFloatingButton />
+          <TaskPanel />
+        </div>
+      </Router>
+    </TaskProvider>
   );
 }
 

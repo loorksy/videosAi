@@ -1,5 +1,23 @@
 import { openDB, DBSchema } from 'idb';
 
+export type TaskType = 'video' | 'image' | 'audio' | 'script' | 'character' | 'storyboard';
+export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+export interface BackgroundTask {
+  id: string;
+  type: TaskType;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  progress: number; // 0-100
+  error?: string;
+  result?: any; // The generated content (image URL, video URL, etc.)
+  relatedId?: string; // ID of related storyboard/character
+  createdAt: number;
+  startedAt?: number;
+  completedAt?: number;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -76,9 +94,14 @@ interface StoryWeaverDB extends DBSchema {
     key: string;
     value: MediaItem;
   };
+  backgroundTasks: {
+    key: string;
+    value: BackgroundTask;
+    indexes: { 'by-status': TaskStatus };
+  };
 }
 
-const dbPromise = openDB<StoryWeaverDB>('storyweaver-db', 3, {
+const dbPromise = openDB<StoryWeaverDB>('storyweaver-db', 4, {
   upgrade(db, oldVersion) {
     if (oldVersion < 1) {
       db.createObjectStore('characters', { keyPath: 'id' });
@@ -89,6 +112,10 @@ const dbPromise = openDB<StoryWeaverDB>('storyweaver-db', 3, {
     }
     if (oldVersion < 3) {
       db.createObjectStore('mediaGallery', { keyPath: 'id' });
+    }
+    if (oldVersion < 4) {
+      const taskStore = db.createObjectStore('backgroundTasks', { keyPath: 'id' });
+      taskStore.createIndex('by-status', 'status');
     }
   },
 });
@@ -143,5 +170,32 @@ export const db = {
   },
   async deleteMediaItem(id: string) {
     return (await dbPromise).delete('mediaGallery', id);
+  },
+
+  // Background Tasks
+  async getTask(id: string) {
+    return (await dbPromise).get('backgroundTasks', id);
+  },
+  async getAllTasks() {
+    const tasks = await (await dbPromise).getAll('backgroundTasks');
+    return tasks.sort((a, b) => b.createdAt - a.createdAt);
+  },
+  async getActiveTasks() {
+    const tasks = await (await dbPromise).getAll('backgroundTasks');
+    return tasks.filter(t => t.status === 'pending' || t.status === 'running');
+  },
+  async saveTask(task: BackgroundTask) {
+    return (await dbPromise).put('backgroundTasks', task);
+  },
+  async deleteTask(id: string) {
+    return (await dbPromise).delete('backgroundTasks', id);
+  },
+  async clearCompletedTasks() {
+    const db = await dbPromise;
+    const tasks = await db.getAll('backgroundTasks');
+    const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'failed');
+    for (const task of completedTasks) {
+      await db.delete('backgroundTasks', task.id);
+    }
   },
 };

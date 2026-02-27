@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle, FolderDown, Image, FileVideo, FileAudio, Package } from 'lucide-react';
+import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle, FolderDown, Image, FileVideo, FileAudio, Package, Zap } from 'lucide-react';
 import { db, Storyboard, Scene } from '../lib/db';
 import { GeminiService } from '../lib/gemini';
+import { useTaskContext } from '../context/TaskContext';
 
 // Scene status type
 type SceneStatus = 'pending' | 'generating' | 'success' | 'failed' | 'rate_limited';
@@ -10,6 +11,7 @@ type SceneStatus = 'pending' | 'generating' | 'success' | 'failed' | 'rate_limit
 export default function StoryboardView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addTask, tasks } = useTaskContext();
   const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
@@ -38,6 +40,14 @@ export default function StoryboardView() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showExportMenu]);
+
+  // Reload storyboard when background task completes
+  useEffect(() => {
+    const relatedTask = tasks.find(t => t.relatedId === id && t.status === 'completed');
+    if (relatedTask && relatedTask.result) {
+      setStoryboard(relatedTask.result);
+    }
+  }, [tasks, id]);
 
   const cameraMotions = [
     { value: 'Static', label: 'ثابت' },
@@ -412,6 +422,136 @@ export default function StoryboardView() {
       setIsAutoPilotRunning(false);
       setCurrentGeneratingIndex(-1);
     }
+  };
+
+  // Run AutoPilot in Background
+  const runAutoPilotInBackground = () => {
+    if (!storyboard) return;
+    
+    const storyboardId = storyboard.id;
+    const storyboardTitle = storyboard.title;
+    const currentCameraMotion = cameraMotion;
+    
+    addTask('storyboard', `إنتاج: ${storyboardTitle}`, async (updateProgress) => {
+      let currentStoryboard = await db.getStoryboard(storyboardId);
+      if (!currentStoryboard) throw new Error('لم يتم العثور على القصة');
+      
+      const totalSteps = currentStoryboard.scenes.length * 3; // images + audio + videos
+      let completedSteps = 0;
+      
+      const updateTaskProgress = (step: string) => {
+        completedSteps++;
+        const progress = Math.round((completedSteps / totalSteps) * 100);
+        updateProgress(progress, step);
+      };
+      
+      // 1. Generate Images
+      for (let i = 0; i < currentStoryboard.scenes.length; i++) {
+        if (!currentStoryboard.scenes[i].frameImage) {
+          updateProgress(Math.round((completedSteps / totalSteps) * 100), `توليد صورة المشهد ${i + 1}...`);
+          
+          const scene = currentStoryboard.scenes[i];
+          const referenceImages: string[] = [];
+          const characterDNAParts: string[] = [];
+          
+          for (const charId of scene.characterIds) {
+            const char = await db.getCharacter(charId);
+            if (char) {
+              characterDNAParts.push(`${char.name}: ${char.visualTraits || char.description}`);
+              const imgs = char.images as Record<string, string | undefined>;
+              for (const value of Object.values(imgs)) {
+                if (value && typeof value === 'string' && value.length > 100) {
+                  referenceImages.push(value);
+                  break;
+                }
+              }
+            }
+          }
+
+          const firstSceneImage = currentStoryboard.scenes[0]?.frameImage;
+          const previousSceneImage = i > 0 ? currentStoryboard.scenes[i - 1]?.frameImage : undefined;
+
+          try {
+            const imageUrl = await GeminiService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: referenceImages,
+              firstSceneImage,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: currentStoryboard.scenes.length,
+              style: currentStoryboard.style || 'cinematic realistic',
+              aspectRatio: currentStoryboard.aspectRatio || '16:9',
+              characterDNA: characterDNAParts.join('\n'),
+            });
+
+            currentStoryboard.scenes[i].frameImage = imageUrl;
+            await db.saveStoryboard(currentStoryboard);
+          } catch (error) {
+            console.error(`Image generation failed for scene ${i + 1}:`, error);
+          }
+        }
+        updateTaskProgress(`صورة ${i + 1}`);
+      }
+
+      // Reload storyboard
+      currentStoryboard = (await db.getStoryboard(storyboardId))!;
+
+      // 2. Generate Audio
+      const voices = ['Zephyr', 'Kore', 'Puck', 'Charon', 'Fenrir'];
+      for (let i = 0; i < currentStoryboard.scenes.length; i++) {
+        const scene = currentStoryboard.scenes[i];
+        if (scene.dialogue && !scene.audioClip) {
+          updateProgress(Math.round((completedSteps / totalSteps) * 100), `توليد صوت المشهد ${i + 1}...`);
+          
+          try {
+            const voiceName = voices[i % voices.length];
+            const audioUrl = await GeminiService.generateVoiceover(scene.dialogue, voiceName);
+            currentStoryboard.scenes[i].audioClip = audioUrl;
+            await db.saveStoryboard(currentStoryboard);
+          } catch (error) {
+            console.error(`Audio generation failed for scene ${i + 1}:`, error);
+          }
+        }
+        updateTaskProgress(`صوت ${i + 1}`);
+      }
+
+      // Reload storyboard
+      currentStoryboard = (await db.getStoryboard(storyboardId))!;
+
+      // 3. Generate Videos
+      for (let i = 0; i < currentStoryboard.scenes.length - 1; i++) {
+        if (!currentStoryboard.scenes[i].videoClip) {
+          updateProgress(Math.round((completedSteps / totalSteps) * 100), `توليد فيديو المشهد ${i + 1}...`);
+          
+          const startFrame = currentStoryboard.scenes[i].frameImage;
+          const endFrame = currentStoryboard.scenes[i + 1].frameImage;
+
+          if (startFrame && endFrame) {
+            try {
+              const motionPrompt = currentCameraMotion !== 'Static' ? currentCameraMotion : undefined;
+              const videoUrl = await GeminiService.generateVideoClip(
+                startFrame, 
+                endFrame, 
+                currentStoryboard.aspectRatio || '16:9', 
+                motionPrompt
+              );
+              currentStoryboard.scenes[i].videoClip = videoUrl;
+              await db.saveStoryboard(currentStoryboard);
+            } catch (error) {
+              console.error(`Video generation failed for scene ${i + 1}:`, error);
+            }
+          }
+        }
+        updateTaskProgress(`فيديو ${i + 1}`);
+      }
+
+      // Update local state if still on same page
+      const finalStoryboard = await db.getStoryboard(storyboardId);
+      return finalStoryboard;
+    }, storyboard.id);
+    
+    // Navigate away or show confirmation
+    navigate('/storyboards');
   };
 
   // === EXPORT FUNCTIONS ===
@@ -870,23 +1010,35 @@ export default function StoryboardView() {
             </select>
           </div>
 
-          <button
-            onClick={runAutoPilot}
-            disabled={isGenerating || isAutoPilotRunning}
-            className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
-          >
-            {isAutoPilotRunning ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>{autoPilotStatus}</span>
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-5 h-5" />
-                <span>الإنتاج الشامل السحري (Auto-Pilot)</span>
-              </>
-            )}
-          </button>
+          {/* Two-button layout for AutoPilot */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={runAutoPilot}
+              disabled={isGenerating || isAutoPilotRunning}
+              className="py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+            >
+              {isAutoPilotRunning ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm truncate">{autoPilotStatus}</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4" />
+                  <span className="text-sm">إنتاج (انتظار)</span>
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={runAutoPilotInBackground}
+              disabled={isAutoPilotRunning}
+              className="py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold shadow-lg hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+            >
+              <Zap className="w-4 h-4" />
+              <span className="text-sm">إنتاج (خلفية)</span>
+            </button>
+          </div>
 
           <button
             onClick={generateFullVideo}

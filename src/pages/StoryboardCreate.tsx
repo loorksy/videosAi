@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw } from 'lucide-react';
+import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw, Zap } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { db, Character, Storyboard, Scene } from '../lib/db';
 import { GeminiService } from '../lib/gemini';
 import { cn } from '../lib/utils';
+import { useTaskContext } from '../context/TaskContext';
 
 export default function StoryboardCreate() {
   const navigate = useNavigate();
+  const { addTask } = useTaskContext();
   const [step, setStep] = useState<'chars' | 'script' | 'scenes' | 'frames' | 'preview'>('chars');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
@@ -242,6 +244,96 @@ export default function StoryboardCreate() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Generate frames in background and navigate away
+  const generateFramesInBackground = () => {
+    const storyboardId = uuidv4();
+    const storyboardTitle = idea.slice(0, 30) + (idea.length > 30 ? '...' : '');
+    const currentScenes = [...scenes];
+    const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
+    const currentStyle = style;
+    const currentAspectRatio = aspectRatio;
+    
+    // Save storyboard first (without frames)
+    const storyboard: Storyboard = {
+      id: storyboardId,
+      title: storyboardTitle,
+      script,
+      characters: selectedCharIds,
+      scenes: currentScenes,
+      aspectRatio: currentAspectRatio,
+      style: currentStyle,
+      createdAt: Date.now()
+    };
+    
+    db.saveStoryboard(storyboard).then(() => {
+      // Add background task
+      addTask('image', `توليد صور: ${storyboardTitle}`, async (updateProgress) => {
+        let savedStoryboard = await db.getStoryboard(storyboardId);
+        if (!savedStoryboard) throw new Error('لم يتم العثور على القصة');
+        
+        const characterDNA = selectedChars.map(c => 
+          `${c.name}: ${c.visualTraits || c.description}`
+        ).join('\n');
+
+        const allCharImages: string[] = [];
+        for (const char of selectedChars) {
+          const imgs = char.images as Record<string, string | undefined>;
+          for (const value of Object.values(imgs)) {
+            if (value && typeof value === 'string' && value.length > 100) {
+              allCharImages.push(value);
+              break;
+            }
+          }
+        }
+
+        let firstSceneImage: string | undefined;
+        let previousSceneImage: string | undefined;
+
+        for (let i = 0; i < savedStoryboard.scenes.length; i++) {
+          updateProgress(
+            Math.round((i / savedStoryboard.scenes.length) * 100), 
+            `توليد صورة المشهد ${i + 1} من ${savedStoryboard.scenes.length}...`
+          );
+          
+          const scene = savedStoryboard.scenes[i];
+          const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
+          const sceneCharImages = sceneChars.length > 0 ? sceneChars.map(c => {
+            const imgs = c.images as Record<string, string | undefined>;
+            return Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100) || '';
+          }).filter(Boolean) : allCharImages;
+
+          try {
+            const frameImage = await GeminiService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: sceneCharImages,
+              firstSceneImage,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: savedStoryboard.scenes.length,
+              style: currentStyle,
+              aspectRatio: currentAspectRatio,
+              characterDNA,
+            });
+            
+            savedStoryboard.scenes[i].frameImage = frameImage;
+            
+            if (i === 0) firstSceneImage = frameImage;
+            previousSceneImage = frameImage;
+            
+            await db.saveStoryboard(savedStoryboard);
+          } catch (sceneError) {
+            console.error(`Scene ${i + 1} failed:`, sceneError);
+          }
+        }
+        
+        return savedStoryboard;
+      }, storyboardId);
+      
+      // Navigate to storyboard list
+      navigate('/storyboards');
+    });
   };
 
   const saveStoryboard = async () => {
@@ -488,15 +580,26 @@ export default function StoryboardCreate() {
               </div>
             ))}
           </div>
-
-          <button
-            onClick={generateFrames}
-            disabled={isProcessing}
-            className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Film className="w-5 h-5" />}
-            <span>توليد المشاهد (Nano Banana)</span>
-          </button>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={generateFrames}
+              disabled={isProcessing}
+              className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Film className="w-5 h-5" />}
+              <span>توليد (انتظار)</span>
+            </button>
+            
+            <button
+              onClick={generateFramesInBackground}
+              disabled={isProcessing}
+              className="flex-1 py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Zap className="w-5 h-5" />
+              <span>توليد (خلفية)</span>
+            </button>
+          </div>
         </div>
       )}
 
