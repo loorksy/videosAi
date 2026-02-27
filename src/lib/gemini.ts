@@ -268,12 +268,32 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
     }
   },
 
-  // 3. Generate Script & Scenes (Thinking Mode)
-  async generateScriptAndScenes(idea: string, characters: {name: string, description: string, visualTraits?: string}[]): Promise<{script: string, scenes: {description: string, characters: string[], dialogue: string}[]}> {
+  // 3. Generate Script & Scenes (with character images for visual reference)
+  async generateScriptAndScenes(idea: string, characters: {name: string, description: string, visualTraits?: string, image?: string}[]): Promise<{script: string, scenes: {description: string, characters: string[], dialogue: string}[]}> {
     try {
       const ai = getAI();
+      
+      // Build multimodal parts array - images first, then text prompt
+      const parts: any[] = [];
+      
+      // Add character images so the AI can SEE them
+      const charsWithImages: string[] = [];
+      for (const char of characters) {
+        if (char.image && char.image.length > 100) {
+          const base64 = await imageToBase64(char.image);
+          if (base64 && base64.length > 1000) {
+            parts.push({ text: `[صورة الشخصية: ${char.name}]` });
+            parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64 } });
+            charsWithImages.push(char.name);
+          }
+        }
+      }
+      
       const charContext = characters.map(c => `- ${c.name}: ${c.description}${c.visualTraits ? `. المظهر: ${c.visualTraits}` : ''}`).join("\n");
+      
       const prompt = `أنت مخرج أفلام ومصور سينمائي محترف. أنشئ سيناريو قصير بناءً على هذه الفكرة: "${idea}".
+
+${charsWithImages.length > 0 ? `مهم جداً: لقد رأيت صور الشخصيات أعلاه (${charsWithImages.join('، ')}). يجب أن تصف مظهرهم في كل مشهد بالضبط كما تراهم في الصور - نفس الملابس، نفس الشعر، نفس ملامح الوجه. لا تخترع مظهراً جديداً!` : ''}
 
 الشخصيات المتاحة:
 ${charContext}
@@ -310,13 +330,16 @@ ${charContext}
 أخرج JSON:
 1. "script": السيناريو الكامل بالعربية
 2. "scenes": مصفوفة من المشاهد، كل مشهد يحتوي:
-   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (للتوليد). يجب أن يتضمن: نوع اللقطة، المسافة، زاوية الكاميرا، حركة الشخصيات، الاتجاهات، تعابير الوجه، الملابس، تفاصيل الخلفية
+   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (للتوليد). يجب أن يتضمن: نوع اللقطة، المسافة، زاوية الكاميرا، حركة الشخصيات، الاتجاهات، تعابير الوجه، الملابس بالضبط كما في الصور، تفاصيل الخلفية
    - "characters": أسماء الشخصيات في المشهد
    - "dialogue": الحوار بالعربية (فارغ إن لم يوجد)`;
 
+      // Add the text prompt to parts
+      parts.push({ text: prompt });
+
       const result = await ai.models.generateContent({
         model: "gemini-3-flash",
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts }],
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -1282,7 +1305,7 @@ ${sceneIndex === 0 ? '- This is the ESTABLISHING SHOT - define the visual world 
       }
     }
     if (charImages.length === 0) {
-      throw new Error("لا توجد صور مرجعية كافية. يجب ان تحتوي الشخصية على صورة واحدة على الاقل.");
+      throw new Error("لا توجد صور مرجعية كافي��. يجب ان تحتوي الشخصية على صورة واحدة على الاقل.");
     }
 
     // Compress images using canvas

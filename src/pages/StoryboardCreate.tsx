@@ -84,11 +84,18 @@ export default function StoryboardCreate() {
       // Enhance idea with all context
       const enhancedIdea = `${idea || 'أنشئ قصة مناسبة للشخصيات'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}.`;
       
-      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
-        name: c.name,
-        description: c.description,
-        visualTraits: c.visualTraits,
-      })));
+      // Pass character images so AI can SEE them when writing the script
+      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => {
+        // Get first available image for this character
+        const imgs = c.images as Record<string, string | undefined>;
+        const image = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100) || '';
+        return {
+          name: c.name,
+          description: c.description,
+          visualTraits: c.visualTraits,
+          image, // Include the character's image!
+        };
+      }));
       
       setScript(result.script);
       setScenes(result.scenes.map(s => ({
