@@ -134,10 +134,11 @@ export default function StoryboardCreate() {
     }
 
     try {
+      let firstSceneImage: string | undefined;
       let previousSceneImage: string | undefined;
 
       for (let i = 0; i < newScenes.length; i++) {
-        setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i > 0 ? ' (مع مرجع المشهد السابق)' : ' (المشهد المرجعي الأساسي)'}`);
+        setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i === 0 ? ' (المشهد المرجعي الأساسي)' : ''}`);
         
         const scene = newScenes[i];
         
@@ -152,6 +153,7 @@ export default function StoryboardCreate() {
           const frameImage = await GeminiService.generateStoryboardFrame({
             sceneDescription: scene.description,
             characterImages: sceneCharImages,
+            firstSceneImage,
             previousSceneImage,
             sceneIndex: i,
             totalScenes: newScenes.length,
@@ -161,7 +163,12 @@ export default function StoryboardCreate() {
           });
           
           newScenes[i].frameImage = frameImage;
-          previousSceneImage = frameImage; // Pass to next scene as reference
+          
+          // Save first scene image as permanent reference
+          if (i === 0) firstSceneImage = frameImage;
+          // Update previous scene image
+          previousSceneImage = frameImage;
+          
           setScenes([...newScenes]);
         } catch (sceneError: any) {
           console.error(`Scene ${i + 1} failed:`, sceneError);
