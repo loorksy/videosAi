@@ -13,6 +13,8 @@ export interface Character {
     right?: string;
     threeQuarter?: string;
     reference?: string; // Original uploaded reference image
+    normal?: string; // Normal/original version (for surreal characters)
+    surreal?: string; // Surreal version
   };
   createdAt: number;
 }
