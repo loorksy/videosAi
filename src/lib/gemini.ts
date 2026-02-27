@@ -71,7 +71,9 @@ const extractImage = (result: any) => {
   
   const part = candidate.content?.parts?.find((p: any) => p.inlineData);
   if (part && part.inlineData && part.inlineData.data) {
-    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    const dataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    console.log(`Image extracted successfully. Size: ${Math.round(dataUrl.length / 1024)}KB`);
+    return dataUrl;
   }
   
   // Check for text refusal/error
