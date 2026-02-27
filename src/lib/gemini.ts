@@ -318,47 +318,36 @@ ${charContext}
     
     const parts: any[] = [];
     
-    // Build the prompt with director's mindset - continuous shots
-    let promptText = `You are generating scene ${sceneIndex + 1} of ${totalScenes} for a ${style} storyboard. Each scene is an 8-second shot in a continuous sequence.
+    // === STEP 1: Character reference images FIRST (highest priority) ===
+    if (characterImages.length > 0) {
+      parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
+      characterImages.slice(0, 3).forEach((img, i) => {
+        const base64Data = img.includes(',') ? img.split(',')[1] : img;
+        parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+      });
+    }
 
-CHARACTER DNA (must match exactly in every scene):
+    // === STEP 2: Previous scene image for environment continuity ===
+    if (previousSceneImage && sceneIndex > 0) {
+      parts.push({ text: `\nPREVIOUS SCENE (the moment right before this scene). Keep the EXACT same environment, lighting, colors, and background:` });
+      const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
+      parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
+    }
+
+    // === STEP 3: Scene description ===
+    let promptText = `\nGenerate scene ${sceneIndex + 1} of ${totalScenes}. Style: ${style}.
+
+CHARACTER DNA:
 ${characterDNA}
 
-SCENE ${sceneIndex + 1} DESCRIPTION:
+SCENE DESCRIPTION:
 ${sceneDescription}
 
-CRITICAL RULES:
-- Characters MUST look EXACTLY like the provided reference images (same face, hair, clothes, body proportions, colors)
-- Style: ${style}
-- This is a CONTINUOUS SEQUENCE - scene ${sceneIndex + 1} of ${totalScenes}`;
-
-    if (sceneIndex === 0) {
-      promptText += `\n\nThis is the ESTABLISHING SHOT (Scene 1). Set the environment, lighting, and mood. Every subsequent scene will reference this image for visual consistency.`;
-    } else if (previousSceneImage) {
-      promptText += `\n\nCRITICAL - CONTINUITY FROM PREVIOUS SCENE:
-- The previous scene image is provided below. This new scene is the NEXT MOMENT in time (8 seconds later).
-- SAME location, SAME lighting, SAME color palette, SAME weather/sky
-- Characters should have MOVED slightly from their previous positions (natural progression)
-- Camera angle has changed as described, but the WORLD is identical
-- If a character was walking left, they should now be further left
-- Match the exact same background elements (buildings, trees, objects)`;
-    }
+RULES:
+- The characters MUST be identical copies of the reference images above. Do NOT redesign them.
+- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly.' : 'Continue from the previous scene image. Same location, same lighting, 8 seconds later.'}`;
 
     parts.push({ text: promptText });
-    
-    // Add previous scene image as reference (most important for continuity)
-    if (previousSceneImage && sceneIndex > 0) {
-      const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
-      parts.push({ inlineData: { mimeType: 'image/png', data: prevData } });
-      parts.push({ text: 'PREVIOUS SCENE IMAGE (8 seconds before this moment). Keep the EXACT same world, lighting, background. Characters have moved slightly as described.' });
-    }
-    
-    // Add character reference images
-    characterImages.slice(0, 3).forEach((img, i) => {
-      const base64Data = img.includes(',') ? img.split(',')[1] : img;
-      parts.push({ inlineData: { mimeType: 'image/png', data: base64Data } });
-      parts.push({ text: `Character reference ${i + 1} - this character MUST look exactly like this in the scene.` });
-    });
 
     try {
       const result = await ai.models.generateContent({
