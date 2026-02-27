@@ -1080,17 +1080,20 @@ export const GeminiService = {
       throw new Error("لا توجد صور مرجعية كافية. يجب ان تحتوي الشخصية على صورة واحدة على الاقل.");
     }
 
-    const referenceImages = selectedImages.map(imgBase64 => {
+    // Convert images to proper format for Veo 3.1 reference images
+    const referenceImages = selectedImages.map((imgBase64, index) => {
       const base64Data = imgBase64.includes(',') ? imgBase64.split(',')[1] : imgBase64;
       const mimeType = imgBase64.includes(',')
         ? imgBase64.substring(imgBase64.indexOf(':') + 1, imgBase64.indexOf(';'))
         : "image/png";
+      
       return {
-        image: {
+        referenceType: 'REFERENCE_TYPE_RAW',
+        referenceImage: {
           imageBytes: base64Data,
           mimeType: mimeType,
         },
-        referenceType: VideoGenerationReferenceType.ASSET,
+        referenceId: index,
       };
     });
 
