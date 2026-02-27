@@ -125,15 +125,19 @@ export default function StoryboardCreate() {
 
     // Collect ALL character reference images
     const allCharImages: string[] = [];
+    console.log("[v0] Selected characters:", selectedChars.map(c => c.name));
     for (const char of selectedChars) {
+      console.log("[v0] Processing character:", char.name, "images:", char.images);
       const imgs = char.images as Record<string, string | undefined>;
-      for (const value of Object.values(imgs)) {
+      for (const [key, value] of Object.entries(imgs)) {
         if (value && typeof value === 'string' && value.length > 100) {
+          console.log(`[v0] Found image for ${char.name}, key: ${key}, length: ${value.length}`);
           allCharImages.push(value);
           break; // one per character
         }
       }
     }
+    console.log("[v0] Total character images collected:", allCharImages.length);
 
     try {
       let firstSceneImage: string | undefined;

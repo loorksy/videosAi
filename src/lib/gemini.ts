@@ -87,42 +87,60 @@ const handleCommonErrors = (error: any, defaultMessage: string) => {
 // Helper function to convert URL or data URL to base64
 const imageToBase64 = async (imageSource: string): Promise<string> => {
   if (!imageSource || imageSource.length < 50) {
-    console.warn("[v0] imageToBase64: Invalid image source");
+    console.warn("[v0] imageToBase64: Invalid image source, length:", imageSource?.length);
     return '';
   }
+  
+  console.log("[v0] imageToBase64 processing:", imageSource.substring(0, 80));
   
   // If it's already a data URL, extract base64
   if (imageSource.startsWith('data:')) {
     const matches = imageSource.match(/^data:[^;]+;base64,(.+)$/);
     if (matches) {
+      console.log("[v0] Extracted base64 from data URL, length:", matches[1].length);
       return matches[1];
     }
     // If it has comma, split and return
     if (imageSource.includes(',')) {
-      return imageSource.split(',')[1];
+      const base64 = imageSource.split(',')[1];
+      console.log("[v0] Split base64 from data URL, length:", base64?.length);
+      return base64 || '';
     }
   }
   
-  // If it's a URL, fetch and convert
+  // If it's a URL, fetch and convert using blob + FileReader for browser compatibility
   if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
     try {
+      console.log("[v0] Fetching image from URL...");
       const response = await fetch(imageSource);
       if (!response.ok) {
         console.warn(`[v0] Failed to fetch image: ${response.status}`);
         return '';
       }
-      const arrayBuffer = await response.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
       
-      // Convert to base64 using browser-compatible method
-      let binary = '';
-      const chunkSize = 8192;
-      for (let i = 0; i < uint8Array.length; i += chunkSize) {
-        const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
-        binary += String.fromCharCode.apply(null, Array.from(chunk));
-      }
-      const base64 = btoa(binary);
-      return base64;
+      const blob = await response.blob();
+      console.log("[v0] Fetched blob, size:", blob.size, "type:", blob.type);
+      
+      // Use FileReader for browser-safe base64 conversion
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          if (dataUrl && dataUrl.includes(',')) {
+            const base64 = dataUrl.split(',')[1];
+            console.log("[v0] Converted to base64, length:", base64?.length);
+            resolve(base64 || '');
+          } else {
+            console.warn("[v0] FileReader returned invalid result");
+            resolve('');
+          }
+        };
+        reader.onerror = () => {
+          console.warn("[v0] FileReader error");
+          resolve('');
+        };
+        reader.readAsDataURL(blob);
+      });
     } catch (e) {
       console.warn('[v0] Error fetching image:', e);
       return '';
@@ -130,6 +148,7 @@ const imageToBase64 = async (imageSource: string): Promise<string> => {
   }
   
   // Assume it's already base64
+  console.log("[v0] Assuming raw base64, length:", imageSource.length);
   return imageSource;
 };
 
@@ -367,6 +386,11 @@ ${charContext}
     
     const parts: any[] = [];
     
+    console.log("[v0] generateStoryboardFrame called:");
+    console.log("[v0] - characterImages count:", characterImages.length);
+    console.log("[v0] - sceneIndex:", sceneIndex);
+    console.log("[v0] - characterDNA:", characterDNA?.substring(0, 100));
+    
     // === DIRECTOR STRATEGY: Think like a film director ===
     
     // STEP 1: CHARACTER REFERENCE IMAGES (HIGHEST PRIORITY - MANDATORY)
@@ -387,16 +411,21 @@ DO NOT create new characters. These actors MUST appear exactly as shown:` });
       );
       
       let validImagesCount = 0;
-      for (const base64Data of convertedImages) {
+      for (let i = 0; i < convertedImages.length; i++) {
+        const base64Data = convertedImages[i];
+        console.log(`[v0] Character image ${i + 1} base64 length:`, base64Data?.length || 0);
         if (base64Data && base64Data.length > 100) {
           parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
           validImagesCount++;
         }
       }
       
+      console.log("[v0] Valid character images added to prompt:", validImagesCount);
       if (validImagesCount === 0) {
-        console.warn("[v0] No valid character images could be converted");
+        console.warn("[v0] WARNING: No valid character images could be converted!");
       }
+    } else {
+      console.warn("[v0] WARNING: No character images provided to generateStoryboardFrame!");
     }
 
     // STEP 2: SCENE 1 AS MASTER REFERENCE (for scenes 2+)
