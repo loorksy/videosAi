@@ -86,12 +86,11 @@ export default function StoryboardView() {
     });
 
     try {
-      // Fetch character images to use as references
+      // Fetch character images and details to use as references
       const referenceImages: string[] = [];
+      const characterDescriptions: string[] = [];
       // Use scene character IDs, or fallback to all storyboard characters
       const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : storyboard.characters;
-      console.log("[v0] Scene character IDs:", scene.characterIds);
-      console.log("[v0] Using character IDs:", charIdsToUse);
       
       for (const charId of charIdsToUse) {
         const char = await db.getCharacter(charId);
@@ -101,11 +100,16 @@ export default function StoryboardView() {
           const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
           if (imageValue) {
             referenceImages.push(imageValue);
-            console.log("[v0] Found image for character:", char.name);
+            // Build character description for DNA
+            characterDescriptions.push(`- ${char.name}: ${char.description || 'الشخصية الرئيسية'}`);
           }
         }
       }
-      console.log("[v0] Total reference images found:", referenceImages.length);
+      
+      // Build detailed characterDNA
+      const characterDNA = characterDescriptions.length > 0 
+        ? `CRITICAL: The following characters appear in this scene. You MUST use the reference images above and make them look IDENTICAL:\n${characterDescriptions.join('\n')}\n\nDo NOT redesign or change any character. Copy their exact appearance from the reference images.`
+        : '';
 
       // Get first scene image for reference
       const firstSceneImage = storyboard.scenes[0]?.frameImage;
@@ -120,7 +124,7 @@ export default function StoryboardView() {
         totalScenes: storyboard.scenes.length,
         style: 'cinematic',
         aspectRatio: storyboard.aspectRatio || '16:9',
-        characterDNA: referenceImages.length > 0 ? 'Use the character reference images exactly as shown.' : '',
+        characterDNA,
       });
       
       const newScenes = [...storyboard.scenes];
@@ -230,6 +234,7 @@ export default function StoryboardView() {
           
           const scene = currentStoryboard.scenes[i];
           const referenceImages: string[] = [];
+          const characterDescriptions: string[] = [];
           // Use scene character IDs, or fallback to all storyboard characters
           const charIdsToUse = scene.characterIds?.length > 0 ? scene.characterIds : currentStoryboard.characters;
           
@@ -241,10 +246,15 @@ export default function StoryboardView() {
               const imageValue = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100);
               if (imageValue) {
                 referenceImages.push(imageValue);
+                characterDescriptions.push(`- ${char.name}: ${char.description || 'الشخصية الرئيسية'}`);
               }
             }
           }
-          console.log("[v0] AutoPilot - Scene", i, "using", referenceImages.length, "reference images");
+          
+          // Build detailed characterDNA
+          const characterDNA = characterDescriptions.length > 0 
+            ? `CRITICAL: The following characters appear in this scene. You MUST use the reference images above and make them look IDENTICAL:\n${characterDescriptions.join('\n')}\n\nDo NOT redesign or change any character. Copy their exact appearance from the reference images.`
+            : '';
 
           // Get first scene image for reference
           const firstSceneImage = currentStoryboard.scenes[0]?.frameImage;
@@ -260,7 +270,7 @@ export default function StoryboardView() {
               totalScenes: currentStoryboard.scenes.length,
               style: 'cinematic',
               aspectRatio: currentStoryboard.aspectRatio || '16:9',
-              characterDNA: referenceImages.length > 0 ? 'Use the character reference images exactly as shown.' : '',
+              characterDNA,
             }),
             i
           );

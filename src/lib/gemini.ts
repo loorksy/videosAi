@@ -86,50 +86,43 @@ const handleCommonErrors = (error: any, defaultMessage: string) => {
 
 // Helper function to convert URL or data URL to base64
 const imageToBase64 = async (imageSource: string): Promise<string> => {
-  console.log("[v0] imageToBase64 called with:", imageSource.substring(0, 80) + "...");
+  if (!imageSource || imageSource.length < 50) {
+    console.warn("[v0] imageToBase64: Invalid image source");
+    return '';
+  }
   
   // If it's already a data URL, extract base64
   if (imageSource.startsWith('data:')) {
-    console.log("[v0] Image is data URL");
     const matches = imageSource.match(/^data:[^;]+;base64,(.+)$/);
     if (matches) {
-      console.log("[v0] Extracted base64, length:", matches[1].length);
       return matches[1];
     }
     // If it has comma, split and return
     if (imageSource.includes(',')) {
-      const base64 = imageSource.split(',')[1];
-      console.log("[v0] Split base64, length:", base64.length);
-      return base64;
+      return imageSource.split(',')[1];
     }
   }
   
   // If it's a URL, fetch and convert
   if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
-    console.log("[v0] Image is URL, fetching...");
     try {
       const response = await fetch(imageSource);
       if (!response.ok) {
         console.warn(`[v0] Failed to fetch image: ${response.status}`);
         return '';
       }
-      const blob = await response.blob();
-      console.log("[v0] Fetched blob, size:", blob.size, "type:", blob.type);
+      const arrayBuffer = await response.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
       
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          const base64 = result.split(',')[1];
-          console.log("[v0] Converted to base64, length:", base64?.length || 0);
-          resolve(base64 || '');
-        };
-        reader.onerror = () => {
-          console.warn('[v0] Failed to read image blob');
-          resolve('');
-        };
-        reader.readAsDataURL(blob);
-      });
+      // Convert to base64 using browser-compatible method
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      const base64 = btoa(binary);
+      return base64;
     } catch (e) {
       console.warn('[v0] Error fetching image:', e);
       return '';
@@ -137,7 +130,6 @@ const imageToBase64 = async (imageSource: string): Promise<string> => {
   }
   
   // Assume it's already base64
-  console.log("[v0] Image assumed to be raw base64, length:", imageSource.length);
   return imageSource;
 };
 
@@ -377,9 +369,7 @@ ${charContext}
     const parts: any[] = [];
     
     // === STEP 1: Character reference images FIRST (highest priority) ===
-    console.log("[v0] generateStoryboardFrame - characterImages received:", characterImages.length);
     if (characterImages.length > 0) {
-      console.log("[v0] Character image URLs/data:", characterImages.map(img => img.substring(0, 100) + "..."));
       parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
       
       // Convert all character images to base64 (handles URLs and data URLs)
@@ -387,15 +377,11 @@ ${charContext}
         characterImages.slice(0, 3).map(img => imageToBase64(img))
       );
       
-      console.log("[v0] Converted images count:", convertedImages.filter(img => img && img.length > 100).length);
-      
       for (const base64Data of convertedImages) {
         if (base64Data && base64Data.length > 100) {
           parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
         }
       }
-    } else {
-      console.log("[v0] WARNING: No character images provided!");
     }
 
     // === STEP 2: Scene reference images ===
@@ -548,7 +534,7 @@ RULES:
         throw new Error("فشل توليد الفيديو (403). نموذج veo-3.1-fast-generate-preview يتطلب مشروع Google Cloud مدفوع (Paid Billing). تأكد من تفعيل الفوترة و Generative Language API.");
       }
       if (error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
-        throw new Error("نموذج veo-3.1-fast-generate-preview غير متاح. تأكد من أن مشروعك يدعم نماذج Veo.");
+        throw new Error("نموذج veo-3.1-fast-generate-preview غير م��اح. تأكد من أن مشروعك يدعم نماذج Veo.");
       }
       if (error?.message?.includes('Failed to fetch image')) {
         throw new Error("فشل تحميل الصورة. تأكد من أن صور المشاهد محفوظة بشكل صحيح.");
