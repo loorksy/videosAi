@@ -402,7 +402,6 @@ export const GeminiService = {
           contents: [{ role: "user", parts: [{ text: promptText }] }],
           config: { 
             imageConfig: { aspectRatio: "3:4" },
-            safetySettings: PERMISSIVE_SAFETY_SETTINGS,
           }
         });
         return extractImage(result);
@@ -1658,7 +1657,6 @@ The character should be instantly recognizable as the same ${typeDesc} from the 
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.7,
-          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       results.front = extractImage(frontResult);
@@ -1703,7 +1701,6 @@ Show the back of the character with consistent details (hair, clothing, body sha
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.7,
-          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       results.back = extractImage(backResult);
@@ -1748,7 +1745,6 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.7,
-          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       results.closeup = extractImage(closeupResult);
@@ -1807,7 +1803,6 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.8,
-          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       return extractImage(result);
