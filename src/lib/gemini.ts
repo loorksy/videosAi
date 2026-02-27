@@ -1044,8 +1044,7 @@ export const GeminiService = {
   },
 
   // 15. Generate Character Animation (Professional Character Consistency)
-  // Uses Veo 3.1 "Ingredients to Video" with up to 3 reference images
-  // and a character bible prompt for maximum visual consistency
+  // Uses Veo 3.1 with reference images (16:9 only) or start frame fallback (9:16)
   async generateCharacterAnimation(params: {
     characters: {
       name: string;
@@ -1059,8 +1058,7 @@ export const GeminiService = {
     const ai = getAI();
     const { characters, prompt, aspectRatio, resolution = '1080p' } = params;
 
-    // Build reference images array (max 3 per Veo 3.1 limit)
-    // Collect ALL available images from characters - robust approach handles any key
+    // Collect ALL available images from characters
     const allImages: string[] = [];
     for (const char of characters) {
       const imgs = char.images as Record<string, string | undefined>;
@@ -1070,66 +1068,64 @@ export const GeminiService = {
         }
       }
     }
-    // Take max 3 (Veo limit)
-    const selectedImages = allImages.slice(0, 3);
-    if (selectedImages.length === 0) {
+    if (allImages.length === 0) {
       throw new Error("لا توجد صور مرجعية كافية. يجب ان تحتوي الشخصية على صورة واحدة على الاقل.");
     }
 
-    // Convert images to proper format for Veo 3.1 reference images
-    // Veo SDK expects: { image: { imageBytes, mimeType }, referenceType: 'asset' }
-    const referenceImages = selectedImages.map((imgBase64, index) => {
-      const base64Data = imgBase64.includes(',') ? imgBase64.split(',')[1] : imgBase64;
-      let mimeType = imgBase64.includes(',')
-        ? imgBase64.substring(imgBase64.indexOf(':') + 1, imgBase64.indexOf(';'))
-        : "image/png";
-      
-      // Ensure supported mimeType (only jpeg and png supported)
-      if (!['image/jpeg', 'image/png'].includes(mimeType)) {
-        mimeType = 'image/png';
-      }
-      
-      console.log(`Reference image ${index + 1}: mimeType=${mimeType}, dataLength=${base64Data.length}`);
-      
-      return {
-        image: {
-          imageBytes: base64Data,
-          mimeType: mimeType,
-        },
-        referenceType: 'asset',
-      };
-    });
-    
-    console.log('Reference images prepared:', referenceImages.length);
-    
+    // Helper: compress a base64 image to ~800KB max using canvas
+    const compressImage = (imgBase64: string, maxSizeKB = 800): Promise<{ data: string; mimeType: string }> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          // Limit max dimension to 1024px
+          let w = img.width, h = img.height;
+          const maxDim = 1024;
+          if (w > maxDim || h > maxDim) {
+            const ratio = Math.min(maxDim / w, maxDim / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, w, h);
+          // Use JPEG for smaller size
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          const base64 = dataUrl.split(',')[1];
+          console.log(`Compressed image: ${w}x${h}, size=${Math.round(base64.length * 0.75 / 1024)}KB`);
+          resolve({ data: base64, mimeType: 'image/jpeg' });
+        };
+        img.onerror = () => {
+          // Fallback: use original
+          const data = imgBase64.includes(',') ? imgBase64.split(',')[1] : imgBase64;
+          resolve({ data, mimeType: 'image/png' });
+        };
+        img.src = imgBase64.startsWith('data:') ? imgBase64 : `data:image/png;base64,${imgBase64}`;
+      });
+    };
 
     // Build character bible prefix for the prompt
-    // This anchors the identity in the prompt to match the reference images
     const charBible = characters.map((c, i) => {
       const label = characters.length > 1 ? `Character ${i + 1}` : 'The character';
-      return `${label}: ${c.visualTraits || c.name}. Maintain exact appearance from the provided reference image${selectedImages.length > 1 ? 's' : ''}.`;
+      return `${label}: ${c.visualTraits || c.name}. Maintain exact appearance from the provided reference image(s).`;
     }).join(' ');
 
     // Sanitize prompt to avoid content policy violations
-    // Replace sensitive words that might trigger rejection especially with children/minors
     const sanitizePrompt = (text: string): string => {
       const replacements: [RegExp, string][] = [
-        // Horror/Fear related
         [/رعب|horror|scary|terrifying/gi, 'dramatic tension'],
         [/خوف|fear|afraid|scared/gi, 'concern'],
         [/توتر شديد|intense tension/gi, 'anticipation'],
         [/مرعب|terrifying|horrifying/gi, 'intense'],
         [/مخيف|creepy|frightening/gi, 'mysterious'],
-        // Violence related
         [/عنف|violence|violent/gi, 'action'],
         [/دم|blood|bloody/gi, 'dramatic'],
         [/قتل|kill|murder/gi, 'conflict'],
         [/موت|death|dying/gi, 'dramatic moment'],
-        // Keep it family-friendly
         [/صراخ|scream|screaming/gi, 'exclaiming'],
         [/بكاء شديد|crying intensely/gi, 'emotional'],
       ];
-      
       let sanitized = text;
       for (const [pattern, replacement] of replacements) {
         sanitized = sanitized.replace(pattern, replacement);
@@ -1138,63 +1134,27 @@ export const GeminiService = {
     };
 
     const sanitizedPrompt = sanitizePrompt(prompt);
+    const enhancedPrompt = `${charBible}\n\nIMPORTANT: The character(s) in this video MUST exactly match the provided reference images - same face, same hairstyle, same clothing, same body proportions, same skin tone.\n\n${sanitizedPrompt}`;
 
-    // Professional prompt engineering for Veo 3.1 character consistency
-    // Formula: [Identity Anchor] + [Cinematography] + [Subject] + [Action] + [Context] + [Style & Audio]
-    const enhancedPrompt = `${charBible}
-
-IMPORTANT: The character(s) in this video MUST exactly match the provided reference images - same face, same hairstyle, same clothing, same body proportions, same skin tone. Do not alter or reinterpret the character's appearance.
-
-${sanitizedPrompt}`;
-
-    try {
-      console.log('Starting video generation with Veo 3.1...');
-      console.log('Prompt:', enhancedPrompt.substring(0, 200) + '...');
-      console.log('Reference images count:', referenceImages?.length || 0);
-      console.log('Aspect ratio:', aspectRatio);
-      
-      let operation = await ai.models.generateVideos({
-        model: 'veo-3.1-generate-preview',
-        prompt: enhancedPrompt,
-        config: {
-          numberOfVideos: 1,
-          referenceImages: referenceImages.length > 0 ? referenceImages : undefined,
-          resolution: resolution,
-          aspectRatio: aspectRatio,
-          personGeneration: 'allow_all',
-          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
-        }
-      });
-
-      console.log('Initial operation:', JSON.stringify(operation).substring(0, 500));
-
+    // Helper: poll operation until done
+    const pollOperation = async (operation: any) => {
       let pollCount = 0;
-      const maxPolls = 60; // 10 minutes max
-      
+      const maxPolls = 60;
       while (!operation.done && pollCount < maxPolls) {
         await new Promise(resolve => setTimeout(resolve, 10000));
-        operation = await ai.operations.getVideosOperation({ operation: operation });
+        operation = await ai.operations.getVideosOperation({ operation });
         pollCount++;
         console.log(`Poll ${pollCount}: done=${operation.done}`);
       }
+      return operation;
+    };
 
-      console.log('Final operation response:', JSON.stringify(operation).substring(0, 1000));
-
-      const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-      if (!downloadLink) {
-        console.error('No video URI in response:', JSON.stringify(operation.response));
-        throw new Error("لم يتم ارجاع رابط الفيديو من Veo.");
-      }
-      
+    // Helper: download video from URI
+    const downloadVideo = async (uri: string): Promise<string> => {
       const storedKey = localStorage.getItem('GEMINI_API_KEY');
       const apiKey = storedKey || process.env.GEMINI_API_KEY;
-      const response = await fetch(downloadLink, {
-        method: 'GET',
-        headers: { 'x-goog-api-key': apiKey || '' },
-      });
-
+      const response = await fetch(uri, { headers: { 'x-goog-api-key': apiKey || '' } });
       if (!response.ok) throw new Error("فشل تحميل الفيديو المولد.");
-      
       const blob = await response.blob();
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1202,11 +1162,87 @@ ${sanitizedPrompt}`;
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
+    };
+
+    // Strategy 1: Use referenceImages (only works with 16:9)
+    const tryWithReferenceImages = async (): Promise<string> => {
+      const selectedImages = allImages.slice(0, 3);
+      const compressedImages = await Promise.all(selectedImages.map(img => compressImage(img)));
+      
+      const refImages = compressedImages.map((img, i) => {
+        console.log(`Ref image ${i + 1}: mimeType=${img.mimeType}, dataLen=${img.data.length}`);
+        return {
+          image: { imageBytes: img.data, mimeType: img.mimeType },
+          referenceType: 'asset',
+        };
+      });
+
+      console.log('Attempting with referenceImages (16:9 mode)...');
+      let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-generate-preview',
+        prompt: enhancedPrompt,
+        config: {
+          numberOfVideos: 1,
+          referenceImages: refImages,
+          resolution,
+          aspectRatio: '16:9',
+          personGeneration: 'allow_all',
+        }
+      });
+
+      operation = await pollOperation(operation);
+      const uri = operation.response?.generatedVideos?.[0]?.video?.uri;
+      if (!uri) throw new Error("لم يتم ارجاع رابط الفيديو.");
+      return downloadVideo(uri);
+    };
+
+    // Strategy 2: Use image (start frame) - works with any aspect ratio
+    const tryWithStartFrame = async (): Promise<string> => {
+      const compressed = await compressImage(allImages[0]);
+      
+      console.log(`Attempting with start frame (${aspectRatio} mode)...`);
+      let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-generate-preview',
+        prompt: enhancedPrompt,
+        image: { imageBytes: compressed.data, mimeType: compressed.mimeType },
+        config: {
+          numberOfVideos: 1,
+          resolution,
+          aspectRatio,
+          personGeneration: 'allow_all',
+        }
+      });
+
+      operation = await pollOperation(operation);
+      const uri = operation.response?.generatedVideos?.[0]?.video?.uri;
+      if (!uri) throw new Error("لم يتم ارجاع رابط الفيديو.");
+      return downloadVideo(uri);
+    };
+
+    try {
+      console.log(`Starting video generation. Aspect ratio: ${aspectRatio}, Images: ${allImages.length}`);
+
+      // referenceImages only supports 16:9, so for 9:16 go directly to start frame
+      if (aspectRatio === '9:16') {
+        console.log('9:16 detected - using start frame strategy (referenceImages only supports 16:9)');
+        return await tryWithStartFrame();
+      }
+
+      // For 16:9, try referenceImages first, fallback to start frame
+      try {
+        return await tryWithReferenceImages();
+      } catch (refError: any) {
+        console.warn('referenceImages failed, falling back to start frame:', refError?.message);
+        // Only fallback on INVALID_ARGUMENT (format/support issue), not on other errors
+        if (refError?.message?.includes('INVALID_ARGUMENT') || refError?.message?.includes('not supported')) {
+          return await tryWithStartFrame();
+        }
+        throw refError;
+      }
+
     } catch (error: any) {
       console.error('Veo generation error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
 
-      // Check if safety block
       const isSafetyBlock = error?.message?.includes('safety') || 
                            error?.message?.includes('blocked') ||
                            error?.message?.includes('policy') ||
@@ -1216,14 +1252,10 @@ ${sanitizedPrompt}`;
       if (isSafetyBlock) {
         throw new Error("تم حظر المحتوى بسبب سياسات الأمان. جرب وصفاً مختلفاً.");
       }
-
       if (isRateLimitError(error)) handleCommonErrors(error, "");
       if (isPermissionError(error)) throw new Error("فشل تحريك الشخصية (403). نموذج veo-3.1-generate-preview يتطلب مشروع Google Cloud مدفوع. تأكد من تفعيل الفوترة.");
       if (error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
         throw new Error("نموذج veo-3.1-generate-preview غير متاح. تأكد من تفعيل Generative Language API في مشروع Google Cloud الخاص بك.");
-      }
-      if (error?.message?.includes('INVALID_ARGUMENT')) {
-        throw new Error("خطأ في المعاملات. تأكد من أن الصور المرجعية بصيغة صحيحة.");
       }
       
       handleCommonErrors(error, `فشل تحريك الشخصية: ${error?.message || 'خطأ غير معروف'}`);
