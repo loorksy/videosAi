@@ -459,9 +459,18 @@ export default function CharacterAnimation() {
             </button>
           </div>
           {selectedCharacters.length > 0 && (
-            <p className="text-xs text-emerald-600 bg-emerald-50 p-2 rounded-lg mb-4">
-              ✓ سيتم استخدام الصور المرجعية للحفاظ على ملامح الشخصية.
-            </p>
+            <div className="space-y-1.5 mb-4">
+              <p className="text-xs text-emerald-600 bg-emerald-50 p-2 rounded-lg">
+                {aspectRatio === '16:9' 
+                  ? '✓ سيتم استخدام الصور المرجعية (Reference Images) للحفاظ على ملامح الشخصية.'
+                  : '✓ سيتم استخدام صورة الشخصية كإطار أول (Start Frame) للحفاظ على ملامحها.'}
+              </p>
+              {aspectRatio === '9:16' && (
+                <p className="text-[10px] text-amber-600 bg-amber-50 p-2 rounded-lg">
+                  ملاحظة: Reference Images تدعم فقط الوضع العرضي (16:9). في الوضع الطولي يتم استخدام Start Frame بديلا.
+                </p>
+              )}
+            </div>
           )}
 
           {/* Resolution */}
