@@ -54,7 +54,7 @@ export default function SurrealCharacterCreate() {
       setStep('review');
     } catch (error: any) {
       console.error(error);
-      alert(`فشل التوليد: ${error.message}`);
+      showToast(error.message || 'فشل التوليد', 'error');
       setStep('input');
     } finally {
       setIsProcessing(false);
