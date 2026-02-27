@@ -16,8 +16,12 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      hmr: false, // Disable HMR to prevent unexpected reloads
+      hmr: false, // Disable HMR completely
       allowedHosts: true,
+      watch: {
+        usePolling: false, // Disable file watching
+        ignored: ['**/*'], // Ignore all files
+      },
     },
   };
 });
