@@ -110,9 +110,11 @@ export default function StoryboardView() {
       const updatedStoryboard = { ...storyboard, scenes: newScenes };
       setStoryboard(updatedStoryboard);
       await db.saveStoryboard(updatedStoryboard);
+      setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'success' }));
     } catch (error: any) {
       console.error(error);
-      alert(`فشل توليد الصورة: ${error.message}`);
+      setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'failed' }));
+      setSceneErrors(prev => ({ ...prev, [sceneIndex]: error.message || 'فشل التوليد' }));
     } finally {
       setIsGenerating(false);
       setCurrentGeneratingIndex(-1);
