@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Clapperboard, Film, Plus, Sparkles, ArrowRight, Ghost, Smile, Youtube, Cat, Lightbulb, PlaySquare, Dna, Package, Megaphone, Video, UserSquare2 } from 'lucide-react';
+import { Users, Clapperboard, Film, Plus, Sparkles, ArrowRight, Ghost, Smile, Youtube, Cat, Lightbulb, Dna, Package, Megaphone, Video, UserSquare2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function ToolCard({ to, icon: Icon, label, description, color }: { to: string; icon: any; label: string; description: string; color: string }) {
