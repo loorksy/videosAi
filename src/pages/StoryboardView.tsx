@@ -146,6 +146,47 @@ export default function StoryboardView() {
 
     setIsAutoPilotRunning(true);
     setAutoPilotStatus('بدء الإنتاج الشامل...');
+    setSceneStatuses({});
+    setSceneErrors({});
+
+    // Helper function to wait with exponential backoff
+    const waitForRateLimit = async (attempt: number = 1): Promise<void> => {
+      const waitTime = Math.min(30000, 5000 * Math.pow(2, attempt - 1)); // 5s, 10s, 20s, max 30s
+      setAutoPilotStatus(`تجاوز حد الاستخدام... انتظار ${Math.round(waitTime / 1000)} ثانية...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    };
+
+    // Helper function to generate with retry
+    const generateWithRetry = async <T,>(
+      fn: () => Promise<T>,
+      sceneIndex: number,
+      maxRetries: number = 3
+    ): Promise<T | null> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'generating' }));
+          const result = await fn();
+          setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'success' }));
+          return result;
+        } catch (error: any) {
+          console.error(`Attempt ${attempt} failed for scene ${sceneIndex}:`, error);
+          
+          // Check if rate limited
+          if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('rate')) {
+            setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'rate_limited' }));
+            await waitForRateLimit(attempt);
+            // Continue to retry
+          } else if (attempt === maxRetries) {
+            // Final attempt failed with non-rate-limit error
+            setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'failed' }));
+            setSceneErrors(prev => ({ ...prev, [sceneIndex]: error.message || 'خطأ غير معروف' }));
+            return null;
+          }
+        }
+      }
+      setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'failed' }));
+      return null;
+    };
 
     try {
       let currentStoryboard = { ...storyboard };
@@ -160,18 +201,29 @@ export default function StoryboardView() {
           const referenceImages: string[] = [];
           for (const charId of scene.characterIds) {
             const char = await db.getCharacter(charId);
-            if (char && char.images.front) referenceImages.push(char.images.front);
+            if (char) {
+              // Support all image types
+              if (char.images.front) referenceImages.push(char.images.front);
+              else if (char.images.closeup) referenceImages.push(char.images.closeup);
+              else if (char.images.reference) referenceImages.push(char.images.reference);
+            }
           }
 
-          const imageUrl = await GeminiService.generateStoryboardFrame(
-            scene.description,
-            referenceImages,
-            currentStoryboard.aspectRatio || '16:9'
+          const imageUrl = await generateWithRetry(
+            () => GeminiService.generateStoryboardFrame(
+              scene.description,
+              referenceImages,
+              currentStoryboard.aspectRatio || '16:9'
+            ),
+            i
           );
-          
-          currentStoryboard.scenes[i].frameImage = imageUrl;
-          await db.saveStoryboard(currentStoryboard);
-          setStoryboard({ ...currentStoryboard });
+
+          if (imageUrl) {
+            currentStoryboard.scenes[i].frameImage = imageUrl;
+            await db.saveStoryboard(currentStoryboard);
+            setStoryboard({ ...currentStoryboard });
+          }
+          // Continue to next scene even if failed
         }
       }
 
@@ -185,10 +237,16 @@ export default function StoryboardView() {
           const voices = ['Zephyr', 'Kore', 'Puck', 'Charon', 'Fenrir'];
           const voiceName = voices[i % voices.length];
           
-          const audioUrl = await GeminiService.generateVoiceover(scene.dialogue, voiceName);
-          currentStoryboard.scenes[i].audioClip = audioUrl;
-          await db.saveStoryboard(currentStoryboard);
-          setStoryboard({ ...currentStoryboard });
+          const audioUrl = await generateWithRetry(
+            () => GeminiService.generateVoiceover(scene.dialogue!, voiceName),
+            i + 1000 // Use different index range for audio
+          );
+
+          if (audioUrl) {
+            currentStoryboard.scenes[i].audioClip = audioUrl;
+            await db.saveStoryboard(currentStoryboard);
+            setStoryboard({ ...currentStoryboard });
+          }
         }
       }
 
@@ -203,21 +261,32 @@ export default function StoryboardView() {
 
           if (startFrame && endFrame) {
             const motionPrompt = cameraMotion !== 'Static' ? cameraMotion : undefined;
-            const videoUrl = await GeminiService.generateVideoClip(startFrame, endFrame, currentStoryboard.aspectRatio || '16:9', motionPrompt);
-            currentStoryboard.scenes[i].videoClip = videoUrl;
-            await db.saveStoryboard(currentStoryboard);
-            setStoryboard({ ...currentStoryboard });
+            const videoUrl = await generateWithRetry(
+              () => GeminiService.generateVideoClip(startFrame, endFrame, currentStoryboard.aspectRatio || '16:9', motionPrompt),
+              i + 2000 // Use different index range for video
+            );
+
+            if (videoUrl) {
+              currentStoryboard.scenes[i].videoClip = videoUrl;
+              await db.saveStoryboard(currentStoryboard);
+              setStoryboard({ ...currentStoryboard });
+            }
           }
         }
       }
 
-      setAutoPilotStatus('تم الانتهاء بنجاح! 🎉');
-      setTimeout(() => setAutoPilotStatus(''), 4000);
+      // Check if any scenes failed
+      const failedScenes = Object.entries(sceneStatuses).filter(([_, status]) => status === 'failed');
+      if (failedScenes.length > 0) {
+        setAutoPilotStatus(`تم مع ${failedScenes.length} أخطاء - استخدم زر إعادة التوليد`);
+      } else {
+        setAutoPilotStatus('تم الانتهاء بنجاح! 🎉');
+      }
+      setTimeout(() => setAutoPilotStatus(''), 5000);
 
     } catch (error: any) {
       console.error(error);
-      alert(`توقف الإنتاج التلقائي: ${error.message}`);
-      setAutoPilotStatus('');
+      setAutoPilotStatus(`خطأ: ${error.message}`);
     } finally {
       setIsAutoPilotRunning(false);
       setCurrentGeneratingIndex(-1);
