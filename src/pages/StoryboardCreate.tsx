@@ -425,91 +425,62 @@ export default function StoryboardCreate() {
           )}
 
           <div className="space-y-6">
-            {scenes.map((scene, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-slate-900">مشهد {idx + 1} {idx === 0 ? '(مرجعي)' : ''}</span>
-                  {!scene.frameImage && !isProcessing && (
-                    <button
-                      onClick={async () => {
-                        setIsProcessing(true);
-                        setProcessingStatus(`إعادة توليد المشهد ${idx + 1}...`);
-                        const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
-                        const characterDNA = selectedChars.map(c => `${c.name}: ${c.visualTraits || c.description}`).join('\n');
-                        const allCharImages: string[] = [];
-                        for (const char of selectedChars) {
-                          const imgs = char.images as Record<string, string | undefined>;
-                          for (const value of Object.values(imgs)) {
-                            if (value && typeof value === 'string' && (value as string).length > 100) { allCharImages.push(value as string); break; }
-                          }
-                        }
-                        try {
-                          const prevImage = idx > 0 ? scenes[idx - 1]?.frameImage : undefined;
-                          const img = await GeminiService.generateStoryboardFrame({
-                            sceneDescription: scene.description, characterImages: allCharImages,
-                            previousSceneImage: prevImage, sceneIndex: idx, totalScenes: scenes.length,
-                            style, aspectRatio, characterDNA,
-                          });
-                          const updated = [...scenes];
-                          updated[idx].frameImage = img;
-                          setScenes(updated);
-                        } catch (e) { console.error(e); }
-                        setIsProcessing(false);
-                      }}
-                      className="text-xs text-indigo-600 flex items-center gap-1 hover:text-indigo-800"
-                    >
-                      <RefreshCw className="w-3 h-3" /> إعادة التوليد
-                    </button>
-                  )}
-                  {scene.frameImage && !isProcessing && (
-                    <button
-                      onClick={async () => {
-                        setIsProcessing(true);
-                        setProcessingStatus(`إعادة توليد المشهد ${idx + 1}...`);
-                        const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
-                        const characterDNA = selectedChars.map(c => `${c.name}: ${c.visualTraits || c.description}`).join('\n');
-                        const allCharImages: string[] = [];
-                        for (const char of selectedChars) {
-                          const imgs = char.images as Record<string, string | undefined>;
-                          for (const value of Object.values(imgs)) {
-                            if (value && typeof value === 'string' && (value as string).length > 100) { allCharImages.push(value as string); break; }
-                          }
-                        }
-                        try {
-                          const prevImage = idx > 0 ? scenes[idx - 1]?.frameImage : undefined;
-                          const img = await GeminiService.generateStoryboardFrame({
-                            sceneDescription: scene.description, characterImages: allCharImages,
-                            previousSceneImage: prevImage, sceneIndex: idx, totalScenes: scenes.length,
-                            style, aspectRatio, characterDNA,
-                          });
-                          const updated = [...scenes];
-                          updated[idx].frameImage = img;
-                          setScenes(updated);
-                        } catch (e) { console.error(e); }
-                        setIsProcessing(false);
-                      }}
-                      className="text-xs text-slate-400 flex items-center gap-1 hover:text-indigo-600"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                    </button>
-                  )}
+            {scenes.map((scene, idx) => {
+              const firstImg = scenes[0]?.frameImage;
+              const prevImg = idx > 0 ? scenes[idx - 1]?.frameImage : undefined;
+              
+              const regenerateScene = async () => {
+                setIsProcessing(true);
+                setProcessingStatus(`إعادة توليد المشهد ${idx + 1}...`);
+                const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
+                const characterDNA = selectedChars.map(c => `${c.name}: ${c.visualTraits || c.description}`).join('\n');
+                const charImgs: string[] = [];
+                for (const char of selectedChars) {
+                  const imgs = char.images as Record<string, string | undefined>;
+                  for (const value of Object.values(imgs)) {
+                    if (value && typeof value === 'string' && (value as string).length > 100) { charImgs.push(value as string); break; }
+                  }
+                }
+                try {
+                  const img = await GeminiService.generateStoryboardFrame({
+                    sceneDescription: scene.description, characterImages: charImgs,
+                    firstSceneImage: firstImg, previousSceneImage: prevImg,
+                    sceneIndex: idx, totalScenes: scenes.length,
+                    style, aspectRatio, characterDNA,
+                  });
+                  const updated = [...scenes];
+                  updated[idx].frameImage = img;
+                  setScenes(updated);
+                } catch (e) { console.error(e); }
+                setIsProcessing(false);
+              };
+
+              return (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-slate-900">مشهد {idx + 1} {idx === 0 ? '(مرجعي)' : ''}</span>
+                    {!isProcessing && (
+                      <button onClick={regenerateScene} className="text-xs text-slate-400 flex items-center gap-1 hover:text-indigo-600">
+                        <RefreshCw className="w-3 h-3" /> {scene.frameImage ? '' : 'إعادة التوليد'}
+                      </button>
+                    )}
+                  </div>
+                  <div className={cn(
+                    "bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative",
+                    aspectRatio === '9:16' ? 'aspect-[9/16] max-w-[220px] mx-auto' : 'aspect-video'
+                  )}>
+                    {scene.frameImage ? (
+                      <img src={scene.frameImage} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <Film className="w-8 h-8" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">{scene.description}</p>
                 </div>
-                
-                <div className={cn(
-                  "bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative",
-                  aspectRatio === '9:16' ? 'aspect-[9/16] max-w-[220px] mx-auto' : 'aspect-video'
-                )}>
-                  {scene.frameImage ? (
-                    <img src={scene.frameImage} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                      <Film className="w-8 h-8" />
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500">{scene.description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {step === 'preview' && !isProcessing && (
