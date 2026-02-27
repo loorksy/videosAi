@@ -1088,13 +1088,42 @@ export const GeminiService = {
       return `${label}: ${c.visualTraits || c.name}. Maintain exact appearance from the provided reference image${selectedImages.length > 1 ? 's' : ''}.`;
     }).join(' ');
 
+    // Sanitize prompt to avoid content policy violations
+    // Replace sensitive words that might trigger rejection especially with children/minors
+    const sanitizePrompt = (text: string): string => {
+      const replacements: [RegExp, string][] = [
+        // Horror/Fear related
+        [/رعب|horror|scary|terrifying/gi, 'dramatic tension'],
+        [/خوف|fear|afraid|scared/gi, 'concern'],
+        [/توتر شديد|intense tension/gi, 'anticipation'],
+        [/مرعب|terrifying|horrifying/gi, 'intense'],
+        [/مخيف|creepy|frightening/gi, 'mysterious'],
+        // Violence related
+        [/عنف|violence|violent/gi, 'action'],
+        [/دم|blood|bloody/gi, 'dramatic'],
+        [/قتل|kill|murder/gi, 'conflict'],
+        [/موت|death|dying/gi, 'dramatic moment'],
+        // Keep it family-friendly
+        [/صراخ|scream|screaming/gi, 'exclaiming'],
+        [/بكاء شديد|crying intensely/gi, 'emotional'],
+      ];
+      
+      let sanitized = text;
+      for (const [pattern, replacement] of replacements) {
+        sanitized = sanitized.replace(pattern, replacement);
+      }
+      return sanitized;
+    };
+
+    const sanitizedPrompt = sanitizePrompt(prompt);
+
     // Professional prompt engineering for Veo 3.1 character consistency
     // Formula: [Identity Anchor] + [Cinematography] + [Subject] + [Action] + [Context] + [Style & Audio]
     const enhancedPrompt = `${charBible}
 
 IMPORTANT: The character(s) in this video MUST exactly match the provided reference images - same face, same hairstyle, same clothing, same body proportions, same skin tone. Do not alter or reinterpret the character's appearance.
 
-${prompt}`;
+${sanitizedPrompt}`;
 
     try {
       console.log('Starting video generation with Veo 3.1...');
