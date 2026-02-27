@@ -1665,6 +1665,7 @@ Show the back of the character with consistent details (hair, clothing, body sha
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.7,
+          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       results.back = extractImage(backResult);
