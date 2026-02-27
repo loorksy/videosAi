@@ -331,8 +331,16 @@ export default function SurrealCharacterCreate() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <div className="bg-slate-800 text-white text-xs text-center py-1 rounded-t-lg font-bold">الشكل الطبيعي</div>
-                <div className="aspect-[3/4] rounded-b-xl overflow-hidden shadow-md border border-slate-200">
-                  <img src={generatedImages.normal} className="w-full h-full object-cover" alt="Normal Object" />
+                <div className="aspect-[3/4] rounded-b-xl overflow-hidden shadow-md border border-slate-200 bg-slate-100">
+                  <img 
+                    src={generatedImages.normal} 
+                    className="w-full h-full object-cover" 
+                    alt="Normal Object"
+                    onError={(e) => {
+                      console.error('Failed to load normal image');
+                      e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="50%" y="50%" text-anchor="middle">❌</text></svg>';
+                    }}
+                  />
                 </div>
                 <button
                   onClick={() => downloadImage(generatedImages.normal!, 'normal')}
@@ -343,8 +351,16 @@ export default function SurrealCharacterCreate() {
               </div>
               <div className="space-y-2">
                 <div className="bg-emerald-600 text-white text-xs text-center py-1 rounded-t-lg font-bold">الشكل الخيالي</div>
-                <div className="aspect-[3/4] rounded-b-xl overflow-hidden shadow-md border border-slate-200">
-                  <img src={generatedImages.surreal} className="w-full h-full object-cover" alt="Surreal Object" />
+                <div className="aspect-[3/4] rounded-b-xl overflow-hidden shadow-md border border-slate-200 bg-slate-100">
+                  <img 
+                    src={generatedImages.surreal} 
+                    className="w-full h-full object-cover" 
+                    alt="Surreal Object"
+                    onError={(e) => {
+                      console.error('Failed to load surreal image');
+                      e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="50%" y="50%" text-anchor="middle">❌</text></svg>';
+                    }}
+                  />
                 </div>
                 <button
                   onClick={() => downloadImage(generatedImages.surreal, 'surreal')}
@@ -356,8 +372,16 @@ export default function SurrealCharacterCreate() {
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-slate-200">
-                <img src={generatedImages.surreal} className="w-full h-full object-cover" alt="Generated Surreal Object" />
+              <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100">
+                <img 
+                  src={generatedImages.surreal} 
+                  className="w-full h-full object-cover" 
+                  alt="Generated Surreal Object"
+                  onError={(e) => {
+                    console.error('Failed to load surreal image');
+                    e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="50%" y="50%" text-anchor="middle">❌</text></svg>';
+                  }}
+                />
               </div>
               <button
                 onClick={() => downloadImage(generatedImages.surreal, 'surreal')}
