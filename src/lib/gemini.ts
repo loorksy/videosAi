@@ -1060,20 +1060,15 @@ export const GeminiService = {
     const { characters, prompt, aspectRatio, resolution = '1080p' } = params;
 
     // Build reference images array (max 3 per Veo 3.1 limit)
-    // Collect ALL available images from characters
+    // Collect ALL available images from characters - robust approach handles any key
     const allImages: string[] = [];
     for (const char of characters) {
-      const imgs = char.images;
-      // Add any available image - no specific order needed
-      if (imgs.front) allImages.push(imgs.front);
-      if (imgs.surreal) allImages.push(imgs.surreal);
-      if (imgs.closeup) allImages.push(imgs.closeup);
-      if (imgs.threeQuarter) allImages.push(imgs.threeQuarter);
-      if (imgs.back) allImages.push(imgs.back);
-      if (imgs.right) allImages.push(imgs.right);
-      if (imgs.left) allImages.push(imgs.left);
-      if (imgs.normal) allImages.push(imgs.normal);
-      if (imgs.reference) allImages.push(imgs.reference);
+      const imgs = char.images as Record<string, string | undefined>;
+      for (const value of Object.values(imgs)) {
+        if (value && typeof value === 'string' && value.length > 100) {
+          allImages.push(value);
+        }
+      }
     }
     // Take max 3 (Veo limit)
     const selectedImages = allImages.slice(0, 3);
