@@ -1082,7 +1082,7 @@ export const GeminiService = {
     }
 
     // Convert images to proper format for Veo 3.1 reference images
-    // Correct format: { inlineData: { mimeType, data } }
+    // Veo SDK expects: { image: { imageBytes, mimeType }, referenceType: 'asset' }
     const referenceImages = selectedImages.map((imgBase64, index) => {
       const base64Data = imgBase64.includes(',') ? imgBase64.split(',')[1] : imgBase64;
       let mimeType = imgBase64.includes(',')
@@ -1097,10 +1097,11 @@ export const GeminiService = {
       console.log(`Reference image ${index + 1}: mimeType=${mimeType}, dataLength=${base64Data.length}`);
       
       return {
-        inlineData: {
+        image: {
+          imageBytes: base64Data,
           mimeType: mimeType,
-          data: base64Data,
-        }
+        },
+        referenceType: 'asset',
       };
     });
     
