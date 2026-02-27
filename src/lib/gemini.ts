@@ -1710,6 +1710,7 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.7,
+          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       results.closeup = extractImage(closeupResult);
