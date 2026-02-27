@@ -11,6 +11,7 @@ import { useToast } from '../components/Toast';
 
 export default function SurrealCharacterCreate() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'trends'>('basic');
   
