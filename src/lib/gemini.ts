@@ -1196,6 +1196,28 @@ ${sanitizedPrompt}`;
       console.error('Veo generation error:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
 
+      // Check if fal.ai is configured as fallback
+      const isSafetyBlock = error?.message?.includes('safety') || 
+                           error?.message?.includes('blocked') ||
+                           error?.message?.includes('policy') ||
+                           error?.message?.includes('SAFETY') ||
+                           error?.message?.includes('لم يتم ارجاع رابط الفيديو');
+      
+      if (isSafetyBlock && FalService.isConfigured()) {
+        console.log('Veo blocked by content policy, trying fal.ai Kling as fallback...');
+        try {
+          const falResult = await FalService.generateCharacterVideo({
+            referenceImages: selectedImages,
+            prompt: sanitizedPrompt,
+            aspectRatio: aspectRatio,
+          });
+          return falResult;
+        } catch (falError: any) {
+          console.error('fal.ai fallback also failed:', falError);
+          throw new Error(`فشل Veo و fal.ai: ${falError.message}`);
+        }
+      }
+
       if (isRateLimitError(error)) handleCommonErrors(error, "");
       if (isPermissionError(error)) throw new Error("فشل تحريك الشخصية (403). نموذج veo-3.1-generate-preview يتطلب مشروع Google Cloud مدفوع. تأكد من تفعيل الفوترة.");
       if (error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
@@ -1204,6 +1226,12 @@ ${sanitizedPrompt}`;
       if (error?.message?.includes('INVALID_ARGUMENT')) {
         throw new Error("خطأ في المعاملات. تأكد من أن الصور المرجعية بصيغة صحيحة.");
       }
+      
+      // If safety block but fal.ai not configured, suggest it
+      if (isSafetyBlock) {
+        throw new Error("تم حظر المحتوى من Veo. أضف مفتاح fal.ai في الإعدادات لاستخدامه كبديل.");
+      }
+      
       handleCommonErrors(error, `فشل تحريك الشخصية: ${error?.message || 'خطأ غير معروف'}`);
       throw error;
     }
