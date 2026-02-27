@@ -1050,7 +1050,7 @@ export const GeminiService = {
     characters: {
       name: string;
       visualTraits: string;
-      images: { front?: string; back?: string; closeup?: string; left?: string; right?: string; threeQuarter?: string; reference?: string };
+      images: { front?: string; back?: string; closeup?: string; left?: string; right?: string; threeQuarter?: string; reference?: string; normal?: string; surreal?: string };
     }[];
     prompt: string;
     aspectRatio: "16:9" | "9:16";
@@ -1060,20 +1060,22 @@ export const GeminiService = {
     const { characters, prompt, aspectRatio, resolution = '1080p' } = params;
 
     // Build reference images array (max 3 per Veo 3.1 limit)
-    // Priority: front > closeup > threeQuarter > back > right > left (front is best for identity anchoring)
+    // Collect ALL available images from characters
     const allImages: string[] = [];
     for (const char of characters) {
       const imgs = char.images;
-      // Prioritize front-facing (best for identity), then closeup, then other angles
+      // Add any available image - no specific order needed
       if (imgs.front) allImages.push(imgs.front);
+      if (imgs.surreal) allImages.push(imgs.surreal);
       if (imgs.closeup) allImages.push(imgs.closeup);
       if (imgs.threeQuarter) allImages.push(imgs.threeQuarter);
       if (imgs.back) allImages.push(imgs.back);
       if (imgs.right) allImages.push(imgs.right);
       if (imgs.left) allImages.push(imgs.left);
+      if (imgs.normal) allImages.push(imgs.normal);
       if (imgs.reference) allImages.push(imgs.reference);
     }
-    // Take max 3 (Veo limit) - prioritize diversity of angles
+    // Take max 3 (Veo limit)
     const selectedImages = allImages.slice(0, 3);
     if (selectedImages.length === 0) {
       throw new Error("لا توجد صور مرجعية كافية. يجب ان تحتوي الشخصية على صورة واحدة على الاقل.");
