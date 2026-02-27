@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import CharacterList from './pages/CharacterList';
 import CharacterCreate from './pages/CharacterCreate';
+import CharacterSheetCreate from './pages/CharacterSheetCreate';
 import SurrealCharacterCreate from './pages/SurrealCharacterCreate';
 import FunnyHumanCreate from './pages/FunnyHumanCreate';
 import CreatureCharacterCreate from './pages/CreatureCharacterCreate';
