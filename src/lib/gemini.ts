@@ -272,17 +272,56 @@ ${charContext}
     }
   },
 
-  // 4. Generate Storyboard Frame (Nano Banana 3 Pro)
-  async generateStoryboardFrame(sceneDescription: string, referenceImages: string[], aspectRatio: '16:9' | '9:16' | '1:1' = '16:9'): Promise<string> {
+  // 4. Generate Storyboard Frame - uses previous scene image + character refs for consistency
+  async generateStoryboardFrame(params: {
+    sceneDescription: string;
+    characterImages: string[];
+    previousSceneImage?: string;
+    sceneIndex: number;
+    totalScenes: number;
+    style: string;
+    aspectRatio: '16:9' | '9:16' | '1:1';
+    characterDNA: string;
+  }): Promise<string> {
     const ai = getAI();
-    const parts: any[] = [{ text: `Generate a scene: ${sceneDescription}. Maintain consistency with the provided character reference images.` }];
+    const { sceneDescription, characterImages, previousSceneImage, sceneIndex, totalScenes, style, aspectRatio, characterDNA } = params;
     
-    // Add reference images (limit to 3-4 to avoid token limits or confusion)
-    referenceImages.slice(0, 3).forEach(img => {
+    const parts: any[] = [];
+    
+    // Build the prompt with director's mindset
+    let promptText = `You are generating scene ${sceneIndex + 1} of ${totalScenes} for a ${style} storyboard.
+
+CHARACTER DNA (must match exactly):
+${characterDNA}
+
+SCENE DESCRIPTION:
+${sceneDescription}
+
+CRITICAL RULES:
+- Characters MUST look EXACTLY like the provided reference images (same face, hair, clothes, body)
+- The environment/background MUST be consistent with ${sceneIndex === 0 ? 'the scene description' : 'the previous scene image provided'}
+- Maintain the same lighting, color palette, and art style throughout
+- Style: ${style}
+- This is scene ${sceneIndex + 1} of ${totalScenes} - maintain visual continuity`;
+
+    if (sceneIndex > 0 && previousSceneImage) {
+      promptText += `\n\nIMPORTANT: The previous scene image is provided. Use it as a VISUAL REFERENCE for the environment, lighting, colors, and overall look. The new scene should feel like a continuation - same world, same style, different camera angle/moment.`;
+    }
+
+    parts.push({ text: promptText });
+    
+    // Add previous scene image as reference (most important for continuity)
+    if (previousSceneImage && sceneIndex > 0) {
+      const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
+      parts.push({ inlineData: { mimeType: 'image/png', data: prevData } });
+      parts.push({ text: 'Above is the PREVIOUS SCENE - maintain the same visual world, lighting and style.' });
+    }
+    
+    // Add character reference images
+    characterImages.slice(0, 3).forEach((img, i) => {
       const base64Data = img.includes(',') ? img.split(',')[1] : img;
-      // Assuming png for simplicity, but ideally should detect
-      const mimeType = "image/png"; 
-      parts.push({ inlineData: { mimeType, data: base64Data } });
+      parts.push({ inlineData: { mimeType: 'image/png', data: base64Data } });
+      parts.push({ text: `Character reference ${i + 1} - this character MUST look exactly like this in the scene.` });
     });
 
     try {
@@ -290,15 +329,14 @@ ${charContext}
         model: "gemini-3-pro-image-preview",
         contents: [{ role: "user", parts }],
         config: {
-            imageConfig: {
-                aspectRatio: aspectRatio
-            }
+          responseModalities: ["image", "text"],
+          imageConfig: { aspectRatio }
         }
       });
       return extractImage(result);
     } catch (error: any) {
       if (isPermissionError(error)) {
-        throw new Error("فشل توليد المشهد (403). تأكد من صلاحيات مفتاح API لنموذج gemini-3-pro-image-preview.");
+        throw new Error("فشل توليد المشهد (403). تأكد من صلاحيات مفتاح API.");
       }
       throw error;
     }
