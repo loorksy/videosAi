@@ -442,7 +442,7 @@ export default function CharacterAnimation() {
 
           {/* Aspect Ratio */}
           <p className="text-xs text-muted-foreground mb-2">الابعاد</p>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-2">
             <button
               onClick={() => setAspectRatio("9:16")}
               className={`py-3 rounded-xl border-2 text-sm font-bold flex flex-col items-center gap-1 transition-all ${aspectRatio === "9:16" ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-card text-muted-foreground hover:bg-secondary/50'}`}
@@ -458,6 +458,16 @@ export default function CharacterAnimation() {
               عرضي (YouTube)
             </button>
           </div>
+          {aspectRatio === "9:16" && selectedCharacters.length > 0 && (
+            <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg mb-4">
+              ⚠️ الصور المرجعية تعمل فقط مع الأبعاد العرضية (16:9). اختر "عرضي" للحفاظ على ملامح الشخصية.
+            </p>
+          )}
+          {aspectRatio === "16:9" && selectedCharacters.length > 0 && (
+            <p className="text-xs text-emerald-600 bg-emerald-50 p-2 rounded-lg mb-4">
+              ✓ سيتم استخدام الصور المرجعية للحفاظ على ملامح الشخصية.
+            </p>
+          )}
 
           {/* Resolution */}
           <p className="text-xs text-muted-foreground mb-2">الجودة (الدقة الاعلى تحسن ثبات الشخصية)</p>
