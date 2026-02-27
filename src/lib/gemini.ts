@@ -1,4 +1,5 @@
 import { GoogleGenAI, ThinkingLevel, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
+import { FalService } from './fal';
 
 // Polyfill for VideoGenerationReferenceType if not exported by the SDK
 const VideoGenerationReferenceType = {
