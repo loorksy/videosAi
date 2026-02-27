@@ -272,15 +272,69 @@ ${idea ? `ملاحظة المستخدم: ${idea}` : ''}
 
       {/* Step 2: Script Input & Settings */}
       {step === 'script' && (
-        <div className="space-y-6">
+        <div className="space-y-5">
+          {/* Content Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">فكرة القصة</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">نوع المحتوى</label>
+            <select
+              value={contentType}
+              onChange={(e) => setContentType(e.target.value)}
+              className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+            >
+              {contentTypes.map(ct => (
+                <option key={ct} value={ct}>{ct}</option>
+              ))}
+            </select>
+            {contentType === 'مخصص' && (
+              <input
+                value={customContentType}
+                onChange={(e) => setCustomContentType(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl mt-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                placeholder="اكتب نوع المحتوى المخصص..."
+              />
+            )}
+          </div>
+
+          {/* Story Idea */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">فكرة القصة <span className="text-slate-400 font-normal">(اختياري)</span></label>
+              <button
+                onClick={generateIdeaWithAI}
+                disabled={isGeneratingIdea}
+                className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 disabled:opacity-50"
+              >
+                {isGeneratingIdea ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                توليد فكرة بالذكاء الاصطناعي
+              </button>
+            </div>
             <textarea
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl h-32 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-              placeholder="اكتب ملخصاً قصيراً للقصة..."
+              className="w-full p-3 border border-slate-200 rounded-xl h-28 focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm"
+              placeholder="اكتب ملخصاً للقصة أو اتركه فارغاً ليقوم الذكاء الاصطناعي بتوليدها..."
             />
+          </div>
+
+          {/* Scene Count */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">عدد المشاهد: <span className="text-indigo-600 font-bold">{sceneCount}</span></label>
+            <div className="flex gap-2">
+              {[3, 4, 5, 6, 8].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setSceneCount(n)}
+                  className={cn(
+                    "flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all",
+                    sceneCount === n
+                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm"
+                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Style Selector */}
@@ -307,7 +361,7 @@ ${idea ? `ملاحظة المستخدم: ${idea}` : ''}
           {/* Aspect Ratio Selector */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">أبعاد الفيديو</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {ratios.map((r) => (
                 <button
                   key={r.id}
@@ -328,7 +382,7 @@ ${idea ? `ملاحظة المستخدم: ${idea}` : ''}
 
           <button
             onClick={generateScript}
-            disabled={!idea || isProcessing}
+            disabled={isProcessing || (contentType === 'مخصص' && !customContentType)}
             className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
