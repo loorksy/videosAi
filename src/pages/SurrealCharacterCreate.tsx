@@ -50,13 +50,23 @@ export default function SurrealCharacterCreate() {
       const images = await GeminiService.generateSurrealObject({
         objectName, emotion, style, body, limbs, hair, cameraAngle, lighting, environment, generateNormal
       });
-      setGeneratedImages(images);
-      setStep('review');
+      
+      // Validate images before setting state
+      if (!images || !images.surreal) {
+        throw new Error('لم يتم استلام صورة من الخادم');
+      }
+      
+      // Use setTimeout to prevent potential race conditions
+      setTimeout(() => {
+        setGeneratedImages(images);
+        setStep('review');
+        setIsProcessing(false);
+      }, 100);
+      
     } catch (error: any) {
-      console.error(error);
+      console.error('Generation error:', error);
       showToast(error.message || 'فشل التوليد', 'error');
       setStep('input');
-    } finally {
       setIsProcessing(false);
     }
   };
