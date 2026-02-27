@@ -330,21 +330,56 @@ export default function StoryboardView() {
                 {scene.videoClip ? (
                   <video src={scene.videoClip} controls className="w-full h-full" />
                 ) : scene.frameImage ? (
-                  <img src={scene.frameImage} className="w-full h-full object-cover opacity-90" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                  <div className="relative w-full h-full">
+                    <img src={scene.frameImage} className="w-full h-full object-cover opacity-90" />
+                    {/* Regenerate button for existing image */}
                     <button
                       onClick={() => generateImageForScene(idx)}
                       disabled={isGenerating || isAutoPilotRunning}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                      className="absolute top-2 left-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors disabled:opacity-50"
+                      title="إعادة توليد"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 gap-3">
+                    {sceneStatuses[idx] === 'failed' && (
+                      <div className="text-red-400 text-xs text-center px-4 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {sceneErrors[idx] || 'فشل التوليد'}
+                      </div>
+                    )}
+                    {sceneStatuses[idx] === 'rate_limited' && (
+                      <div className="text-amber-400 text-xs text-center px-4 flex items-center gap-1">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        انتظار... تجاوز حد الاستخدام
+                      </div>
+                    )}
+                    <button
+                      onClick={() => generateImageForScene(idx)}
+                      disabled={isGenerating || isAutoPilotRunning}
+                      className={`${sceneStatuses[idx] === 'failed' ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-2`}
                     >
                       {(isGenerating || isAutoPilotRunning) && currentGeneratingIndex === idx ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : sceneStatuses[idx] === 'failed' ? (
+                        <RefreshCw className="w-4 h-4" />
                       ) : (
                         <Film className="w-4 h-4" />
                       )}
-                      توليد صورة المشهد
+                      {sceneStatuses[idx] === 'failed' ? 'إعادة التوليد' : 'توليد صورة المشهد'}
                     </button>
+                  </div>
+                )}
+                
+                {/* Status indicator */}
+                {sceneStatuses[idx] === 'generating' && currentGeneratingIndex === idx && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                      <span className="text-sm">جاري التوليد...</span>
+                    </div>
                   </div>
                 )}
               </div>
