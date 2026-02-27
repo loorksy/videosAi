@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// الشخصيات
+model Character {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  visualTraits String?
+  type        String   @default("human") // human, creature, hybrid, surreal, funny
+  
+  // صور الشخصية - مخزنة كمسارات محلية
+  imageFront       String?
+  imageBack        String?
+  imageLeft        String?
+  imageRight       String?
+  imageThreeQuarter String?
+  imageCloseup     String?
+  imageReference   String?  // الصورة المرجعية الأصلية
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // العلاقات
+  storyboards StoryboardCharacter[]
+  scenes      SceneCharacter[]
+}
+
+// القصص
+model Storyboard {
+  id          String   @id @default(uuid())
+  title       String
+  script      String?  @db.Text
+  aspectRatio String   @default("16:9") // 16:9 or 9:16
+  style       String   @default("cinematic") // cinematic, anime, 3d, watercolor, cyberpunk
+  status      String   @default("draft") // draft, generating, completed
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // العلاقات
+  characters  StoryboardCharacter[]
+  scenes      Scene[]
+}
+
+// جدول وسيط للعلاقة بين القصص والشخصيات
+model StoryboardCharacter {
+  storyboardId String
+  characterId  String
+  
+  storyboard   Storyboard @relation(fields: [storyboardId], references: [id], onDelete: Cascade)
+  character    Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  
+  @@id([storyboardId, characterId])
+}
+
+// المشاهد
+model Scene {
+  id           String   @id @default(uuid())
+  storyboardId String
+  orderIndex   Int
+  description  String   @db.Text
+  dialogue     String?  @db.Text
+  cameraMotion String?  // static, pan, zoom, etc.
+  
+  // الوسائط المولدة
+  frameImage   String?  // مسار صورة المشهد
+  videoClip    String?  // مسار الفيديو
+  audioClip    String?  // مسار الصوت
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // العلاقات
+  storyboard   Storyboard @relation(fields: [storyboardId], references: [id], onDelete: Cascade)
+  characters   SceneCharacter[]
+}
+
+// جدول وسيط للعلاقة بين المشاهد والشخصيات
+model SceneCharacter {
+  sceneId     String
+  characterId String
+  
+  scene       Scene     @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  
+  @@id([sceneId, characterId])
+}
+
+// المعرض - لحفظ الأعمال المنتجة
+model GalleryItem {
+  id          String   @id @default(uuid())
+  title       String?
+  type        String   // video, image, thumbnail
+  filePath    String
+  sourceType  String?  // storyboard, thumbnail, product, ad
+  sourceId    String?  // معرف المصدر
+  
+  createdAt   DateTime @default(now())
+}
+
+// الإعدادات
+model Settings {
+  id        String @id @default("default")
+  apiKey    String?
+  quality   String @default("high") // low, medium, high
+  updatedAt DateTime @updatedAt
+}

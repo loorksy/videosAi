@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, User, Ghost, Smile, Cat, Dna } from 'lucide-react';
-import { db, Character } from '../lib/db';
+import { User, Ghost, Smile, Cat, Dna } from 'lucide-react';
+import { charactersApi, Character, getCharacterImage } from '../lib/api';
 
 export default function CharacterList() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -11,8 +11,12 @@ export default function CharacterList() {
   }, []);
 
   async function loadCharacters() {
-    const chars = await db.getAllCharacters();
-    setCharacters(chars.sort((a, b) => b.createdAt - a.createdAt));
+    try {
+      const chars = await charactersApi.getAll();
+      setCharacters(chars);
+    } catch (error) {
+      console.error('Failed to load characters:', error);
+    }
   }
 
   return (
@@ -40,23 +44,26 @@ export default function CharacterList() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {characters.map((char) => (
-          <div key={char.id} className="bg-card rounded-2xl overflow-hidden border border-border/60 hover:shadow-md transition-all group">
-            <div className="aspect-square bg-muted relative overflow-hidden">
-              {char.images.front ? (
-                <img src={char.images.front} alt={char.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                  <User className="w-10 h-10" />
-                </div>
-              )}
+        {characters.map((char) => {
+          const charImage = getCharacterImage(char);
+          return (
+            <div key={char.id} className="bg-card rounded-2xl overflow-hidden border border-border/60 hover:shadow-md transition-all group">
+              <div className="aspect-square bg-muted relative overflow-hidden">
+                {charImage ? (
+                  <img src={charImage} alt={char.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                    <User className="w-10 h-10" />
+                  </div>
+                )}
+              </div>
+              <div className="p-3">
+                <h3 className="font-semibold text-card-foreground truncate text-sm">{char.name}</h3>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{char.description || 'شخصية من نوع ' + char.type}</p>
+              </div>
             </div>
-            <div className="p-3">
-              <h3 className="font-semibold text-card-foreground truncate text-sm">{char.name}</h3>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{char.description}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         
         {characters.length === 0 && (
           <div className="col-span-2 py-16 text-center">

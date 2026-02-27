@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Upload, Sparkles, Check, ChevronRight, Loader2 } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
+import { Upload, Sparkles, Check, ChevronRight, Loader2 } from 'lucide-react';
 import { GeminiService } from '../lib/gemini';
-import { db, Character } from '../lib/db';
+import { charactersApi, uploadApi } from '../lib/api';
 import { cn } from '../lib/utils';
 
 export default function CharacterCreate() {
@@ -128,17 +127,45 @@ export default function CharacterCreate() {
   };
 
   const saveCharacter = async () => {
-    const character: Character = {
-      id: uuidv4(),
-      name,
-      description,
-      visualTraits: description,
-      images: generatedImages,
-      createdAt: Date.now()
-    };
-    
-    await db.saveCharacter(character);
-    navigate('/characters');
+    try {
+      // Upload images to server and get paths
+      const uploadedPaths: Record<string, string> = {};
+      
+      if (generatedImages.front) {
+        const result = await uploadApi.uploadBase64(generatedImages.front, 'characters');
+        uploadedPaths.imageFront = result.path;
+      }
+      if (generatedImages.left) {
+        const result = await uploadApi.uploadBase64(generatedImages.left, 'characters');
+        uploadedPaths.imageLeft = result.path;
+      }
+      if (generatedImages.right) {
+        const result = await uploadApi.uploadBase64(generatedImages.right, 'characters');
+        uploadedPaths.imageRight = result.path;
+      }
+      if (generatedImages.threeQuarter) {
+        const result = await uploadApi.uploadBase64(generatedImages.threeQuarter, 'characters');
+        uploadedPaths.imageThreeQuarter = result.path;
+      }
+      if (uploadedImage) {
+        const result = await uploadApi.uploadBase64(uploadedImage, 'characters');
+        uploadedPaths.imageReference = result.path;
+      }
+      
+      // Create character in database
+      await charactersApi.create({
+        name,
+        description,
+        visualTraits: description,
+        type: 'human',
+        ...uploadedPaths,
+      });
+      
+      navigate('/characters');
+    } catch (error) {
+      console.error('Failed to save character:', error);
+      alert('فشل حفظ الشخصية. تأكد من تشغيل السيرفر.');
+    }
   };
 
   return (

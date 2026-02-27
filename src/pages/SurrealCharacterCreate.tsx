@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Check, ChevronRight, Loader2, Ghost, Download, RefreshCw, Wand2, LayoutGrid, Settings2 } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
+import { Sparkles, ChevronRight, Loader2, Ghost, Download, Wand2, LayoutGrid, Settings2 } from 'lucide-react';
 import { GeminiService } from '../lib/gemini';
-import { db, Character } from '../lib/db';
+import { charactersApi, uploadApi } from '../lib/api';
 import { cn } from '../lib/utils';
 import { surrealTrends } from '../lib/surrealTrends';
 import { CustomSelect } from '../components/CustomSelect';
@@ -130,20 +129,32 @@ export default function SurrealCharacterCreate() {
 
   const saveCharacter = async () => {
     if (!generatedImages?.surreal) return;
-    const character: Character = {
-      id: uuidv4(),
-      name: objectName,
-      description: `Surreal object: ${objectName}, Emotion: ${emotion}, Style: ${style}`,
-      visualTraits: `Surreal anthropomorphic ${objectName} with a ${emotion} face in ${style} style. Body: ${body}, Limbs: ${limbs}, Hair: ${hair}, Camera: ${cameraAngle}, Lighting: ${lighting}, Environment: ${environment}.`,
-      images: {
-        front: generatedImages.surreal,
-        normal: generatedImages.normal
-      },
-      createdAt: Date.now()
-    };
     
-    await db.saveCharacter(character);
-    navigate('/characters');
+    try {
+      // Upload images to server
+      const uploadedPaths: Record<string, string> = {};
+      
+      const surrealResult = await uploadApi.uploadBase64(generatedImages.surreal, 'characters');
+      uploadedPaths.imageFront = surrealResult.path;
+      
+      if (generatedImages.normal) {
+        const normalResult = await uploadApi.uploadBase64(generatedImages.normal, 'characters');
+        uploadedPaths.imageReference = normalResult.path;
+      }
+      
+      await charactersApi.create({
+        name: objectName,
+        description: `Surreal object: ${objectName}, Emotion: ${emotion}, Style: ${style}`,
+        visualTraits: `Surreal anthropomorphic ${objectName} with a ${emotion} face in ${style} style. Body: ${body}, Limbs: ${limbs}, Hair: ${hair}, Camera: ${cameraAngle}, Lighting: ${lighting}, Environment: ${environment}.`,
+        type: 'surreal',
+        ...uploadedPaths,
+      });
+      
+      navigate('/characters');
+    } catch (error) {
+      console.error('Failed to save character:', error);
+      showToast('فشل حفظ الشخصية. تأكد من تشغيل السيرفر.', 'error');
+    }
   };
 
   return (
