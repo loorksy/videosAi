@@ -382,26 +382,59 @@ RULES:
   async generateVideoClip(startFrame: string, endFrame: string, aspectRatio: '16:9' | '9:16' = '16:9', cameraMotion?: string): Promise<string> {
     try {
       const ai = getAI();
-      const startBase64 = startFrame.includes(',') ? startFrame.split(',')[1] : startFrame;
-      const startMime = "image/png"; // Simplified
       
-      const endBase64 = endFrame.includes(',') ? endFrame.split(',')[1] : endFrame;
-      const endMime = "image/png";
+      // Helper function to convert URL or data URL to base64
+      const toBase64 = async (imageSource: string): Promise<{ base64: string; mimeType: string }> => {
+        // If it's already a data URL
+        if (imageSource.startsWith('data:')) {
+          const matches = imageSource.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            return { base64: matches[2], mimeType: matches[1] };
+          }
+        }
+        
+        // If it's a URL, fetch and convert
+        if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+          const response = await fetch(imageSource);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          const blob = await response.blob();
+          const mimeType = blob.type || 'image/png';
+          
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              const base64 = result.split(',')[1];
+              resolve({ base64, mimeType });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+        
+        // Assume it's already base64
+        return { base64: imageSource, mimeType: 'image/png' };
+      };
+      
+      const startData = await toBase64(startFrame);
+      const endData = await toBase64(endFrame);
 
       let operation = await ai.models.generateVideos({
         model: 'veo-3.1-fast-generate-preview',
         prompt: cameraMotion ? `Camera motion: ${cameraMotion}` : undefined,
         image: {
-          imageBytes: startBase64,
-          mimeType: startMime,
+          imageBytes: startData.base64,
+          mimeType: startData.mimeType,
         },
         config: {
           numberOfVideos: 1,
           resolution: '720p',
           aspectRatio: aspectRatio,
           lastFrame: {
-            imageBytes: endBase64,
-            mimeType: endMime
+            imageBytes: endData.base64,
+            mimeType: endData.mimeType
           }
         }
       });
@@ -434,13 +467,20 @@ RULES:
         reader.readAsDataURL(blob);
       });
     } catch (error: any) {
-
+      console.error("[v0] Video generation error:", error);
+      
       if (isRateLimitError(error)) handleCommonErrors(error, "");
       if (isPermissionError(error)) {
         throw new Error("فشل توليد الفيديو (403). نموذج veo-3.1-fast-generate-preview يتطلب مشروع Google Cloud مدفوع (Paid Billing). تأكد من تفعيل الفوترة و Generative Language API.");
       }
       if (error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
         throw new Error("نموذج veo-3.1-fast-generate-preview غير متاح. تأكد من أن مشروعك يدعم نماذج Veo.");
+      }
+      if (error?.message?.includes('Failed to fetch image')) {
+        throw new Error("فشل تحميل الصورة. تأكد من أن صور المشاهد محفوظة بشكل صحيح.");
+      }
+      if (error?.message?.includes('CORS') || error?.message?.includes('cross-origin')) {
+        throw new Error("خطأ في تحميل الصورة بسبب قيود CORS. حاول إعادة توليد الصور.");
       }
       throw new Error(`فشل توليد الفيديو: ${error?.message || 'خطأ غير معروف'}`);
     }
