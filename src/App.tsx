@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Users, Clapperboard, Film, Plus, Settings } from 'lucide-react';
+import { Users, Clapperboard, Film, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from './lib/utils';
+import Login from './pages/Login';
 import Home from './pages/Home';
 import CharacterList from './pages/CharacterList';
 import CharacterCreate from './pages/CharacterCreate';
@@ -47,7 +48,7 @@ function NavItem({ to, icon: Icon, label }: { to: string; icon: any; label: stri
   );
 }
 
-export default function App() {
+function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
   return (
     <Router>
       <div className="flex flex-col h-screen overflow-hidden bg-background font-sans">
@@ -70,7 +71,7 @@ export default function App() {
             <Route path="/storyboards/new" element={<StoryboardCreate />} />
             <Route path="/storyboards/:id" element={<StoryboardView />} />
             <Route path="/gallery" element={<VideoGallery />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<SettingsPage onLogout={onLogout} />} />
           </Routes>
         </main>
         
@@ -87,4 +88,37 @@ export default function App() {
       </div>
     </Router>
   );
+}
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const auth = localStorage.getItem('isAuthenticated');
+    setIsAuthenticated(auth === 'true');
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    setIsAuthenticated(false);
+  };
+
+  // Loading state
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="w-10 h-10 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  return <AuthenticatedApp onLogout={handleLogout} />;
 }
