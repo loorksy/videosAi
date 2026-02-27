@@ -24,16 +24,21 @@ const isRateLimitError = (error: any) => {
   return error.message?.includes('429') || error.status === 429 || error.message?.includes('RESOURCE_EXHAUSTED');
 };
 
+const isNetworkError = (error: any) => {
+  return error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError') || error.message?.includes('network') || error.name === 'TypeError';
+};
+
 const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3, baseDelayMs = 2000): Promise<T> => {
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
       return await fn();
     } catch (error: any) {
-      if (isRateLimitError(error) && attempt < maxRetries - 1) {
+      const shouldRetry = isRateLimitError(error) || isNetworkError(error);
+      if (shouldRetry && attempt < maxRetries - 1) {
         attempt++;
-        const delay = baseDelayMs * Math.pow(2, attempt - 1); // Exponential backoff: 2s, 4s
-        console.warn(`Rate limit hit. Retrying in ${delay}ms... (Attempt ${attempt} of ${maxRetries - 1})`);
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        console.warn(`Retrying in ${delay}ms (attempt ${attempt}/${maxRetries - 1}): ${error.message}`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         throw error;
