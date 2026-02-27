@@ -7,6 +7,7 @@ import { db, Character } from '../lib/db';
 import { cn } from '../lib/utils';
 import { surrealTrends } from '../lib/surrealTrends';
 import { CustomSelect } from '../components/CustomSelect';
+import { useToast } from '../components/Toast';
 
 export default function SurrealCharacterCreate() {
   const navigate = useNavigate();
