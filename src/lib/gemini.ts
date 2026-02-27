@@ -117,6 +117,18 @@ const extractImage = (result: any) => {
 };
 
 export const GeminiService = {
+  // Generate a story idea using AI
+  async generateStoryIdea(charNames: string[], genre: string, hint?: string): Promise<string> {
+    const ai = getAI();
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: `أنت كاتب سيناريو محترف. اكتب فكرة قصة قصيرة (3-4 جمل) من نوع "${genre}" تتضمن الشخصيات التالية: ${charNames.join(' و ')}.
+${hint ? `ملاحظة المستخدم: ${hint}` : ''}
+اكتب الفكرة بالعربية فقط. لا تكتب أي شيء آخر غير الفكرة.` }] }],
+    });
+    return result.text?.trim() || '';
+  },
+
   async testConnection(): Promise<boolean> {
     try {
       const ai = getAI();
