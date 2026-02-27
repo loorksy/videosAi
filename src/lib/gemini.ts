@@ -1620,6 +1620,7 @@ The character should be instantly recognizable as the same ${typeDesc} from the 
         config: {
           responseModalities: ["image", "text"],
           temperature: 0.7,
+          safetySettings: PERMISSIVE_SAFETY_SETTINGS,
         }
       });
       results.front = extractImage(frontResult);
