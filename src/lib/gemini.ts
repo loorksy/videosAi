@@ -1,10 +1,19 @@
-import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
 
 // Polyfill for VideoGenerationReferenceType if not exported by the SDK
 const VideoGenerationReferenceType = {
   ASSET: "ASSET",
   STYLE: "STYLE",
 } as const;
+
+// Safety settings - BLOCK_NONE for maximum flexibility
+// These allow adult content but still block illegal content (CSAM, etc.)
+const PERMISSIVE_SAFETY_SETTINGS = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+];
 
 const getAI = () => {
   const storedKey = localStorage.getItem('GEMINI_API_KEY');
