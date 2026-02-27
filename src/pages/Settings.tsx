@@ -175,6 +175,18 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
           </p>
         </div>
       </div>
+
+      {/* Logout Button */}
+      {onLogout && (
+        <button
+          onClick={onLogout}
+          className="w-full py-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+          data-testid="logout-button"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>تسجيل الخروج</span>
+        </button>
+      )}
     </div>
   );
 }
