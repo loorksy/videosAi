@@ -60,6 +60,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
             <Route path="/" element={<Home />} />
             <Route path="/characters" element={<CharacterList />} />
             <Route path="/characters/new" element={<CharacterCreate />} />
+            <Route path="/character-sheet/new" element={<CharacterSheetCreate />} />
             <Route path="/surreal-characters/new" element={<SurrealCharacterCreate />} />
             <Route path="/funny-humans/new" element={<FunnyHumanCreate />} />
             <Route path="/creature-characters/new" element={<CreatureCharacterCreate />} />
