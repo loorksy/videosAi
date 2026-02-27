@@ -13,7 +13,30 @@ const getAI = () => {
     throw new Error("مفتاح Gemini API مفقود. الرجاء إدخاله في صفحة الإعدادات.");
   }
   
-  return new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey });
+  
+  // Wrap generateContent with automatic retry on network/rate limit errors
+  const originalGenerateContent = ai.models.generateContent.bind(ai.models);
+  ai.models.generateContent = async (...args: any[]) => {
+    let lastError: any;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await originalGenerateContent(...args);
+      } catch (error: any) {
+        lastError = error;
+        if ((isNetworkError(error) || isRateLimitError(error)) && attempt < 2) {
+          const delay = 2000 * Math.pow(2, attempt);
+          console.warn(`Retry ${attempt + 1}/2 in ${delay}ms: ${error.message}`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw lastError;
+  };
+  
+  return ai;
 };
 
 const isPermissionError = (error: any) => {
