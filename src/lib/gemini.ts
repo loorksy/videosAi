@@ -1,5 +1,4 @@
 import { GoogleGenAI, ThinkingLevel, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
-import { KieService } from './kie';
 
 // Polyfill for VideoGenerationReferenceType if not exported by the SDK
 const VideoGenerationReferenceType = {
