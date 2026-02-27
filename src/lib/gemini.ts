@@ -315,10 +315,9 @@ ${charContext}
    - "dialogue": الحوار بالعربية (فارغ إن لم يوجد)`;
 
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
-          thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -345,7 +344,7 @@ ${charContext}
       return JSON.parse(jsonString);
     } catch (error: any) {
       if (isPermissionError(error)) {
-        throw new Error("فشل توليد السيناريو (403). تأكد من أن المفتاح العام لديه صلاحية الوصول لنموذج gemini-3.1-pro-preview.");
+        throw new Error("فشل توليد السيناريو (403). تأكد من أن المفتاح لديه صلاحية الوصول لنموذج gemini-3-flash.");
       }
       throw error;
     }
@@ -929,7 +928,7 @@ RULES:
       - hair: (e.g., "شعر أسود قصير ومجعد", "شعر أشقر طويل ومموج", "أصلع مع لحية كثيفة", "تسريحة ذيل حصان")
       - eyeColor: (e.g., "بني غامق", "أزرق فاتح", "أخضر زمردي", "عسلي")
       - bodyType: (e.g., "رياضي مفتول العضلات", "نحيف", "متوسط البنية", "ممتلئ")
-      - clothing: (e.g., "ملابس سايبربانك مستقبلية مضيئة", "بدلة رسمية أنيقة", "ملابس كاجوال يومية", "درع فارس من العصور الوسطى", "ملابس نينجا")
+      - clothing: (e.g., "ملابس سايبربانك مستقبلية مضيئة", "بدلة رسمية أنيقة", "ملابس كاجوال يومية", "درع فارس من ال��صور الوسطى", "ملابس نينجا")
       - expression: (e.g., "نظرة حادة وواثقة", "ابتسامة لطيفة", "ملامح غاضبة وجادة", "نظر�� حزينة")
       - style: (e.g., "واقعي جداً (Hyperrealistic)", "أنمي (Anime)", "بيكسار 3D (Pixar 3D)", "سينمائي (Cinematic)")
       - environment: (e.g., "شارع مدينة ممطر ليلاً", "خلفية استوديو رمادية", "غابة مشمسة", "مقهى كلاسيكي")
