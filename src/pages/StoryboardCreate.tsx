@@ -60,29 +60,9 @@ export default function StoryboardCreate() {
     setIsGeneratingIdea(true);
     try {
       const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
-      const charNames = selectedChars.map(c => c.name).join(' و ');
+      const charNames = selectedChars.map(c => c.name);
       const genre = contentType === 'مخصص' ? customContentType : contentType;
-      
-      const ai = GeminiService;
-      const result = await (window as any).__genAI_instance || (() => {
-        // Use GeminiService directly
-        return null;
-      })();
-      
-      // Generate idea using Gemini
-      const { GoogleGenAI } = await import('@google/genai');
-      const apiKey = localStorage.getItem('GEMINI_API_KEY');
-      if (!apiKey) throw new Error('مفتاح API مفقود');
-      const genai = new GoogleGenAI({ apiKey });
-      
-      const res = await genai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: `أنت كاتب سيناريو محترف. اكتب فكرة قصة قصيرة (3-4 جمل) من نوع "${genre}" تتضمن الشخصيات التالية: ${charNames}.
-${idea ? `ملاحظة المستخدم: ${idea}` : ''}
-اكتب الفكرة بالعربية فقط. لا تكتب أي شيء آخر غير الفكرة.` }] }],
-      });
-      
-      const generatedIdea = res.text?.trim();
+      const generatedIdea = await GeminiService.generateStoryIdea(charNames, genre, idea || undefined);
       if (generatedIdea) setIdea(generatedIdea);
     } catch (error: any) {
       console.error('Failed to generate idea:', error);
