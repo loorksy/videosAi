@@ -318,24 +318,30 @@ ${charContext}
     
     const parts: any[] = [];
     
-    // Build the prompt with director's mindset
-    let promptText = `You are generating scene ${sceneIndex + 1} of ${totalScenes} for a ${style} storyboard.
+    // Build the prompt with director's mindset - continuous shots
+    let promptText = `You are generating scene ${sceneIndex + 1} of ${totalScenes} for a ${style} storyboard. Each scene is an 8-second shot in a continuous sequence.
 
-CHARACTER DNA (must match exactly):
+CHARACTER DNA (must match exactly in every scene):
 ${characterDNA}
 
-SCENE DESCRIPTION:
+SCENE ${sceneIndex + 1} DESCRIPTION:
 ${sceneDescription}
 
 CRITICAL RULES:
-- Characters MUST look EXACTLY like the provided reference images (same face, hair, clothes, body)
-- The environment/background MUST be consistent with ${sceneIndex === 0 ? 'the scene description' : 'the previous scene image provided'}
-- Maintain the same lighting, color palette, and art style throughout
+- Characters MUST look EXACTLY like the provided reference images (same face, hair, clothes, body proportions, colors)
 - Style: ${style}
-- This is scene ${sceneIndex + 1} of ${totalScenes} - maintain visual continuity`;
+- This is a CONTINUOUS SEQUENCE - scene ${sceneIndex + 1} of ${totalScenes}`;
 
-    if (sceneIndex > 0 && previousSceneImage) {
-      promptText += `\n\nIMPORTANT: The previous scene image is provided. Use it as a VISUAL REFERENCE for the environment, lighting, colors, and overall look. The new scene should feel like a continuation - same world, same style, different camera angle/moment.`;
+    if (sceneIndex === 0) {
+      promptText += `\n\nThis is the ESTABLISHING SHOT (Scene 1). Set the environment, lighting, and mood. Every subsequent scene will reference this image for visual consistency.`;
+    } else if (previousSceneImage) {
+      promptText += `\n\nCRITICAL - CONTINUITY FROM PREVIOUS SCENE:
+- The previous scene image is provided below. This new scene is the NEXT MOMENT in time (8 seconds later).
+- SAME location, SAME lighting, SAME color palette, SAME weather/sky
+- Characters should have MOVED slightly from their previous positions (natural progression)
+- Camera angle has changed as described, but the WORLD is identical
+- If a character was walking left, they should now be further left
+- Match the exact same background elements (buildings, trees, objects)`;
     }
 
     parts.push({ text: promptText });
