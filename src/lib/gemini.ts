@@ -1196,25 +1196,25 @@ ${sanitizedPrompt}`;
       console.error('Veo generation error:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
 
-      // Check if fal.ai is configured as fallback
+      // Check if kie.ai is configured as fallback
       const isSafetyBlock = error?.message?.includes('safety') || 
                            error?.message?.includes('blocked') ||
                            error?.message?.includes('policy') ||
                            error?.message?.includes('SAFETY') ||
                            error?.message?.includes('لم يتم ارجاع رابط الفيديو');
       
-      if (isSafetyBlock && FalService.isConfigured()) {
-        console.log('Veo blocked by content policy, trying fal.ai Kling as fallback...');
+      if (isSafetyBlock && KieService.isConfigured()) {
+        console.log('Veo blocked by content policy, trying kie.ai as fallback...');
         try {
-          const falResult = await FalService.generateCharacterVideo({
+          const kieResult = await KieService.generateCharacterVideo({
             referenceImages: selectedImages,
             prompt: sanitizedPrompt,
             aspectRatio: aspectRatio,
           });
-          return falResult;
-        } catch (falError: any) {
-          console.error('fal.ai fallback also failed:', falError);
-          throw new Error(`فشل Veo و fal.ai: ${falError.message}`);
+          return kieResult;
+        } catch (kieError: any) {
+          console.error('kie.ai fallback also failed:', kieError);
+          throw new Error(`فشل Veo و kie.ai: ${kieError.message}`);
         }
       }
 
@@ -1227,9 +1227,9 @@ ${sanitizedPrompt}`;
         throw new Error("خطأ في المعاملات. تأكد من أن الصور المرجعية بصيغة صحيحة.");
       }
       
-      // If safety block but fal.ai not configured, suggest it
+      // If safety block but kie.ai not configured, suggest it
       if (isSafetyBlock) {
-        throw new Error("تم حظر المحتوى من Veo. أضف مفتاح fal.ai في الإعدادات لاستخدامه كبديل.");
+        throw new Error("تم حظر المحتوى من Veo. أضف مفتاح kie.ai في الإعدادات لاستخدامه كبديل.");
       }
       
       handleCommonErrors(error, `فشل تحريك الشخصية: ${error?.message || 'خطأ غير معروف'}`);
