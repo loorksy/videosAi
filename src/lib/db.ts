@@ -7,9 +7,12 @@ export interface Character {
   visualTraits: string; // JSON string or text description of visual traits
   images: {
     front?: string;
+    back?: string;
+    closeup?: string;
     left?: string;
     right?: string;
     threeQuarter?: string;
+    reference?: string; // Original uploaded reference image
   };
   createdAt: number;
 }
