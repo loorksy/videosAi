@@ -82,21 +82,61 @@ export default function StoryboardCreate() {
     
     const newScenes = [...scenes];
     const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
+    
+    // Build character DNA string
+    const characterDNA = selectedChars.map(c => 
+      `${c.name}: ${c.visualTraits || c.description}`
+    ).join('\n');
+
+    // Collect ALL character reference images
+    const allCharImages: string[] = [];
+    for (const char of selectedChars) {
+      const imgs = char.images as Record<string, string | undefined>;
+      for (const value of Object.values(imgs)) {
+        if (value && typeof value === 'string' && value.length > 100) {
+          allCharImages.push(value);
+          break; // one per character
+        }
+      }
+    }
 
     try {
+      let previousSceneImage: string | undefined;
+
       for (let i = 0; i < newScenes.length; i++) {
-        setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...`);
+        setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i > 0 ? ' (مع مرجع المشهد السابق)' : ' (المشهد المرجعي الأساسي)'}`);
         
         const scene = newScenes[i];
-        // Get reference images for characters in this scene
-        const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
-        const refImages = sceneChars.map(c => c.images.front || c.images.threeQuarter || '').filter(Boolean);
         
-        // Generate frame
-        const styledDescription = `${scene.description}. Art Style: ${style}. Aspect Ratio: ${aspectRatio}.`;
-        const frameImage = await GeminiService.generateStoryboardFrame(styledDescription, refImages, aspectRatio);
-        newScenes[i].frameImage = frameImage;
-        setScenes([...newScenes]); // Update UI progressively
+        // Get character images specific to this scene
+        const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
+        const sceneCharImages = sceneChars.length > 0 ? sceneChars.map(c => {
+          const imgs = c.images as Record<string, string | undefined>;
+          return Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100) || '';
+        }).filter(Boolean) : allCharImages;
+
+        try {
+          const frameImage = await GeminiService.generateStoryboardFrame({
+            sceneDescription: scene.description,
+            characterImages: sceneCharImages,
+            previousSceneImage,
+            sceneIndex: i,
+            totalScenes: newScenes.length,
+            style,
+            aspectRatio,
+            characterDNA,
+          });
+          
+          newScenes[i].frameImage = frameImage;
+          previousSceneImage = frameImage; // Pass to next scene as reference
+          setScenes([...newScenes]);
+        } catch (sceneError: any) {
+          console.error(`Scene ${i + 1} failed:`, sceneError);
+          // Mark as failed but continue to next scene
+          newScenes[i].frameImage = undefined;
+          setScenes([...newScenes]);
+          // Don't break - continue generating remaining scenes
+        }
       }
       setStep('preview');
     } catch (error) {
