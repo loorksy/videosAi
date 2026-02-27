@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Check, ChevronRight, Loader2, Ghost, Download, RefreshCw, Wand2, LayoutGrid, Settings2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,6 +30,13 @@ export default function SurrealCharacterCreate() {
   const [generatedImages, setGeneratedImages] = useState<{surreal: string, normal?: string} | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  // Handle image load error
+  const handleImageError = useCallback(() => {
+    setImageLoadError(true);
+    showToast('فشل تحميل الصورة', 'error');
+  }, [showToast]);
 
   // Options
   const emotions = ['Creepy / مخيف', 'Crying / يبكي', 'Smiling / يبتسم', 'Angry / غاضب', 'Shocked / مصدوم', 'Disgusted / مشمئز'];
