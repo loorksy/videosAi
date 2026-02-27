@@ -302,10 +302,11 @@ ${charContext}
     }
   },
 
-  // 4. Generate Storyboard Frame - uses previous scene image + character refs for consistency
+  // 4. Generate Storyboard Frame - character refs + first scene + previous scene for max consistency
   async generateStoryboardFrame(params: {
     sceneDescription: string;
     characterImages: string[];
+    firstSceneImage?: string;
     previousSceneImage?: string;
     sceneIndex: number;
     totalScenes: number;
@@ -314,24 +315,34 @@ ${charContext}
     characterDNA: string;
   }): Promise<string> {
     const ai = getAI();
-    const { sceneDescription, characterImages, previousSceneImage, sceneIndex, totalScenes, style, aspectRatio, characterDNA } = params;
+    const { sceneDescription, characterImages, firstSceneImage, previousSceneImage, sceneIndex, totalScenes, style, aspectRatio, characterDNA } = params;
     
     const parts: any[] = [];
     
     // === STEP 1: Character reference images FIRST (highest priority) ===
     if (characterImages.length > 0) {
       parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
-      characterImages.slice(0, 3).forEach((img, i) => {
+      characterImages.slice(0, 3).forEach((img) => {
         const base64Data = img.includes(',') ? img.split(',')[1] : img;
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
       });
     }
 
-    // === STEP 2: Previous scene image for environment continuity ===
-    if (previousSceneImage && sceneIndex > 0) {
-      parts.push({ text: `\nPREVIOUS SCENE (the moment right before this scene). Keep the EXACT same environment, lighting, colors, and background:` });
-      const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
-      parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
+    // === STEP 2: Scene reference images ===
+    if (sceneIndex > 0) {
+      // Always include FIRST scene (establishing shot) as base reference
+      if (firstSceneImage) {
+        parts.push({ text: `\nESTABLISHING SHOT (Scene 1) - BASE REFERENCE for the entire story. Same world, art style, color palette:` });
+        const firstData = firstSceneImage.includes(',') ? firstSceneImage.split(',')[1] : firstSceneImage;
+        parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
+      }
+      
+      // Include PREVIOUS scene for direct continuity (skip if same as first)
+      if (previousSceneImage && previousSceneImage !== firstSceneImage) {
+        parts.push({ text: `\nPREVIOUS SCENE (Scene ${sceneIndex}) - Continue directly from here:` });
+        const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
+        parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
+      }
     }
 
     // === STEP 3: Scene description ===
@@ -345,7 +356,7 @@ ${sceneDescription}
 
 RULES:
 - The characters MUST be identical copies of the reference images above. Do NOT redesign them.
-- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly.' : 'Continue from the previous scene image. Same location, same lighting, 8 seconds later.'}`;
+- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly.' : 'Continue from the scene images above. Same location, same lighting, same world.'}`;
 
     parts.push({ text: promptText });
 
