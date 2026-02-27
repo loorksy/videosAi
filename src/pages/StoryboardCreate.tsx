@@ -299,21 +299,26 @@ export default function StoryboardCreate() {
           {/* Scene Count */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">عدد المشاهد: <span className="text-indigo-600 font-bold">{sceneCount}</span></label>
-            <div className="flex gap-2">
-              {[3, 4, 5, 6, 8].map(n => (
-                <button
-                  key={n}
-                  onClick={() => setSceneCount(n)}
-                  className={cn(
-                    "flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all",
-                    sceneCount === n
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
-                  )}
-                >
-                  {n}
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={2}
+                max={60}
+                value={sceneCount}
+                onChange={(e) => setSceneCount(Number(e.target.value))}
+                className="flex-1 accent-indigo-600"
+              />
+              <input
+                type="number"
+                min={2}
+                max={60}
+                value={sceneCount}
+                onChange={(e) => {
+                  const v = Math.min(60, Math.max(2, Number(e.target.value) || 2));
+                  setSceneCount(v);
+                }}
+                className="w-16 p-2 border border-slate-200 rounded-lg text-center text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
             </div>
           </div>
 
