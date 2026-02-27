@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2 } from 'lucide-react';
+import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle } from 'lucide-react';
 import { db, Storyboard, Scene } from '../lib/db';
 import { GeminiService } from '../lib/gemini';
+
+// Scene status type
+type SceneStatus = 'pending' | 'generating' | 'success' | 'failed' | 'rate_limited';
 
 export default function StoryboardView() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +17,8 @@ export default function StoryboardView() {
   const [autoPilotStatus, setAutoPilotStatus] = useState('');
   const [currentGeneratingIndex, setCurrentGeneratingIndex] = useState(-1);
   const [cameraMotion, setCameraMotion] = useState('Static');
+  const [sceneStatuses, setSceneStatuses] = useState<Record<number, SceneStatus>>({});
+  const [sceneErrors, setSceneErrors] = useState<Record<number, string>>({});
 
   const cameraMotions = [
     { value: 'Static', label: 'ثابت' },
