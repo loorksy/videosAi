@@ -1275,7 +1275,7 @@ Output a JSON object:
 - "dialogueSuggestion": Suggested dialogue lines in ${dialogueLanguage} with character emotion directions`;
 
     try {
-      const result = await ai.models.generateContent({
+      const result = await withRetry(() => ai.models.generateContent({
         model: "gemini-3.1-pro-preview",
         contents: [{ role: "user", parts: [{ text: textPrompt }] }],
         config: {
@@ -1293,7 +1293,7 @@ Output a JSON object:
             required: ["title", "prompt", "scenes", "cameraMovements", "mood", "dialogueSuggestion"]
           }
         }
-      });
+      }));
       const text = result.text;
       if (!text) throw new Error("لم يتم استلام رد من النموذج. حاول مرة اخرى.");
       const jsonString = text.replace(/```json\n?|\n?```/g, "").trim();
@@ -1304,7 +1304,7 @@ Output a JSON object:
       if (isRateLimitError(error)) handleCommonErrors(error, "");
       if (isPermissionError(error)) throw new Error("فشل توليد الفكرة (403). تاكد من صلاحيات المفتاح.");
       if (error instanceof SyntaxError) throw new Error("فشل تحليل رد النموذج. حاول مرة اخرى.");
-      handleCommonErrors(error, `فشل توليد فكرة الفيديو: ${error?.message || 'خطا غي�� معروف'}`);
+      handleCommonErrors(error, `فشل توليد فكرة الفيديو: ${error?.message || 'خطأ غير معروف'}`);
       throw error;
     }
   },
