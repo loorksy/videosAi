@@ -1186,7 +1186,6 @@ export const GeminiService = {
           referenceImages: refImages,
           resolution,
           aspectRatio: '16:9',
-          personGeneration: 'allow_all',
         }
       });
 
@@ -1209,7 +1208,6 @@ export const GeminiService = {
           numberOfVideos: 1,
           resolution,
           aspectRatio,
-          personGeneration: 'allow_all',
         }
       });
 
