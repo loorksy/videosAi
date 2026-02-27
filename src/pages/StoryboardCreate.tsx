@@ -17,8 +17,8 @@ export default function StoryboardCreate() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
 
-  // New Professional Options
-  const [style, setStyle] = useState('Cinematic Realistic');
+  // New Professional Options - Default to kid-friendly style
+  const [style, setStyle] = useState('Pixar 3D Animation - High quality CGI, emotional storytelling, detailed textures, cinematic lighting, Pixar movie quality');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [contentType, setContentType] = useState('قصة درامية');
   const [customContentType, setCustomContentType] = useState('');
@@ -32,20 +32,71 @@ export default function StoryboardCreate() {
     'سيرة ذاتية', 'اجتماعي', 'مخصص',
   ];
 
-  const styles = [
-    { value: 'Cinematic Realistic', label: 'سينمائي واقعي' },
-    { value: 'Cinematic', label: 'سينمائي' },
-    { value: 'Anime', label: 'أنمي' },
-    { value: 'Pixar 3D Animation', label: 'بيكسار / 3D كرتوني' },
-    { value: '3D Render Realistic', label: 'ثلاثي الأبعاد واقعي' },
-    { value: 'Watercolor', label: 'ألوان مائية' },
-    { value: 'Oil Painting', label: 'رسم زيتي' },
-    { value: 'Comic Book', label: 'كوميك / مانجا' },
-    { value: 'Cyberpunk Neon', label: 'سايبربانك' },
-    { value: 'Fantasy Epic', label: 'فانتازيا ملحمية' },
-    { value: 'Horror Dark', label: 'رعب مظلم' },
-    { value: 'Minimalist Clean', label: 'بسيط ونظيف' }
+  // Style categories for better organization
+  const styleCategories = [
+    {
+      category: 'قنوات الأطفال',
+      styles: [
+        { value: 'Cocomelon 3D Style - Bright colorful 3D animation, round cute characters, vibrant saturated colors, soft lighting, educational kids content style', label: 'كوكوميلون (3D ملون)' },
+        { value: 'Baby Shark Style - Cute 3D animated characters, ocean theme, bright cheerful colors, simple shapes, child-friendly cartoon', label: 'بيبي شارك' },
+        { value: 'Peppa Pig Style - Simple 2D flat animation, pastel colors, minimalist design, outlined characters, British cartoon style', label: 'بيبا بيج (2D بسيط)' },
+        { value: 'Bluey Style - Warm 2D animation, Australian family style, soft watercolor textures, heartwarming cartoon', label: 'بلوي (عائلي دافئ)' },
+        { value: 'Paw Patrol Style - 3D CGI animation, heroic puppies, action cartoon for kids, bright primary colors', label: 'باو باترول (أبطال)' },
+        { value: 'Numberblocks Style - Educational 3D blocks, math learning, colorful geometric shapes, BBC kids style', label: 'نمبربلوكس (تعليمي)' },
+        { value: 'Sesame Street Style - Friendly muppet style, educational warm colors, inclusive diverse characters, PBS kids', label: 'شارع سمسم' },
+      ]
+    },
+    {
+      category: 'ديزني وبيكسار',
+      styles: [
+        { value: 'Pixar 3D Animation - High quality CGI, emotional storytelling, detailed textures, cinematic lighting, Pixar movie quality', label: 'بيكسار (جودة سينمائية)' },
+        { value: 'Disney 2D Classic - Traditional hand-drawn animation, fairy tale style, magical atmosphere, classic Disney', label: 'ديزني كلاسيكي (2D)' },
+        { value: 'Disney 3D Modern - Modern Disney CGI, expressive characters, detailed hair and fabric, Tangled/Frozen style', label: 'ديزني حديث (3D)' },
+        { value: 'DreamWorks Style - Stylized 3D animation, comedic expressions, dynamic poses, Shrek/Kung Fu Panda style', label: 'دريم ووركس' },
+      ]
+    },
+    {
+      category: 'أنمي ياباني',
+      styles: [
+        { value: 'Studio Ghibli Style - Hand-painted backgrounds, soft ethereal lighting, nature themes, Miyazaki masterpiece quality', label: 'ستوديو جيبلي' },
+        { value: 'Modern Anime Style - Sharp clean lines, vibrant colors, dynamic action poses, seasonal anime quality', label: 'أنمي حديث' },
+        { value: 'Chibi Kawaii Style - Super deformed cute characters, big eyes, pastel colors, Japanese kawaii aesthetic', label: 'تشيبي كاواي' },
+        { value: 'Shonen Anime Style - Action-oriented, dramatic lighting, intense expressions, battle anime style', label: 'شونين (أكشن)' },
+      ]
+    },
+    {
+      category: 'كرتون أمريكي',
+      styles: [
+        { value: 'Cartoon Network Style - Bold outlines, exaggerated expressions, vibrant flat colors, Adventure Time/Gumball style', label: 'كرتون نتورك' },
+        { value: 'Nickelodeon Style - Energetic animation, wild expressions, bright neon colors, SpongeBob style', label: 'نيكلودين' },
+        { value: 'Adult Swim Style - Stylized adult animation, dark humor aesthetic, Rick and Morty/Archer style', label: 'أدلت سويم (للكبار)' },
+        { value: 'Looney Tunes Classic - Vintage cartoon style, slapstick animation, classic American cartoon', label: 'لوني تونز كلاسيكي' },
+      ]
+    },
+    {
+      category: 'سينمائي واقعي',
+      styles: [
+        { value: 'Cinematic Realistic - Photorealistic, movie quality, dramatic lighting, Hollywood blockbuster style', label: 'سينمائي واقعي' },
+        { value: 'Netflix Drama Style - High production value, moody lighting, prestige TV aesthetic', label: 'دراما نتفليكس' },
+        { value: 'Documentary Style - Realistic footage look, natural lighting, educational documentary', label: 'وثائقي' },
+        { value: 'Horror Cinematic - Dark atmospheric, suspenseful lighting, horror movie aesthetic', label: 'رعب سينمائي' },
+      ]
+    },
+    {
+      category: 'فني وإبداعي',
+      styles: [
+        { value: 'Watercolor Illustration - Soft watercolor textures, delicate brushstrokes, storybook illustration', label: 'ألوان مائية' },
+        { value: 'Oil Painting Style - Rich oil paint textures, classical art style, museum quality', label: 'رسم زيتي' },
+        { value: 'Comic Book Style - Bold ink lines, halftone dots, superhero comic aesthetic', label: 'كوميك أمريكي' },
+        { value: 'Manga Style - Black and white manga, screentones, Japanese comic panels', label: 'مانجا' },
+        { value: 'Cyberpunk Neon - Futuristic neon lights, dark cityscape, sci-fi aesthetic', label: 'سايبربانك' },
+        { value: 'Fantasy Epic - Magical world, epic scale, Lord of the Rings style', label: 'فانتازيا ملحمية' },
+      ]
+    }
   ];
+
+  // Flatten styles for backward compatibility
+  const styles = styleCategories.flatMap(cat => cat.styles);
   const ratios = [
     { id: '16:9', label: 'عرضي (يوتيوب)', icon: '▭' },
     { id: '9:16', label: 'طولي (تيك توك/ريلز)', icon: '▯' }
@@ -336,25 +387,43 @@ export default function StoryboardCreate() {
             </div>
           </div>
 
-          {/* Style Selector */}
+          {/* Style Selector - Organized by Category */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">نمط الفيديو</label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {styles.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStyle(s.value)}
-                  className={cn(
-                    "whitespace-nowrap py-2 px-3 text-xs font-medium rounded-lg border transition-all",
-                    style === s.value 
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
-                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
-                  )}
-                >
-                  {s.label}
-                </button>
+            <label className="block text-sm font-medium text-slate-700 mb-3">نمط الفيديو</label>
+            <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
+              {styleCategories.map((category) => (
+                <div key={category.category}>
+                  <h4 className="text-xs font-bold text-slate-500 mb-2 sticky top-0 bg-white py-1">
+                    {category.category}
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {category.styles.map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => setStyle(s.value)}
+                        className={cn(
+                          "py-2 px-3 text-xs font-medium rounded-lg border transition-all",
+                          style === s.value 
+                            ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
+                            : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200 hover:bg-slate-50"
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+            {/* Selected Style Preview */}
+            {style && (
+              <div className="mt-3 p-2 bg-indigo-50 rounded-lg border border-indigo-100">
+                <p className="text-xs text-indigo-700">
+                  <span className="font-bold">النمط المختار: </span>
+                  {styles.find(s => s.value === style)?.label || style.split(' - ')[0]}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Aspect Ratio Selector */}
@@ -378,6 +447,16 @@ export default function StoryboardCreate() {
               ))}
             </div>
           </div>
+
+          {/* Tip for video generation */}
+          {(contentType === 'أطفال' || contentType === 'تعليمي' || contentType === 'عائلي') && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-800">
+                <span className="font-bold">نصيحة: </span>
+                للحصول على أفضل نتائج في توليد الفيديو لمحتوى الأطفال، استخدم الأنماط الكرتونية مثل كوكوميلون أو بيكسار بدلاً من الأنماط الواقعية.
+              </p>
+            </div>
+          )}
 
           <button
             onClick={generateScript}
