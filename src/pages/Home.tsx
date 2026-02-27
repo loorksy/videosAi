@@ -120,6 +120,7 @@ export default function Home() {
         <div className="space-y-2.5">
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">الأدوات الاحترافية</h2>
           <div className="space-y-2">
+            <ToolCard to="/character-sheet/new" icon={UserSquare2} label="منشئ ورقة الشخصية" description="رفع صورة وتوليد 3 زوايا للشخصية" color="indigo" />
             <ToolCard to="/product-studio" icon={Package} label="استوديو المنتجات والهوية" description="تصوير منتجات وبناء هوية بصرية" color="sky" />
             <ToolCard to="/ad-campaign-studio" icon={Megaphone} label="استوديو الإعلانات" description="تصميم بوستات إعلانية احترافية" color="primary" />
             <ToolCard to="/kling-motion" icon={Video} label="Motion Control (Kling AI)" description="انقل حركة فيديو حقيقي الى شخصيتك" color="pink" />
