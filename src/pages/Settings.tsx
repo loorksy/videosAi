@@ -120,32 +120,6 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
           </p>
         </div>
 
-        {/* kie.ai Fallback Key */}
-        <div className="pt-4 border-t border-border/60">
-          <label className="block text-sm font-bold text-card-foreground mb-2">
-            مفتاح kie.ai (احتياطي للفيديو) 
-            <span className="text-xs font-normal text-amber-600 mr-2">موصى به</span>
-          </label>
-          <div className="relative">
-            <input
-              type="password"
-              value={kieApiKey}
-              onChange={(e) => setKieApiKey(e.target.value)}
-              placeholder="kie_xxxxxxxxxxxx"
-              className="w-full p-3.5 border border-border rounded-xl focus:ring-2 focus:ring-ring/30 focus:border-primary outline-none font-mono text-sm bg-secondary/50 transition-all"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-            <span className="text-amber-600 font-medium">يُستخدم تلقائياً</span> عندما يفشل Veo بسبب سياسات المحتوى (مثل صور الأطفال).
-            <br/>
-            يدعم Runway و Veo 3.1 كبدائل موثوقة بسياسات أقل تقييداً.
-            <br/>
-            <a href="https://kie.ai/getting-started" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">
-              احصل على مفتاحك من kie.ai
-            </a>
-          </p>
-        </div>
-
         <div className="flex gap-2.5 pt-3 border-t border-border/60">
             <button
             onClick={handleTest}
