@@ -1146,11 +1146,16 @@ ${prompt}`;
         reader.readAsDataURL(blob);
       });
     } catch (error: any) {
+      console.error('Veo generation error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
 
       if (isRateLimitError(error)) handleCommonErrors(error, "");
       if (isPermissionError(error)) throw new Error("فشل تحريك الشخصية (403). نموذج veo-3.1-generate-preview يتطلب مشروع Google Cloud مدفوع. تأكد من تفعيل الفوترة.");
       if (error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
-        throw new Error("نموذج veo-3.1-generate-preview غير متاح. تأكد من تفعيل Generative Language API.");
+        throw new Error("نموذج veo-3.1-generate-preview غير متاح. تأكد من تفعيل Generative Language API في مشروع Google Cloud الخاص بك.");
+      }
+      if (error?.message?.includes('INVALID_ARGUMENT')) {
+        throw new Error("خطأ في المعاملات. تأكد من أن الصور المرجعية بصيغة صحيحة.");
       }
       handleCommonErrors(error, `فشل تحريك الشخصية: ${error?.message || 'خطأ غير معروف'}`);
       throw error;
