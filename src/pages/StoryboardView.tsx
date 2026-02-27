@@ -98,11 +98,21 @@ export default function StoryboardView() {
         }
       }
 
-      const imageUrl = await GeminiService.generateStoryboardFrame(
-        scene.description,
-        referenceImages,
-        storyboard.aspectRatio || '16:9'
-      );
+      // Get first scene image for reference
+      const firstSceneImage = storyboard.scenes[0]?.frameImage;
+      const previousSceneImage = sceneIndex > 0 ? storyboard.scenes[sceneIndex - 1]?.frameImage : undefined;
+      
+      const imageUrl = await GeminiService.generateStoryboardFrame({
+        sceneDescription: scene.description,
+        characterImages: referenceImages,
+        firstSceneImage: sceneIndex > 0 ? firstSceneImage : undefined,
+        previousSceneImage,
+        sceneIndex,
+        totalScenes: storyboard.scenes.length,
+        style: 'cinematic',
+        aspectRatio: storyboard.aspectRatio || '16:9',
+        characterDNA: referenceImages.length > 0 ? 'Use the character reference images exactly as shown.' : '',
+      });
       
       const newScenes = [...storyboard.scenes];
       newScenes[sceneIndex].frameImage = imageUrl;
@@ -221,12 +231,22 @@ export default function StoryboardView() {
             }
           }
 
+          // Get first scene image for reference
+          const firstSceneImage = currentStoryboard.scenes[0]?.frameImage;
+          const previousSceneImage = i > 0 ? currentStoryboard.scenes[i - 1]?.frameImage : undefined;
+          
           const imageUrl = await generateWithRetry(
-            () => GeminiService.generateStoryboardFrame(
-              scene.description,
-              referenceImages,
-              currentStoryboard.aspectRatio || '16:9'
-            ),
+            () => GeminiService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: referenceImages,
+              firstSceneImage: i > 0 ? firstSceneImage : undefined,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: currentStoryboard.scenes.length,
+              style: 'cinematic',
+              aspectRatio: currentStoryboard.aspectRatio || '16:9',
+              characterDNA: referenceImages.length > 0 ? 'Use the character reference images exactly as shown.' : '',
+            }),
             i
           );
 
