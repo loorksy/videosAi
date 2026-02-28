@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, User, Ghost, Smile, Cat, Dna } from 'lucide-react';
+import { Plus, User, Ghost, Smile, Cat, Dna, Star } from 'lucide-react';
 import { db, Character } from '../lib/db';
 
 export default function CharacterList() {
@@ -20,6 +20,15 @@ export default function CharacterList() {
       <header className="flex items-center justify-between pt-2">
         <h1 className="text-xl font-bold text-foreground">شخصياتي</h1>
       </header>
+
+      {/* Kids Story Featured Button */}
+      <Link 
+        to="/kids-story" 
+        className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 hover:brightness-110 transition-all active:scale-[0.98]"
+      >
+        <Star className="w-5 h-5" />
+        <span>إنشاء قصة أطفال</span>
+      </Link>
 
       <div className="grid grid-cols-4 gap-2">
         {[

@@ -24,6 +24,7 @@ import KlingMotionControl from './pages/KlingMotionControl';
 import StoryboardList from './pages/StoryboardList';
 import StoryboardCreate from './pages/StoryboardCreate';
 import StoryboardView from './pages/StoryboardView';
+import KidsStoryCreator from './pages/KidsStoryCreator';
 import VideoGallery from './pages/VideoGallery';
 import SettingsPage from './pages/Settings';
 import { Home as HomeIcon } from 'lucide-react';
@@ -76,6 +77,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
             <Route path="/storyboards" element={<StoryboardList />} />
             <Route path="/storyboards/new" element={<StoryboardCreate />} />
             <Route path="/storyboards/:id" element={<StoryboardView />} />
+            <Route path="/kids-story" element={<KidsStoryCreator />} />
             <Route path="/gallery" element={<VideoGallery />} />
             <Route path="/settings" element={<SettingsPage onLogout={onLogout} />} />
           </Routes>
