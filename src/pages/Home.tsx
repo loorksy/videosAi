@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Clapperboard, Film, Plus, Sparkles, ArrowRight, Ghost, Smile, Youtube, Cat, Lightbulb, Dna, Package, Megaphone, Video, UserSquare2 } from 'lucide-react';
+import { Users, Clapperboard, Film, Plus, Sparkles, ArrowRight, Ghost, Smile, Youtube, Cat, Lightbulb, Dna, Package, Megaphone, Video, UserSquare2, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function ToolCard({ to, icon: Icon, label, description, color }: { to: string; icon: any; label: string; description: string; color: string }) {
@@ -78,22 +78,33 @@ export default function Home() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="mt-8 flex gap-3"
+            className="mt-8 space-y-3"
           >
+            {/* Kids Story - Featured */}
             <Link 
-              to="/storyboards/new" 
-              className="flex-1 bg-primary text-primary-foreground py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 transition-all active:scale-[0.98]"
+              to="/kids-story" 
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-4 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 hover:brightness-110 transition-all active:scale-[0.98]"
             >
-              <Plus className="w-4 h-4" />
-              <span>قصة جديدة</span>
+              <Star className="w-5 h-5" />
+              <span>قصص الأطفال</span>
             </Link>
-            <Link 
-              to="/thumbnails/new" 
-              className="flex-1 bg-white/10 backdrop-blur-sm border border-white/10 text-white py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/15 transition-all active:scale-[0.98]"
-            >
-              <Youtube className="w-4 h-4 text-red-400" />
-              <span>صورة مصغرة</span>
-            </Link>
+            
+            <div className="flex gap-3">
+              <Link 
+                to="/storyboards/new" 
+                className="flex-1 bg-primary text-primary-foreground py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 transition-all active:scale-[0.98]"
+              >
+                <Plus className="w-4 h-4" />
+                <span>قصة جديدة</span>
+              </Link>
+              <Link 
+                to="/thumbnails/new" 
+                className="flex-1 bg-white/10 backdrop-blur-sm border border-white/10 text-white py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/15 transition-all active:scale-[0.98]"
+              >
+                <Youtube className="w-4 h-4 text-red-400" />
+                <span>صورة مصغرة</span>
+              </Link>
+            </div>
           </motion.div>
         </div>
       </div>
