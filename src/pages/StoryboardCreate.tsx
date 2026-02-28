@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw } from 'lucide-react';
+import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw, Zap } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { db, Character, Storyboard, Scene } from '../lib/db';
 import { GeminiService } from '../lib/gemini';
 import { cn } from '../lib/utils';
+import { useTaskContext } from '../context/TaskContext';
 
 export default function StoryboardCreate() {
   const navigate = useNavigate();
+  const { addTask } = useTaskContext();
   const [step, setStep] = useState<'chars' | 'script' | 'scenes' | 'frames' | 'preview'>('chars');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
@@ -17,8 +19,8 @@ export default function StoryboardCreate() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
 
-  // New Professional Options
-  const [style, setStyle] = useState('Cinematic');
+  // New Professional Options - Default to kid-friendly style
+  const [style, setStyle] = useState('Pixar 3D Animation - High quality CGI, emotional storytelling, detailed textures, cinematic lighting, Pixar movie quality');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [contentType, setContentType] = useState('قصة درامية');
   const [customContentType, setCustomContentType] = useState('');
@@ -32,14 +34,71 @@ export default function StoryboardCreate() {
     'سيرة ذاتية', 'اجتماعي', 'مخصص',
   ];
 
-  const styles = [
-    { value: 'Cinematic', label: 'سينمائي' },
-    { value: 'Anime', label: 'أنمي' },
-    { value: '3D Render', label: 'ثلاثي الأبعاد' },
-    { value: 'Watercolor', label: 'ألوان مائية' },
-    { value: 'Cyberpunk', label: 'سايبربانك' },
-    { value: 'Minimalist', label: 'بسيط (Minimalist)' }
+  // Style categories for better organization
+  const styleCategories = [
+    {
+      category: 'قنوات الأطفال',
+      styles: [
+        { value: 'Cocomelon 3D Style - Bright colorful 3D animation, round cute characters, vibrant saturated colors, soft lighting, educational kids content style', label: 'كوكوميلون (3D ملون)' },
+        { value: 'Baby Shark Style - Cute 3D animated characters, ocean theme, bright cheerful colors, simple shapes, child-friendly cartoon', label: 'بيبي شارك' },
+        { value: 'Peppa Pig Style - Simple 2D flat animation, pastel colors, minimalist design, outlined characters, British cartoon style', label: 'بيبا بيج (2D بسيط)' },
+        { value: 'Bluey Style - Warm 2D animation, Australian family style, soft watercolor textures, heartwarming cartoon', label: 'بلوي (عائلي دافئ)' },
+        { value: 'Paw Patrol Style - 3D CGI animation, heroic puppies, action cartoon for kids, bright primary colors', label: 'باو باترول (أبطال)' },
+        { value: 'Numberblocks Style - Educational 3D blocks, math learning, colorful geometric shapes, BBC kids style', label: 'نمبربلوكس (تعليمي)' },
+        { value: 'Sesame Street Style - Friendly muppet style, educational warm colors, inclusive diverse characters, PBS kids', label: 'شارع سمسم' },
+      ]
+    },
+    {
+      category: 'ديزني وبيكسار',
+      styles: [
+        { value: 'Pixar 3D Animation - High quality CGI, emotional storytelling, detailed textures, cinematic lighting, Pixar movie quality', label: 'بيكسار (جودة سينمائية)' },
+        { value: 'Disney 2D Classic - Traditional hand-drawn animation, fairy tale style, magical atmosphere, classic Disney', label: 'ديزني كلاسيكي (2D)' },
+        { value: 'Disney 3D Modern - Modern Disney CGI, expressive characters, detailed hair and fabric, Tangled/Frozen style', label: 'ديزني حديث (3D)' },
+        { value: 'DreamWorks Style - Stylized 3D animation, comedic expressions, dynamic poses, Shrek/Kung Fu Panda style', label: 'دريم ووركس' },
+      ]
+    },
+    {
+      category: 'أنمي ياباني',
+      styles: [
+        { value: 'Studio Ghibli Style - Hand-painted backgrounds, soft ethereal lighting, nature themes, Miyazaki masterpiece quality', label: 'ستوديو جيبلي' },
+        { value: 'Modern Anime Style - Sharp clean lines, vibrant colors, dynamic action poses, seasonal anime quality', label: 'أنمي حديث' },
+        { value: 'Chibi Kawaii Style - Super deformed cute characters, big eyes, pastel colors, Japanese kawaii aesthetic', label: 'تشيبي كاواي' },
+        { value: 'Shonen Anime Style - Action-oriented, dramatic lighting, intense expressions, battle anime style', label: 'شونين (أكشن)' },
+      ]
+    },
+    {
+      category: 'كرتون أمريكي',
+      styles: [
+        { value: 'Cartoon Network Style - Bold outlines, exaggerated expressions, vibrant flat colors, Adventure Time/Gumball style', label: 'كرتون نتورك' },
+        { value: 'Nickelodeon Style - Energetic animation, wild expressions, bright neon colors, SpongeBob style', label: 'نيكلودين' },
+        { value: 'Adult Swim Style - Stylized adult animation, dark humor aesthetic, Rick and Morty/Archer style', label: 'أدلت سويم (للكبار)' },
+        { value: 'Looney Tunes Classic - Vintage cartoon style, slapstick animation, classic American cartoon', label: 'لوني تونز كلاسيكي' },
+      ]
+    },
+    {
+      category: 'سينمائي واقعي',
+      styles: [
+        { value: 'Cinematic Realistic - Photorealistic, movie quality, dramatic lighting, Hollywood blockbuster style', label: 'سينمائي واقعي' },
+        { value: 'Netflix Drama Style - High production value, moody lighting, prestige TV aesthetic', label: 'دراما نتفليكس' },
+        { value: 'Documentary Style - Realistic footage look, natural lighting, educational documentary', label: 'وثائقي' },
+        { value: 'Horror Cinematic - Dark atmospheric, suspenseful lighting, horror movie aesthetic', label: 'رعب سينمائي' },
+      ]
+    },
+    {
+      category: 'فني وإبداعي',
+      styles: [
+        { value: 'Watercolor Illustration - Soft watercolor textures, delicate brushstrokes, storybook illustration', label: 'ألوان مائية' },
+        { value: 'Oil Painting Style - Rich oil paint textures, classical art style, museum quality', label: 'رسم زيتي' },
+        { value: 'Comic Book Style - Bold ink lines, halftone dots, superhero comic aesthetic', label: 'كوميك أمريكي' },
+        { value: 'Manga Style - Black and white manga, screentones, Japanese comic panels', label: 'مانجا' },
+        { value: 'Cyberpunk Neon - Futuristic neon lights, dark cityscape, sci-fi aesthetic', label: 'سايبربانك' },
+        { value: 'Fantasy Epic - Magical world, epic scale, Lord of the Rings style', label: 'فانتازيا ملحمية' },
+      ]
+    }
   ];
+
+  // Flatten styles for backward compatibility
+  const styles = styleCategories.flatMap(cat => cat.styles);
   const ratios = [
     { id: '16:9', label: 'عرضي (يوتيوب)', icon: '▭' },
     { id: '9:16', label: 'طولي (تيك توك/ريلز)', icon: '▯' }
@@ -187,6 +246,96 @@ export default function StoryboardCreate() {
     }
   };
 
+  // Generate frames in background and navigate away
+  const generateFramesInBackground = () => {
+    const storyboardId = uuidv4();
+    const storyboardTitle = idea.slice(0, 30) + (idea.length > 30 ? '...' : '');
+    const currentScenes = [...scenes];
+    const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
+    const currentStyle = style;
+    const currentAspectRatio = aspectRatio;
+    
+    // Save storyboard first (without frames)
+    const storyboard: Storyboard = {
+      id: storyboardId,
+      title: storyboardTitle,
+      script,
+      characters: selectedCharIds,
+      scenes: currentScenes,
+      aspectRatio: currentAspectRatio,
+      style: currentStyle,
+      createdAt: Date.now()
+    };
+    
+    db.saveStoryboard(storyboard).then(() => {
+      // Add background task
+      addTask('image', `توليد صور: ${storyboardTitle}`, async (updateProgress) => {
+        let savedStoryboard = await db.getStoryboard(storyboardId);
+        if (!savedStoryboard) throw new Error('لم يتم العثور على القصة');
+        
+        const characterDNA = selectedChars.map(c => 
+          `${c.name}: ${c.visualTraits || c.description}`
+        ).join('\n');
+
+        const allCharImages: string[] = [];
+        for (const char of selectedChars) {
+          const imgs = char.images as Record<string, string | undefined>;
+          for (const value of Object.values(imgs)) {
+            if (value && typeof value === 'string' && value.length > 100) {
+              allCharImages.push(value);
+              break;
+            }
+          }
+        }
+
+        let firstSceneImage: string | undefined;
+        let previousSceneImage: string | undefined;
+
+        for (let i = 0; i < savedStoryboard.scenes.length; i++) {
+          updateProgress(
+            Math.round((i / savedStoryboard.scenes.length) * 100), 
+            `توليد صورة المشهد ${i + 1} من ${savedStoryboard.scenes.length}...`
+          );
+          
+          const scene = savedStoryboard.scenes[i];
+          const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
+          const sceneCharImages = sceneChars.length > 0 ? sceneChars.map(c => {
+            const imgs = c.images as Record<string, string | undefined>;
+            return Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100) || '';
+          }).filter(Boolean) : allCharImages;
+
+          try {
+            const frameImage = await GeminiService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: sceneCharImages,
+              firstSceneImage,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: savedStoryboard.scenes.length,
+              style: currentStyle,
+              aspectRatio: currentAspectRatio,
+              characterDNA,
+            });
+            
+            savedStoryboard.scenes[i].frameImage = frameImage;
+            
+            if (i === 0) firstSceneImage = frameImage;
+            previousSceneImage = frameImage;
+            
+            await db.saveStoryboard(savedStoryboard);
+          } catch (sceneError) {
+            console.error(`Scene ${i + 1} failed:`, sceneError);
+          }
+        }
+        
+        return savedStoryboard;
+      }, storyboardId);
+      
+      // Navigate to storyboard list
+      navigate('/storyboards');
+    });
+  };
+
   const saveStoryboard = async () => {
     const storyboard: Storyboard = {
       id: uuidv4(),
@@ -195,6 +344,7 @@ export default function StoryboardCreate() {
       characters: selectedCharIds,
       scenes,
       aspectRatio,
+      style,
       createdAt: Date.now()
     };
     await db.saveStoryboard(storyboard);
@@ -329,25 +479,43 @@ export default function StoryboardCreate() {
             </div>
           </div>
 
-          {/* Style Selector */}
+          {/* Style Selector - Organized by Category */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">نمط الفيديو</label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {styles.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStyle(s.value)}
-                  className={cn(
-                    "whitespace-nowrap py-2 px-3 text-xs font-medium rounded-lg border transition-all",
-                    style === s.value 
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
-                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
-                  )}
-                >
-                  {s.label}
-                </button>
+            <label className="block text-sm font-medium text-slate-700 mb-3">نمط الفيديو</label>
+            <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
+              {styleCategories.map((category) => (
+                <div key={category.category}>
+                  <h4 className="text-xs font-bold text-slate-500 mb-2 sticky top-0 bg-white py-1">
+                    {category.category}
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {category.styles.map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => setStyle(s.value)}
+                        className={cn(
+                          "py-2 px-3 text-xs font-medium rounded-lg border transition-all",
+                          style === s.value 
+                            ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
+                            : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200 hover:bg-slate-50"
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+            {/* Selected Style Preview */}
+            {style && (
+              <div className="mt-3 p-2 bg-indigo-50 rounded-lg border border-indigo-100">
+                <p className="text-xs text-indigo-700">
+                  <span className="font-bold">النمط المختار: </span>
+                  {styles.find(s => s.value === style)?.label || style.split(' - ')[0]}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Aspect Ratio Selector */}
@@ -371,6 +539,16 @@ export default function StoryboardCreate() {
               ))}
             </div>
           </div>
+
+          {/* Tip for video generation */}
+          {(contentType === 'أطفال' || contentType === 'تعليمي' || contentType === 'عائلي') && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-800">
+                <span className="font-bold">نصيحة: </span>
+                للحصول على أفضل نتائج في توليد الفيديو لمحتوى الأطفال، استخدم الأنماط الكرتونية مثل كوكوميلون أو بيكسار بدلاً من الأنماط الواقعية.
+              </p>
+            </div>
+          )}
 
           <button
             onClick={generateScript}
@@ -402,15 +580,26 @@ export default function StoryboardCreate() {
               </div>
             ))}
           </div>
-
-          <button
-            onClick={generateFrames}
-            disabled={isProcessing}
-            className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Film className="w-5 h-5" />}
-            <span>توليد المشاهد (Nano Banana)</span>
-          </button>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={generateFrames}
+              disabled={isProcessing}
+              className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Film className="w-5 h-5" />}
+              <span>توليد (انتظار)</span>
+            </button>
+            
+            <button
+              onClick={generateFramesInBackground}
+              disabled={isProcessing}
+              className="flex-1 py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Zap className="w-5 h-5" />
+              <span>توليد (خلفية)</span>
+            </button>
+          </div>
         </div>
       )}
 
