@@ -407,6 +407,21 @@ export default function StoryboardCreate() {
       {/* Step 1: Select Characters */}
       {step === 'chars' && (
         <div className="space-y-6">
+          {/* Resume Draft Banner */}
+          {hasDraft && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-center justify-between">
+              <span className="text-xs text-amber-800 font-medium">لديك مسودة قصة محفوظة</span>
+              <div className="flex gap-2">
+                <button onClick={resumeDraft} className="px-3 py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600">
+                  استئناف
+                </button>
+                <button onClick={startNew} className="px-3 py-1.5 bg-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-300">
+                  تجاهل
+                </button>
+              </div>
+            </div>
+          )}
+
           <div>
             <h2 className="text-lg font-semibold mb-2">اختر الشخصيات</h2>
             <p className="text-sm text-slate-500 mb-4">حدد الشخصيات التي ستظهر في القصة</p>
