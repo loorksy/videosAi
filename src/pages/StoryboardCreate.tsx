@@ -217,15 +217,32 @@ export default function StoryboardCreate() {
       `${c.name}: ${c.visualTraits || c.description}`
     ).join('\n');
 
-    // Collect ALL character reference images
+    // Helper: Convert image URL or base64 to base64 data
+    const toBase64 = async (img: string): Promise<string> => {
+      if (!img) return '';
+      // Already base64
+      if (img.length > 200) return img;
+      // It's a URL - fetch and convert
+      try {
+        const resp = await fetch(img.startsWith('/') ? `${window.location.origin}${img}` : img);
+        const blob = await resp.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } catch { return ''; }
+    };
+
+    // Collect ALL character reference images (convert URLs to base64)
+    setProcessingStatus('جاري تحميل صور الشخصيات المرجعية...');
     const allCharImages: string[] = [];
     for (const char of selectedChars) {
       const imgs = char.images as Record<string, string | undefined>;
-      for (const value of Object.values(imgs)) {
-        if (value && typeof value === 'string' && value.length > 100) {
-          allCharImages.push(value);
-          break; // one per character
-        }
+      const firstImg = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 0);
+      if (firstImg) {
+        const b64 = await toBase64(firstImg);
+        if (b64) allCharImages.push(b64);
       }
     }
 
@@ -238,12 +255,22 @@ export default function StoryboardCreate() {
         
         const scene = newScenes[i];
         
-        // Get character images specific to this scene
+        // Get character images for this scene
         const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
-        const sceneCharImages = sceneChars.length > 0 ? sceneChars.map(c => {
-          const imgs = c.images as Record<string, string | undefined>;
-          return Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 100) || '';
-        }).filter(Boolean) : allCharImages;
+        let sceneCharImages: string[];
+        if (sceneChars.length > 0) {
+          sceneCharImages = [];
+          for (const c of sceneChars) {
+            const imgs = c.images as Record<string, string | undefined>;
+            const firstImg = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 0);
+            if (firstImg) {
+              const b64 = await toBase64(firstImg);
+              if (b64) sceneCharImages.push(b64);
+            }
+          }
+        } else {
+          sceneCharImages = allCharImages;
+        }
 
         try {
           const frameImage = await GeminiService.generateStoryboardFrame({
