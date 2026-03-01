@@ -217,8 +217,7 @@ export const db = {
   },
 
   async deleteMediaItem(id: string) {
-    // TODO: implement delete media endpoint
-    return;
+    return api(`/api/media/${id}`, { method: 'DELETE' });
   },
 
   // Ad Campaigns (keep simple for now)
