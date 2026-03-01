@@ -268,8 +268,33 @@ async def task_status(task_id: str):
 
     headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(f"{KIE_BASE_URL}/veo/record-detail?taskId={task_id}", headers=headers)
-        return resp.json()
+        resp = await client.get(f"{KIE_BASE_URL}/veo/record-info?taskId={task_id}", headers=headers)
+        result = resp.json()
+        
+        # Normalize response for frontend
+        data = result.get("data", {})
+        success_flag = data.get("successFlag", 0)
+        
+        status = "processing"
+        video_url = ""
+        if success_flag == 1:
+            status = "completed"
+            urls_str = data.get("resultUrls", "[]")
+            try:
+                import json
+                urls = json.loads(urls_str) if isinstance(urls_str, str) else urls_str
+                video_url = urls[0] if urls else ""
+            except Exception:
+                video_url = ""
+        elif success_flag in (2, 3):
+            status = "failed"
+        
+        return {
+            "status": status,
+            "videoUrl": video_url,
+            "successFlag": success_flag,
+            "raw": result,
+        }
 
 
 class ImageToVideoRequest(BaseModel):
