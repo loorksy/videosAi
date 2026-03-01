@@ -258,11 +258,24 @@ export default function ThumbnailCreate() {
         
       const finalElementsText = [elements, uploadedElementNames].filter(Boolean).join('، ');
 
+      // For from_story mode, use story context as the prompt
+      let thumbTitle = title;
+      let thumbStyle = style;
+      let thumbElements = finalElementsText;
+      let thumbBackground = background;
+      if (mode === 'from_story' && storyMetadata) {
+        thumbTitle = storyMetadata.videoTitle;
+        thumbStyle = 'أطفال يوتيوب (Kids YouTube)';
+        const story = storyboards.find(s => s.id === selectedStoryId);
+        thumbElements = story?.script?.slice(0, 200) || '';
+        thumbBackground = 'خلفية مشرقة بألوان باستيل دافئة مناسبة للأطفال';
+      }
+
       const image = await GeminiService.generateThumbnail({
-        title,
-        style,
-        elements: finalElementsText,
-        background,
+        title: thumbTitle,
+        style: thumbStyle,
+        elements: thumbElements,
+        background: thumbBackground,
         referenceImages,
         elementImages,
         baseThumbnail: mode === 'enhance' ? baseThumbnail || undefined : undefined,
