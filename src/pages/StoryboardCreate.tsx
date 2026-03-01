@@ -293,12 +293,37 @@ export default function StoryboardCreate() {
           previousSceneImage = frameImage;
           
           setScenes([...newScenes]);
+          
+          // Rate limit delay between scenes (avoid API throttling)
+          if (i < newScenes.length - 1) {
+            setProcessingStatus(`تم رسم المشهد ${i + 1}. انتظر قليلاً قبل المشهد التالي...`);
+            await new Promise(r => setTimeout(r, 3000));
+          }
         } catch (sceneError: any) {
           console.error(`Scene ${i + 1} failed:`, sceneError);
-          // Mark as failed but continue to next scene
-          newScenes[i].frameImage = undefined;
-          setScenes([...newScenes]);
-          // Don't break - continue generating remaining scenes
+          // Retry once after a longer wait
+          setProcessingStatus(`فشل المشهد ${i + 1}، إعادة المحاولة بعد 10 ثوانٍ...`);
+          await new Promise(r => setTimeout(r, 10000));
+          try {
+            const retryImage = await GeminiService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: sceneCharImages,
+              firstSceneImage,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: newScenes.length,
+              style,
+              aspectRatio,
+              characterDNA,
+            });
+            newScenes[i].frameImage = retryImage;
+            if (i === 0) firstSceneImage = retryImage;
+            previousSceneImage = retryImage;
+            setScenes([...newScenes]);
+          } catch {
+            newScenes[i].frameImage = undefined;
+            setScenes([...newScenes]);
+          }
         }
       }
       setStep('preview');
