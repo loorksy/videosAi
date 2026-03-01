@@ -475,61 +475,77 @@ export default function StoryboardView() {
         </div>
       </div>
 
-      {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/60 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-        <div className="max-w-lg mx-auto space-y-2.5">
-          
-          <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
-            <span className="text-xs font-medium text-slate-600 flex items-center gap-1">
-              <Video className="w-4 h-4" /> حركة الكاميرا:
-            </span>
-            <select 
-              value={cameraMotion}
-              onChange={(e) => setCameraMotion(e.target.value)}
-              disabled={isGenerating || isAutoPilotRunning}
-              className="text-xs bg-white border border-slate-200 rounded-md px-2 py-1 outline-none focus:border-indigo-500 disabled:opacity-50"
-            >
-              {cameraMotions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </select>
+      {/* Fixed Bottom Action Bar - show only when videos are missing */}
+      {(() => {
+        const hasAllVideos = storyboard.scenes.slice(0, -1).every(s => s.videoClip);
+        const hasAnyImages = storyboard.scenes.some(s => s.frameImage);
+        const hasMissingImages = storyboard.scenes.some(s => !s.frameImage);
+        
+        if (hasAllVideos && !hasMissingImages) return null;
+        
+        return (
+          <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/60 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+            <div className="max-w-lg mx-auto space-y-2.5">
+              
+              {hasAnyImages && !hasAllVideos && (
+                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span className="text-xs font-medium text-slate-600 flex items-center gap-1">
+                    <Video className="w-4 h-4" /> حركة الكاميرا:
+                  </span>
+                  <select 
+                    value={cameraMotion}
+                    onChange={(e) => setCameraMotion(e.target.value)}
+                    disabled={isGenerating || isAutoPilotRunning}
+                    className="text-xs bg-white border border-slate-200 rounded-md px-2 py-1 outline-none focus:border-indigo-500 disabled:opacity-50"
+                  >
+                    {cameraMotions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {hasMissingImages && (
+                <button
+                  onClick={runAutoPilot}
+                  disabled={isGenerating || isAutoPilotRunning}
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                >
+                  {isAutoPilotRunning ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>{autoPilotStatus}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-5 h-5" />
+                      <span>الإنتاج الشامل السحري (Auto-Pilot)</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {hasAnyImages && !hasAllVideos && (
+                <button
+                  onClick={generateFullVideo}
+                  disabled={isGenerating || isAutoPilotRunning}
+                  className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                >
+                  {isGenerating && !isAutoPilotRunning ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري التوليد... {videoStatuses[currentGeneratingIndex] || ''}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5" />
+                      <span>توليد الفيديوهات (Veo3)</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
-
-          <button
-            onClick={runAutoPilot}
-            disabled={isGenerating || isAutoPilotRunning}
-            className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
-          >
-            {isAutoPilotRunning ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>{autoPilotStatus}</span>
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-5 h-5" />
-                <span>الإنتاج الشامل السحري (Auto-Pilot)</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={generateFullVideo}
-            disabled={isGenerating || isAutoPilotRunning}
-            className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
-          >
-            {isGenerating && !isAutoPilotRunning ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>جاري توليد المشهد {currentGeneratingIndex + 1}...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-5 h-5" />
-                <span>توليد الفيديو الكامل (Veo3)</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+        );
+      })()}
     </div>
   );
 }
