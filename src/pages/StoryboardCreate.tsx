@@ -95,13 +95,17 @@ export default function StoryboardCreate() {
         visualTraits: c.visualTraits,
       })));
       
-      setScript(result.script);
-      setIdea(result.script.slice(0, 100) + '...');
+      if (!result || !result.scenes || !Array.isArray(result.scenes)) {
+        throw new Error('لم يتم توليد المشاهد. حاول مرة أخرى.');
+      }
+      
+      setScript(result.script || '');
+      setIdea((result.script || '').slice(0, 100) + '...');
       setScenes(result.scenes.map(s => ({
         id: uuidv4(),
-        description: s.description,
+        description: s.description || '',
         dialogue: s.dialogue || '',
-        characterIds: s.characters.map(name => {
+        characterIds: (s.characters || []).map((name: string) => {
           const found = selectedChars.find(c => c.name.includes(name) || name.includes(c.name));
           return found ? found.id : '';
         }).filter(Boolean),
