@@ -22,7 +22,8 @@ export interface KieTaskStatus {
 
 export const KieService = {
   // Generate video from text prompt only
-  async generateTextToVideo(prompt: string, model = 'veo3_fast', aspectRatio = '9:16'): Promise<KieVideoTask> {
+  async generateTextToVideo(prompt: string, model?: string, aspectRatio = '9:16'): Promise<KieVideoTask> {
+    const videoModel = model || getVideoModel();
     const resp = await fetch(`${getApiBase()}/api/kie/generate-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
