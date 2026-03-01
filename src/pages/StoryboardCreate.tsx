@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw } from 'lucide-react';
+import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw, Video } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { db, Character, Storyboard, Scene } from '../lib/db';
 import { GeminiService } from '../lib/gemini';
+import { KieService } from '../lib/kie';
 import { cn } from '../lib/utils';
 
 export default function StoryboardCreate() {
