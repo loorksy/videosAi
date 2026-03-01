@@ -223,47 +223,48 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
   async generateScriptAndScenes(idea: string, characters: {name: string, description: string, visualTraits?: string}[]): Promise<{script: string, scenes: {description: string, characters: string[], dialogue: string}[]}> {
     try {
       const ai = getAI();
-      const charContext = characters.map(c => `- ${c.name}: ${c.description}${c.visualTraits ? `. المظهر: ${c.visualTraits}` : ''}`).join("\n");
-      const prompt = `أنت مخرج أفلام ومصور سينمائي محترف. أنشئ سيناريو قصير بناءً على هذه الفكرة: "${idea}".
+      const charContext = characters.map(c => `- ${c.name}: ${c.description}${c.visualTraits ? `. المظهر الثابت (لا يتغير أبداً): ${c.visualTraits}` : ''}`).join("\n");
+      const prompt = `أنت مخرج أفلام أطفال ومصور سينمائي محترف. أنشئ سيناريو كامل ومفصل بناءً على هذه الفكرة: "${idea}".
 
 الشخصيات المتاحة:
 ${charContext}
 
-القواعد المهمة - فكر كمخرج سينمائي يخطط للقطات متتالية:
+⛔ قاعدة ثبات الشخصية (الأهم):
+- ملابس الشخصية وتفاصيلها لا تتغير أبداً بين المشاهد
+- نفس الشعر، نفس لون العيون، نفس الملابس بالضبط في كل مشهد
+- اذكر مظهر الشخصية الكامل في كل مشهد (الملابس، اللون، التفاصيل)
+
+🎨 قاعدة الألوان والبيئة (محتوى أطفال):
+- الألوان يجب أن تكون زاهية ومريحة للعين مثل فيديوهات الأطفال على يوتيوب
+- خلفيات بألوان باستيل دافئة (أصفر فاتح، أزرق سماوي، أخضر فاتح، وردي هادئ)
+- إضاءة مشرقة ودافئة في كل المشاهد
+- لا ألوان قاتمة أو مخيفة
+- البيئة مرحة ومبهجة مناسبة للأطفال
 
 ⚡ قاعدة الاستمرارية: كل مشهد مدته 8 ثوانٍ. المشاهد هي لقطات متتالية متصلة مثل فيلم حقيقي.
 - المشهد الثاني يبدأ من حيث انتهى الأول بالضبط
 - إذا كانت الشخصية تمشي نحو اليمين في المشهد 1، يجب أن تكون أقرب لليمين في المشهد 2
-- الكاميرا تنتقل بسلاسة بين اللقطات (مثلاً: لقطة واسعة ← متوسطة ← قريبة ← فوق الكتف)
+- الكاميرا تنتقل بسلاسة بين اللقطات
 
-⚡ وصف الحركة: لكل مشهد اذكر:
-- ماذا تفعل الشخصية بالضبط (تمشي، تلتفت، تجلس، تشير بيدها)
-- من أي اتجاه تأتي/تذهب الشخصية
-- وضعية الجسم (واقف، جالس، منحنٍ، يركض)
-- تعبير الوجه (ابتسامة، دهشة، تركيز، حزن)
+⚡ الحوار المفصل:
+- كل مشهد يجب أن يحتوي على حوار كامل بالعربية
+- الحوار يجب أن يكون طبيعي ومناسب للأطفال
+- إذا كان أكثر من شخصية في المشهد، اكتب حوار لكل شخصية
+- الحوار يبدأ من بداية المشهد وينتهي في نهايته
 
-⚡ وصف المكان: يجب أن يكون المكان واحداً ومتسقاً:
-- المشهد الأول يحدد المكان بالتفصيل (هو المرجع الأساسي)
-- المشاهد اللاحقة تصف نفس المكان من زوايا مختلفة
-- اذكر العناصر المشتركة (شجرة معينة، مبنى، لون السماء) في كل مشهد
-
-⚡ تخطيط الكاميرا: خطط اللقطات مثل مخرج محترف:
-- Establishing Shot (لقطة تأسيسية واسعة) → Medium Shot → Close-up → Over-the-shoulder → Wide reaction shot
-- لا تقفز بين لقطتين بعيدتين - اجعل الانتقال سلساً
-
-مثال لمشاهد متتالية:
-المشهد 1: "Wide establishing shot of a lush green park with tall pine trees. Golden afternoon sunlight filters through the leaves. Jad (brown short hair, blue t-shirt, jeans) walks from the LEFT side toward the center of the frame along a stone path. His expression is curious, looking around. Camera is static, positioned 10 meters away."
-المشهد 2: "Medium shot, same park, same lighting. Camera has moved closer. Jad (same outfit) has now reached the center of the path and STOPS, looking toward the RIGHT side of frame with a surprised smile. Behind him, the same pine trees visible. Camera at waist level, 3 meters away."
-المشهد 3: "Over-the-shoulder shot from behind Yazan's head (black curly hair, red hoodie). We see the same park path ahead, and Jad (blue t-shirt) standing 5 meters away, waving. Same golden light, same trees. Yazan is raising his right hand to wave back."
-
-اذكر اسم كل شخصية ومظهرها الكامل في كل مشهد.
+⚡ وصف المشهد:
+- اذكر اسم كل شخصية ومظهرها الكامل في كل مشهد (نفس الملابس دائماً!)
+- نوع اللقطة، المسافة، زاوية الكاميرا
+- حركة الشخصيات، الاتجاهات، تعابير الوجه
+- تحريك الشفاه أثناء الحوار
+- ألوان الخلفية مشرقة وزاهية مناسبة للأطفال
 
 أخرج JSON:
-1. "script": السيناريو الكامل بالعربية
+1. "script": السيناريو الكامل المفصل بالعربية (ليس ملخص! بل قصة كاملة مع كل التفاصيل)
 2. "scenes": مصفوفة من المشاهد، كل مشهد يحتوي:
-   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (للتوليد). يجب أن يتضمن: نوع اللقطة، المسافة، زاوية الكاميرا، حركة الشخصيات، الاتجاهات، تعابير الوجه، الملابس، تفاصيل الخلفية
+   - "description": وصف بصري سينمائي مفصل جداً بالإنجليزية (للتوليد). يجب أن يتضمن: نوع اللقطة، المسافة، الملابس الثابتة، الألوان الزاهية، إضاءة مشرقة، وضعية الفم مفتوح يتكلم، تفاصيل الخلفية بألوان أطفال
    - "characters": أسماء الشخصيات في المشهد
-   - "dialogue": الحوار بالعربية (فارغ إن لم يوجد)`;
+   - "dialogue": الحوار الكامل بالعربية (يبدأ من أول المشهد لآخره)`;
 
       const result = await ai.models.generateContent({
         model: "gemini-3.1-pro-preview",
