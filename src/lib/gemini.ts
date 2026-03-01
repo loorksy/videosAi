@@ -229,7 +229,7 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
       return result.text || "";
     } catch (error: any) {
       if (isPermissionError(error)) {
-        throw new Error("فشل تحليل الشخصية (403). تأكد من أن المفتاح العام لديه صلاحية الوصول لنموذج gemini-2.5-flash.");
+        throw new Error("فشل تحليل الشخصية. تأكد من صحة مفتاح Gemini API.");
       }
       throw error;
     }
