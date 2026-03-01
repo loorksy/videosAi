@@ -312,10 +312,9 @@ ${charContext}
    - "dialogue": الحوار الكامل بـ${dialogueLang} مع ذكر اسم كل شخصية قبل كلامها`;
 
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
-          thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
