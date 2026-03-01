@@ -1,5 +1,12 @@
 const API = window.location.origin;
 
+// In-memory cache for performance
+const cache: {
+  characters?: { data: Character[]; ts: number };
+  storyboards?: { data: Storyboard[]; ts: number };
+} = {};
+const CACHE_TTL = 30000; // 30 seconds
+
 export interface Character {
   id: string;
   name: string;
