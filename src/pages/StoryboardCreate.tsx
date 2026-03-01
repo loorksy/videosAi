@@ -447,6 +447,14 @@ export default function StoryboardCreate() {
             {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
             <span>{isProcessing ? 'جاري الكتابة...' : 'توليد السيناريو'}</span>
           </button>
+
+          {isProcessing && (
+            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-center space-y-3">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
+              <p className="text-sm font-medium text-indigo-700">{processingStatus}</p>
+              <p className="text-xs text-indigo-400">قد يستغرق الأمر دقيقة واحدة...</p>
+            </div>
+          )}
         </div>
       )}
 
