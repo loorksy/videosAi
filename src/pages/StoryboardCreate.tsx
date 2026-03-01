@@ -27,6 +27,11 @@ export default function StoryboardCreate() {
   const [isGeneratingIdea, setIsGeneratingIdea] = useState(false);
   const [sceneVideos, setSceneVideos] = useState<Record<number, { status: string; url?: string }>>({});
   const [isGeneratingVideos, setIsGeneratingVideos] = useState(false);
+  const [dialogueLanguage, setDialogueLanguage] = useState('العربية');
+
+  const dialogueLanguages = [
+    'العربية', 'الإنجليزية', 'الفرنسية', 'الإسبانية', 'التركية', 'الهندية', 'اليابانية', 'الكورية',
+  ];
 
   const contentTypes = [
     'قصة درامية', 'كوميدي', 'مغامرة', 'رومانسي', 'خيال علمي', 'فانتازيا',
