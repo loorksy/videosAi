@@ -240,7 +240,15 @@ async def generate_video(req: GenerateVideoRequest):
         "aspect_ratio": req.aspect_ratio,
     }
     if req.image_url:
-        payload["imageUrls"] = [req.image_url]
+        image_url = req.image_url
+        # If image is hosted on our preview URL, upload to kie.ai first
+        if "preview.emergentagent.com" in image_url or "localhost" in image_url:
+            async with httpx.AsyncClient(timeout=30) as dl:
+                img_resp = await dl.get(image_url)
+                if img_resp.status_code == 200:
+                    fname = f"{uuid.uuid4().hex}.jpg"
+                    image_url = await upload_image_to_kie(img_resp.content, fname)
+        payload["imageUrls"] = [image_url]
         payload["generation_mode"] = req.generation_mode
 
     headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
