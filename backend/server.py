@@ -447,7 +447,8 @@ class UploadImageRequest(BaseModel):
 
 @app.post("/api/kie/upload-image")
 async def kie_upload_image(req: UploadImageRequest):
-    if not KIE_API_KEY:
+    api_key = get_kie_api_key()
+    if not api_key:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
     img_data = req.image_base64
