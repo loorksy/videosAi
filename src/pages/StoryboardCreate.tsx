@@ -61,17 +61,38 @@ export default function StoryboardCreate() {
   const generateIdeaWithAI = async () => {
     if (selectedCharIds.length === 0) return;
     setIsGeneratingIdea(true);
+    setIsProcessing(true);
+    setProcessingStatus('جاري كتابة القصة الكاملة مع المشاهد والحوار...');
     try {
       const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
-      const charNames = selectedChars.map(c => c.name);
       const genre = contentType === 'مخصص' ? customContentType : contentType;
-      const generatedIdea = await GeminiService.generateStoryIdea(charNames, genre, idea || undefined);
-      if (generatedIdea) setIdea(generatedIdea);
+      
+      const enhancedIdea = `${idea || 'أنشئ قصة ممتعة للأطفال'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}.`;
+      
+      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
+        name: c.name,
+        description: c.description,
+        visualTraits: c.visualTraits,
+      })));
+      
+      setScript(result.script);
+      setIdea(result.script.slice(0, 100) + '...');
+      setScenes(result.scenes.map(s => ({
+        id: uuidv4(),
+        description: s.description,
+        dialogue: s.dialogue || '',
+        characterIds: s.characters.map(name => {
+          const found = selectedChars.find(c => c.name.includes(name) || name.includes(c.name));
+          return found ? found.id : '';
+        }).filter(Boolean),
+      })));
+      setStep('scenes');
     } catch (error: any) {
-      console.error('Failed to generate idea:', error);
-      alert('فشل توليد الفكرة: ' + (error?.message || ''));
+      console.error('Failed to generate story:', error);
+      alert('فشل توليد القصة: ' + (error?.message || ''));
     } finally {
       setIsGeneratingIdea(false);
+      setIsProcessing(false);
     }
   };
 
