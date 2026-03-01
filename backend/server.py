@@ -17,11 +17,19 @@ load_dotenv("/app/.env")
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-KIE_API_KEY = os.environ.get("KIE_API_KEY", "")
+KIE_API_KEY_ENV = os.environ.get("KIE_API_KEY", "")
 KIE_BASE_URL = "https://api.kie.ai/api/v1"
 APP_URL = os.environ.get("APP_URL", "")
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "storyweaver")
+
+
+def get_kie_api_key() -> str:
+    """Get kie.ai API key from DB settings first, fallback to .env."""
+    settings = db.settings.find_one({"key": "app_settings"}, {"_id": 0})
+    if settings and settings.get("kie_api_key"):
+        return settings["kie_api_key"]
+    return KIE_API_KEY_ENV
 
 # MongoDB
 client = MongoClient(MONGO_URL)
