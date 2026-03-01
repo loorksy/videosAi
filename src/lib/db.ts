@@ -1,10 +1,10 @@
-import { openDB, DBSchema } from 'idb';
+const API = window.location.origin;
 
 export interface Character {
   id: string;
   name: string;
   description: string;
-  visualTraits: string; // JSON string or text description of visual traits
+  visualTraits: string;
   images: {
     front?: string;
     back?: string;
@@ -12,9 +12,9 @@ export interface Character {
     left?: string;
     right?: string;
     threeQuarter?: string;
-    reference?: string; // Original uploaded reference image
-    normal?: string; // Normal/original version (for surreal characters)
-    surreal?: string; // Surreal version
+    reference?: string;
+    normal?: string;
+    surreal?: string;
   };
   createdAt: number;
 }
@@ -23,7 +23,7 @@ export interface Storyboard {
   id: string;
   title: string;
   script: string;
-  characters: string[]; // Character IDs
+  characters: string[];
   scenes: Scene[];
   aspectRatio?: '16:9' | '9:16';
   createdAt: number;
@@ -33,10 +33,10 @@ export interface Scene {
   id: string;
   description: string;
   characterIds: string[];
-  dialogue?: string; // The spoken text for this scene
-  frameImage?: string; // The generated master frame
-  videoClip?: string; // The generated video clip URL/Blob
-  audioClip?: string; // The generated voiceover audio URL/Blob
+  dialogue?: string;
+  frameImage?: string;
+  videoClip?: string;
+  audioClip?: string;
 }
 
 export interface AdCampaign {
@@ -51,96 +51,133 @@ export interface MediaItem {
   type: 'video' | 'image' | 'thumbnail';
   title: string;
   description?: string;
-  data: string; // base64 or blob URL
+  data: string;
   source: 'animation' | 'product' | 'thumbnail' | 'brand' | 'storyboard';
   characterName?: string;
   aspectRatio?: string;
   createdAt: number;
 }
 
-interface StoryWeaverDB extends DBSchema {
-  characters: {
-    key: string;
-    value: Character;
-  };
-  storyboards: {
-    key: string;
-    value: Storyboard;
-  };
-  adCampaigns: {
-    key: string;
-    value: AdCampaign;
-  };
-  mediaGallery: {
-    key: string;
-    value: MediaItem;
-  };
+async function api(path: string, options?: RequestInit) {
+  const resp = await fetch(`${API}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.detail || `API error ${resp.status}`);
+  }
+  return resp.json();
 }
 
-const dbPromise = openDB<StoryWeaverDB>('storyweaver-db', 3, {
-  upgrade(db, oldVersion) {
-    if (oldVersion < 1) {
-      db.createObjectStore('characters', { keyPath: 'id' });
-      db.createObjectStore('storyboards', { keyPath: 'id' });
-    }
-    if (oldVersion < 2) {
-      db.createObjectStore('adCampaigns', { keyPath: 'id' });
-    }
-    if (oldVersion < 3) {
-      db.createObjectStore('mediaGallery', { keyPath: 'id' });
-    }
-  },
-});
-
 export const db = {
-  async getCharacter(id: string) {
-    return (await dbPromise).get('characters', id);
-  },
-  async getAllCharacters() {
-    return (await dbPromise).getAll('characters');
-  },
-  async saveCharacter(character: Character) {
-    return (await dbPromise).put('characters', character);
-  },
-  async deleteCharacter(id: string) {
-    return (await dbPromise).delete('characters', id);
-  },
-  async getStoryboard(id: string) {
-    return (await dbPromise).get('storyboards', id);
-  },
-  async getAllStoryboards() {
-    return (await dbPromise).getAll('storyboards');
-  },
-  async saveStoryboard(storyboard: Storyboard) {
-    return (await dbPromise).put('storyboards', storyboard);
-  },
-  async deleteStoryboard(id: string) {
-    return (await dbPromise).delete('storyboards', id);
-  },
-  async getAdCampaign(id: string) {
-    return (await dbPromise).get('adCampaigns', id);
-  },
-  async getAllAdCampaigns() {
-    return (await dbPromise).getAll('adCampaigns');
-  },
-  async saveAdCampaign(campaign: AdCampaign) {
-    return (await dbPromise).put('adCampaigns', campaign);
-  },
-  async deleteAdCampaign(id: string) {
-    return (await dbPromise).delete('adCampaigns', id);
+  // Characters
+  async getCharacter(id: string): Promise<Character | undefined> {
+    try {
+      return await api(`/api/characters/${id}`);
+    } catch { return undefined; }
   },
 
-  // Media Gallery
-  async getMediaItem(id: string) {
-    return (await dbPromise).get('mediaGallery', id);
+  async getAllCharacters(): Promise<Character[]> {
+    try {
+      return await api('/api/characters/list');
+    } catch { return []; }
   },
-  async getAllMedia() {
-    return (await dbPromise).getAll('mediaGallery');
+
+  async saveCharacter(character: Character) {
+    return api('/api/characters/save', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: character.id,
+        name: character.name,
+        description: character.description,
+        visualTraits: character.visualTraits || '',
+        images: character.images,
+      }),
+    });
   },
+
+  async deleteCharacter(id: string) {
+    return api(`/api/characters/${id}`, { method: 'DELETE' });
+  },
+
+  // Storyboards
+  async getStoryboard(id: string): Promise<Storyboard | undefined> {
+    try {
+      return await api(`/api/storyboards/${id}`);
+    } catch { return undefined; }
+  },
+
+  async getAllStoryboards(): Promise<Storyboard[]> {
+    try {
+      return await api('/api/storyboards/list');
+    } catch { return []; }
+  },
+
+  async saveStoryboard(storyboard: Storyboard) {
+    return api('/api/storyboards/save', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: storyboard.id,
+        title: storyboard.title || '',
+        script: storyboard.script || '',
+        aspectRatio: storyboard.aspectRatio || '16:9',
+        scenes: storyboard.scenes?.map(s => ({
+          description: s.description || '',
+          characterIds: s.characterIds || [],
+          dialogue: s.dialogue || '',
+          frameImage: s.frameImage || '',
+          videoUrl: s.videoClip || '',
+        })) || [],
+      }),
+    });
+  },
+
+  async deleteStoryboard(id: string) {
+    return api(`/api/storyboards/${id}`, { method: 'DELETE' });
+  },
+
+  // Media Gallery - upload to server
+  async getMediaItem(id: string): Promise<MediaItem | undefined> {
+    try {
+      const items = await api('/api/media/list');
+      return items.find((m: any) => m.id === id);
+    } catch { return undefined; }
+  },
+
+  async getAllMedia(): Promise<MediaItem[]> {
+    try {
+      const items = await api('/api/media/list');
+      return items.map((m: any) => ({
+        id: m.id,
+        type: m.type,
+        title: m.source || '',
+        data: m.url,
+        source: m.source,
+        createdAt: m.createdAt,
+      }));
+    } catch { return []; }
+  },
+
   async saveMediaItem(item: MediaItem) {
-    return (await dbPromise).put('mediaGallery', item);
+    return api('/api/media/upload', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: item.data,
+        type: item.type,
+        source: item.source,
+      }),
+    });
   },
+
   async deleteMediaItem(id: string) {
-    return (await dbPromise).delete('mediaGallery', id);
+    // TODO: implement delete media endpoint
+    return;
   },
+
+  // Ad Campaigns (keep simple for now)
+  async getAdCampaign(id: string): Promise<AdCampaign | undefined> { return undefined; },
+  async getAllAdCampaigns(): Promise<AdCampaign[]> { return []; },
+  async saveAdCampaign(campaign: AdCampaign) { return; },
+  async deleteAdCampaign(id: string) { return; },
 };
