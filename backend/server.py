@@ -223,6 +223,13 @@ async def delete_storyboard(sb_id: str):
     return {"ok": True}
 
 
+@app.delete("/api/media/{media_id}")
+async def delete_media(media_id: str):
+    db.media.delete_one({"id": media_id})
+    return {"ok": True}
+
+
+
 # ============ KIE.AI VIDEO ============
 
 class GenerateVideoRequest(BaseModel):
