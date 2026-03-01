@@ -63,24 +63,18 @@ export const KieService = {
       if (!resp.ok) continue;
       
       const result = await resp.json();
-      const data = result.data || result;
-      const status = data.status || data.state || '';
+      const status = result.status || '';
       
       if (onProgress) {
         onProgress(`${status} (${i + 1}/${maxPolls})`);
       }
       
-      // Check for completion
-      if (status === 'completed' || status === 'SUCCESS' || status === 'success') {
-        const videoUrl = data.videoUrl || data.resultUrl || data.video_url || 
-                        (data.resultUrls && data.resultUrls[0]) ||
-                        (data.works && data.works[0]?.resource?.resource);
-        if (videoUrl) return videoUrl;
+      if (status === 'completed' && result.videoUrl) {
+        return result.videoUrl;
       }
       
-      // Check for failure
-      if (status === 'failed' || status === 'FAILED' || status === 'error') {
-        throw new Error(data.message || data.error || 'فشل توليد الفيديو');
+      if (status === 'failed') {
+        throw new Error('فشل توليد الفيديو');
       }
     }
     throw new Error('انتهت مهلة توليد الفيديو (10 دقائق)');
