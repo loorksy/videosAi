@@ -527,3 +527,242 @@ async def merge_videos(req: MergeVideosRequest):
         # Cleanup temp files
         import shutil
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+
+# ============ SETTINGS ============
+
+class SettingsSaveRequest(BaseModel):
+    kie_api_key: Optional[str] = None
+    provider: str = "gemini"  # "gemini" or "kie"
+    text_model: str = "gemini-2.5-flash"
+    image_model: str = "gemini-3-pro-image-preview"
+    video_model: str = "veo3_fast"
+
+
+@app.get("/api/settings")
+async def get_settings():
+    settings = db.settings.find_one({"key": "app_settings"}, {"_id": 0})
+    if not settings:
+        return {
+            "provider": "gemini",
+            "text_model": "gemini-2.5-flash",
+            "image_model": "gemini-3-pro-image-preview",
+            "video_model": "veo3_fast",
+            "has_kie_key": bool(KIE_API_KEY_ENV),
+        }
+    return {
+        "provider": settings.get("provider", "gemini"),
+        "text_model": settings.get("text_model", "gemini-2.5-flash"),
+        "image_model": settings.get("image_model", "gemini-3-pro-image-preview"),
+        "video_model": settings.get("video_model", "veo3_fast"),
+        "has_kie_key": bool(settings.get("kie_api_key") or KIE_API_KEY_ENV),
+    }
+
+
+@app.post("/api/settings")
+async def save_settings(req: SettingsSaveRequest):
+    update = {
+        "key": "app_settings",
+        "provider": req.provider,
+        "text_model": req.text_model,
+        "image_model": req.image_model,
+        "video_model": req.video_model,
+    }
+    if req.kie_api_key is not None:
+        update["kie_api_key"] = req.kie_api_key
+    db.settings.update_one({"key": "app_settings"}, {"$set": update}, upsert=True)
+    return {"ok": True}
+
+
+# ============ KIE.AI TEXT GENERATION ============
+
+class KieTextRequest(BaseModel):
+    prompt: str
+    system_prompt: str = ""
+    model: str = "deepseek-chat"
+    response_format: Optional[str] = None  # "json" or None
+
+
+@app.post("/api/kie/generate-text")
+async def kie_generate_text(req: KieTextRequest):
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    messages = []
+    if req.system_prompt:
+        messages.append({"role": "system", "content": req.system_prompt})
+    messages.append({"role": "user", "content": req.prompt})
+
+    payload = {
+        "model": req.model,
+        "input": {
+            "messages": messages,
+        },
+    }
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        # Create task
+        resp = await client.post(f"{KIE_BASE_URL}/jobs/createTask", json=payload, headers=headers)
+        result = resp.json()
+        if resp.status_code != 200 or result.get("code") != 200:
+            raise HTTPException(status_code=resp.status_code, detail=result.get("msg", str(result)))
+
+        task_id = result.get("data", {}).get("taskId", "")
+        if not task_id:
+            raise HTTPException(status_code=500, detail="No taskId returned")
+
+        # Poll for completion
+        for _ in range(60):
+            await asyncio.sleep(2)
+            status_resp = await client.get(
+                f"{KIE_BASE_URL}/jobs/recordInfo?taskId={task_id}", headers=headers
+            )
+            status_data = status_resp.json()
+            data = status_data.get("data", {})
+            success = data.get("successFlag", 0)
+
+            if success == 1:
+                response_obj = data.get("response", {})
+                # For text models the content is in choices
+                choices = response_obj.get("choices", [])
+                if choices:
+                    content = choices[0].get("message", {}).get("content", "")
+                    return {"text": content, "taskId": task_id}
+                # Fallback: raw response text
+                return {"text": str(response_obj), "taskId": task_id}
+            elif success in (2, 3):
+                raise HTTPException(status_code=500, detail="Text generation failed")
+
+        raise HTTPException(status_code=504, detail="Text generation timed out")
+
+
+# ============ KIE.AI IMAGE GENERATION ============
+
+class KieImageRequest(BaseModel):
+    prompt: str
+    model: str = "gpt-image-1"
+    size: str = "1:1"
+    image_urls: List[str] = []
+
+
+@app.post("/api/kie/generate-image")
+async def kie_generate_image(req: KieImageRequest):
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    # Route to correct endpoint based on model
+    if req.model in ("gpt-image-1", "4o-image"):
+        endpoint = f"{KIE_BASE_URL}/gpt4o-image/generate"
+        payload = {"prompt": req.prompt, "size": req.size}
+        if req.image_urls:
+            payload["filesUrl"] = req.image_urls
+        status_endpoint = f"{KIE_BASE_URL}/gpt4o-image/record-info"
+    elif "nano-banana" in req.model:
+        endpoint = f"{KIE_BASE_URL}/jobs/createTask"
+        payload = {
+            "model": req.model,
+            "input": {
+                "prompt": req.prompt,
+                "aspect_ratio": req.size if ":" in req.size else "1:1",
+                "resolution": "2K",
+                "output_format": "jpg",
+                "google_search": False,
+            },
+        }
+        if req.image_urls:
+            payload["input"]["image_urls"] = req.image_urls
+        status_endpoint = f"{KIE_BASE_URL}/jobs/recordInfo"
+    elif "flux-kontext" in req.model:
+        endpoint = f"{KIE_BASE_URL}/jobs/createTask"
+        payload = {
+            "model": req.model,
+            "input": {
+                "prompt": req.prompt,
+                "aspect_ratio": req.size if ":" in req.size else "1:1",
+            },
+        }
+        if req.image_urls:
+            payload["input"]["image_urls"] = req.image_urls
+        status_endpoint = f"{KIE_BASE_URL}/jobs/recordInfo"
+    else:
+        # Generic jobs endpoint
+        endpoint = f"{KIE_BASE_URL}/jobs/createTask"
+        payload = {"model": req.model, "input": {"prompt": req.prompt}}
+        status_endpoint = f"{KIE_BASE_URL}/jobs/recordInfo"
+
+    async with httpx.AsyncClient(timeout=180) as client:
+        resp = await client.post(endpoint, json=payload, headers=headers)
+        result = resp.json()
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=result.get("msg", str(result)))
+
+        task_id = result.get("data", {}).get("taskId", "")
+        if not task_id:
+            raise HTTPException(status_code=500, detail=f"No taskId: {result}")
+
+        # Poll for completion
+        for _ in range(90):
+            await asyncio.sleep(3)
+            sr = await client.get(f"{status_endpoint}?taskId={task_id}", headers=headers)
+            sd = sr.json()
+            data = sd.get("data", {})
+            success = data.get("successFlag", 0)
+
+            if success == 1:
+                response_obj = data.get("response", {})
+                # Image URLs vary by model
+                urls = response_obj.get("resultUrls", [])
+                if not urls:
+                    urls = response_obj.get("imageUrls", [])
+                if not urls:
+                    urls = response_obj.get("images", [])
+                if not urls and isinstance(response_obj, list):
+                    urls = response_obj
+                image_url = urls[0] if urls else ""
+                return {"imageUrl": image_url, "taskId": task_id, "allUrls": urls}
+            elif success in (2, 3):
+                error_msg = data.get("response", {}).get("error", "Image generation failed")
+                raise HTTPException(status_code=500, detail=str(error_msg))
+
+        raise HTTPException(status_code=504, detail="Image generation timed out")
+
+
+@app.get("/api/kie/image-status/{task_id}")
+async def kie_image_status(task_id: str):
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=30) as client:
+        # Try gpt4o endpoint first
+        resp = await client.get(f"{KIE_BASE_URL}/gpt4o-image/record-info?taskId={task_id}", headers=headers)
+        result = resp.json()
+        data = result.get("data", {})
+        success = data.get("successFlag", 0)
+
+        if success == 0:
+            # Try jobs endpoint
+            resp = await client.get(f"{KIE_BASE_URL}/jobs/recordInfo?taskId={task_id}", headers=headers)
+            result = resp.json()
+            data = result.get("data", {})
+            success = data.get("successFlag", 0)
+
+        status = "processing"
+        image_url = ""
+        if success == 1:
+            status = "completed"
+            response_obj = data.get("response", {})
+            urls = response_obj.get("resultUrls", []) or response_obj.get("imageUrls", []) or response_obj.get("images", [])
+            image_url = urls[0] if urls else ""
+        elif success in (2, 3):
+            status = "failed"
+
+        return {"status": status, "imageUrl": image_url, "raw": result}
