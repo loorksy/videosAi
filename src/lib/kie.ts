@@ -38,14 +38,15 @@ export const KieService = {
   },
 
   // Generate video from image + prompt (all-in-one)
-  async generateImageToVideo(imageBase64: string, prompt: string, model = 'veo3_fast', aspectRatio = '9:16'): Promise<KieVideoTask> {
+  async generateImageToVideo(imageBase64: string, prompt: string, model?: string, aspectRatio = '9:16'): Promise<KieVideoTask> {
+    const videoModel = model || getVideoModel();
     const resp = await fetch(`${getApiBase()}/api/kie/image-to-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image_base64: imageBase64,
         prompt,
-        model,
+        model: videoModel,
         aspect_ratio: aspectRatio,
       }),
     });
