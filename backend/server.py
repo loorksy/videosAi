@@ -257,7 +257,8 @@ class GenerateVideoRequest(BaseModel):
 
 @app.post("/api/kie/generate-video")
 async def generate_video(req: GenerateVideoRequest):
-    if not KIE_API_KEY:
+    api_key = get_kie_api_key()
+    if not api_key:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
     payload = {
@@ -267,7 +268,6 @@ async def generate_video(req: GenerateVideoRequest):
     }
     if req.image_url:
         image_url = req.image_url
-        # If image is hosted on our preview URL, upload to kie.ai first
         if "preview.emergentagent.com" in image_url or "localhost" in image_url:
             async with httpx.AsyncClient(timeout=30) as dl:
                 img_resp = await dl.get(image_url)
@@ -277,7 +277,7 @@ async def generate_video(req: GenerateVideoRequest):
         payload["imageUrls"] = [image_url]
         payload["generation_mode"] = req.generation_mode
 
-    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(f"{KIE_BASE_URL}/veo/generate", json=payload, headers=headers)
