@@ -77,7 +77,7 @@ export default function StoryboardView() {
     const tasks: { idx: number; taskId: string }[] = [];
     
     try {
-      // Step 1: Submit all video generation tasks (consecutive pairs)
+      // Step 1: Submit all video generation tasks
       for (let i = 0; i < newScenes.length - 1; i++) {
         if (newScenes[i].videoClip) continue;
 
@@ -87,13 +87,9 @@ export default function StoryboardView() {
         setCurrentGeneratingIndex(i);
         setVideoStatuses(prev => ({ ...prev, [i]: 'جاري الرفع...' }));
 
-        // Build prompt with dialogue
         let prompt = newScenes[i].description;
         if (newScenes[i].dialogue) {
           prompt += `. الشخصية تتحدث بوضوح مع تحريك الشفاه طوال المشهد: "${newScenes[i].dialogue}"`;
-        }
-        if (cameraMotion !== 'Static') {
-          prompt += `. Camera motion: ${cameraMotion}`;
         }
         prompt += `. انتقال سلس إلى المشهد التالي.`;
 
@@ -109,6 +105,16 @@ export default function StoryboardView() {
         } catch (e: any) {
           setVideoStatuses(prev => ({ ...prev, [i]: `فشل: ${e.message}` }));
         }
+      }
+
+      // Save task IDs to database so they persist even if browser is closed
+      if (tasks.length > 0) {
+        const videoTasks = tasks.map(t => ({ taskId: t.taskId, sceneIndex: t.idx }));
+        await fetch(`${window.location.origin}/api/storyboards/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...storyboard, videoTasks }),
+        });
       }
 
       // Step 2: Poll all tasks
@@ -128,7 +134,6 @@ export default function StoryboardView() {
               newScenes[task.idx].videoClip = result.videoUrl;
               pending.delete(task.idx);
               setVideoStatuses(prev => ({ ...prev, [task.idx]: 'مكتمل' }));
-              // Save progress
               const updated = { ...storyboard, scenes: newScenes };
               setStoryboard(updated);
               await db.saveStoryboard(updated);
