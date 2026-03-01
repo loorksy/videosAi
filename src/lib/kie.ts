@@ -27,7 +27,7 @@ export const KieService = {
     const resp = await fetch(`${getApiBase()}/api/kie/generate-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, model, aspect_ratio: aspectRatio }),
+      body: JSON.stringify({ prompt, model: videoModel, aspect_ratio: aspectRatio }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
