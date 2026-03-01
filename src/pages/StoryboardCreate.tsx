@@ -545,6 +545,19 @@ export default function StoryboardCreate() {
                     )}
                   </div>
                   <p className="text-xs text-slate-500">{scene.description}</p>
+                  {/* Video status */}
+                  {sceneVideos[idx] && (
+                    <div className="mt-2">
+                      {sceneVideos[idx].url ? (
+                        <video src={sceneVideos[idx].url} controls className="w-full rounded-lg" />
+                      ) : (
+                        <div className="text-xs text-purple-600 bg-purple-50 p-2 rounded-lg flex items-center gap-1">
+                          {sceneVideos[idx].status.includes('فشل') ? '⚠️' : <Loader2 className="w-3 h-3 animate-spin" />}
+                          {sceneVideos[idx].status}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
