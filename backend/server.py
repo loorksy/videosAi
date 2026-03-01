@@ -325,3 +325,23 @@ async def image_to_video(req: ImageToVideoRequest):
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail=result.get("message", str(result)))
         return {"taskId": result.get("data", {}).get("taskId", result.get("taskId")), "imageUrl": local_url}
+
+
+
+class UploadImageRequest(BaseModel):
+    image_base64: str
+
+
+@app.post("/api/kie/upload-image")
+async def kie_upload_image(req: UploadImageRequest):
+    if not KIE_API_KEY:
+        raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
+
+    img_data = req.image_base64
+    if "," in img_data:
+        img_data = img_data.split(",")[1]
+    image_bytes = base64.b64decode(img_data)
+    filename = f"{uuid.uuid4().hex}.jpg"
+
+    kie_url = await upload_image_to_kie(image_bytes, filename)
+    return {"url": kie_url}
