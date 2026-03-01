@@ -341,22 +341,18 @@ ${charContext}
     // === STEP 3: Scene description ===
     let promptText = `\nGenerate scene ${sceneIndex + 1} of ${totalScenes}. Style: ${style}.
 
-CHARACTER DNA (NEVER change these details - copy them EXACTLY from reference images):
+CHARACTER DNA (MUST be identical to reference images above):
 ${characterDNA}
 
-SCENE DESCRIPTION:
+SCENE TO GENERATE:
 ${sceneDescription}
 
-CRITICAL RULES:
-- LOOK at the character reference images above and COPY them exactly. Same face, same body, same fur/skin, same clothes, same colors.
-- The character in this scene MUST be a pixel-perfect copy of the reference images. Do NOT redesign or reinterpret.
-- NEVER change character clothes, hair, accessories, or any visual detail between scenes.
-- If the reference shows a monkey in a black ninja outfit with glasses, the scene MUST show that EXACT monkey in that EXACT outfit.
-- Colors: Bright, warm, child-friendly pastel colors (soft yellow, sky blue, light green, gentle pink).
-- Lighting: Bright and warm like children's YouTube videos.
-- Background: Cheerful, colorful, kid-friendly environment with pastel tones.
-- Characters speaking: Mouth slightly open as if talking.
-- ${sceneIndex === 0 ? 'ESTABLISHING SHOT. Define the kid-friendly environment clearly.' : 'Continue from previous scene. Same location, same character appearance.'}`;
+DIRECTOR'S RULES:
+1. CHARACTER IDENTITY: COPY the exact character from the reference images above. Same face shape, same fur/skin color, same clothes, same accessories. NOT similar - IDENTICAL.
+2. CONTINUITY: ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Create a bright, warm, kid-friendly environment. This scene sets the visual standard for ALL following scenes.' : `This scene continues from the PREVIOUS SCENE image above. The camera has moved to a new angle but the world is the SAME.`}
+3. KID-FRIENDLY VISUALS: Bright pastel colors (soft yellow, sky blue, light green, pink). Warm lighting. No dark or scary elements. Like a high-quality children's YouTube animation.
+4. SPEAKING: Characters should have their mouth slightly open as if talking/speaking.
+5. CINEMATIC QUALITY: Professional camera angle, proper composition, depth of field. Think Pixar quality for kids.`;
 
     parts.push({ text: promptText });
 
