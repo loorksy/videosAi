@@ -551,13 +551,23 @@ export default function StoryboardCreate() {
           </div>
 
           {step === 'preview' && !isProcessing && (
-            <button
-              onClick={saveStoryboard}
-              className="w-full py-4 bg-green-600 text-white rounded-xl font-bold shadow-lg hover:bg-green-700 flex items-center justify-center gap-2"
-            >
-              <Check className="w-5 h-5" />
-              <span>حفظ القصة</span>
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={generateVideos}
+                disabled={isGeneratingVideos || scenes.every(s => !s.frameImage)}
+                className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold shadow-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isGeneratingVideos ? <Loader2 className="w-5 h-5 animate-spin" /> : <Video className="w-5 h-5" />}
+                <span>{isGeneratingVideos ? 'جاري توليد الفيديوهات...' : 'تحويل المشاهد إلى فيديوهات (Veo 3)'}</span>
+              </button>
+              <button
+                onClick={saveStoryboard}
+                className="w-full py-4 bg-green-600 text-white rounded-xl font-bold shadow-lg hover:bg-green-700 flex items-center justify-center gap-2"
+              >
+                <Check className="w-5 h-5" />
+                <span>حفظ القصة</span>
+              </button>
+            </div>
           )}
         </div>
       )}
