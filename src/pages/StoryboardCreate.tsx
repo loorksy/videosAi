@@ -75,22 +75,29 @@ export default function StoryboardCreate() {
     }
   };
 
-  // Generate videos for all scenes using kie.ai
+  // Generate videos for all scenes using kie.ai (consecutive pairs)
   const generateVideos = async () => {
     setIsGeneratingVideos(true);
     const videos: Record<number, { status: string; url?: string }> = {};
     
-    // Step 1: Start all video tasks
+    // Step 1: Start video tasks using consecutive scene pairs
     const tasks: { idx: number; taskId: string }[] = [];
-    for (let i = 0; i < scenes.length; i++) {
-      if (!scenes[i].frameImage) continue;
+    for (let i = 0; i < scenes.length - 1; i++) {
+      if (!scenes[i].frameImage || !scenes[i + 1].frameImage) continue;
       videos[i] = { status: 'جاري الرفع...' };
       setSceneVideos({ ...videos });
       
       try {
+        // Build prompt with dialogue and lip movement
+        let prompt = scenes[i].description;
+        if (scenes[i].dialogue) {
+          prompt += `. الشخصية تتحدث بوضوح وتحريك الشفاه طوال المشهد: "${scenes[i].dialogue}"`;
+        }
+        prompt += `. الانتقال من هذا المشهد إلى المشهد التالي بسلاسة.`;
+        
         const result = await KieService.generateImageToVideo(
           scenes[i].frameImage!,
-          scenes[i].description,
+          prompt,
           'veo3_fast',
           aspectRatio
         );
@@ -119,6 +126,9 @@ export default function StoryboardCreate() {
           if (result.status === 'completed' && result.videoUrl) {
             videos[task.idx] = { status: 'مكتمل', url: result.videoUrl };
             pending.delete(task.idx);
+            // Save video URL to the scene
+            scenes[task.idx].videoClip = result.videoUrl;
+            setScenes([...scenes]);
           } else if (result.status === 'failed') {
             videos[task.idx] = { status: 'فشل التوليد' };
             pending.delete(task.idx);
