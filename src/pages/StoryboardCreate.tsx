@@ -520,7 +520,12 @@ export default function StoryboardCreate() {
                 <div className="flex justify-between mb-1">
                   <span className="font-bold text-indigo-600">مشهد {idx + 1}</span>
                 </div>
-                <p className="text-slate-600">{scene.description}</p>
+                <p className="text-slate-600 text-xs mb-2">{scene.description}</p>
+                {scene.dialogue && (
+                  <div className="bg-indigo-50 p-2 rounded-lg border border-indigo-100">
+                    <p className="text-xs font-medium text-indigo-700">الحوار: "{scene.dialogue}"</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
