@@ -10,42 +10,65 @@ import { cn } from '../lib/utils';
 export default function StoryboardCreate() {
   const navigate = useNavigate();
   
-  // Restore state from sessionStorage if available
+  // Check for draft but always start at 'chars' step
   const saved = sessionStorage.getItem('storyboard_draft');
   const draft = saved ? JSON.parse(saved) : null;
+  const hasDraft = draft && draft.scenes && draft.scenes.length > 0;
   
-  const [step, setStep] = useState<'chars' | 'script' | 'scenes' | 'frames' | 'preview'>(draft?.step || 'chars');
+  const [step, setStep] = useState<'chars' | 'script' | 'scenes' | 'frames' | 'preview'>('chars');
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [selectedCharIds, setSelectedCharIds] = useState<string[]>(draft?.selectedCharIds || []);
-  const [idea, setIdea] = useState(draft?.idea || '');
-  const [script, setScript] = useState(draft?.script || '');
-  const [scenes, setScenes] = useState<Scene[]>(draft?.scenes || []);
+  const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
+  const [idea, setIdea] = useState('');
+  const [script, setScript] = useState('');
+  const [scenes, setScenes] = useState<Scene[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
 
   // New Professional Options
-  const [style, setStyle] = useState(draft?.style || 'Cinematic');
-  const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>(draft?.aspectRatio || '16:9');
-  const [contentType, setContentType] = useState(draft?.contentType || 'قصة درامية');
-  const [customContentType, setCustomContentType] = useState(draft?.customContentType || '');
-  const [sceneCount, setSceneCount] = useState(draft?.sceneCount || 5);
+  const [style, setStyle] = useState('Cinematic');
+  const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
+  const [contentType, setContentType] = useState('قصة درامية');
+  const [customContentType, setCustomContentType] = useState('');
+  const [sceneCount, setSceneCount] = useState(5);
   const [isGeneratingIdea, setIsGeneratingIdea] = useState(false);
-  const [sceneVideos, setSceneVideos] = useState<Record<number, { status: string; url?: string }>>(draft?.sceneVideos || {});
+  const [sceneVideos, setSceneVideos] = useState<Record<number, { status: string; url?: string }>>({});
   const [isGeneratingVideos, setIsGeneratingVideos] = useState(false);
-  const [dialogueLanguage, setDialogueLanguage] = useState(draft?.dialogueLanguage || 'العربية');
-  const [draftId] = useState(draft?.draftId || uuidv4());
+  const [dialogueLanguage, setDialogueLanguage] = useState('العربية');
+  const [draftId] = useState(uuidv4());
 
   const dialogueLanguages = [
     'العربية', 'الإنجليزية', 'الفرنسية', 'الإسبانية', 'التركية', 'الهندية', 'اليابانية', 'الكورية',
   ];
 
-  // Auto-save draft to sessionStorage on every state change
+  const resumeDraft = () => {
+    if (!draft) return;
+    setStep(draft.step || 'chars');
+    setSelectedCharIds(draft.selectedCharIds || []);
+    setIdea(draft.idea || '');
+    setScript(draft.script || '');
+    setScenes(draft.scenes || []);
+    setStyle(draft.style || 'Cinematic');
+    setAspectRatio(draft.aspectRatio || '16:9');
+    setContentType(draft.contentType || 'قصة درامية');
+    setCustomContentType(draft.customContentType || '');
+    setSceneCount(draft.sceneCount || 5);
+    setDialogueLanguage(draft.dialogueLanguage || 'العربية');
+    setSceneVideos(draft.sceneVideos || {});
+  };
+
+  const startNew = () => {
+    sessionStorage.removeItem('storyboard_draft');
+  };
+
+  // Auto-save draft to sessionStorage
   useEffect(() => {
-    const draftData = {
-      draftId, step, selectedCharIds, idea, script, scenes, style, aspectRatio,
-      contentType, customContentType, sceneCount, dialogueLanguage, sceneVideos,
-    };
-    sessionStorage.setItem('storyboard_draft', JSON.stringify(draftData));
+    if (scenes.length > 0 || script) {
+      const draftData = {
+        draftId, step, selectedCharIds, idea, script, scenes, style, aspectRatio,
+        contentType, customContentType, sceneCount, dialogueLanguage, sceneVideos,
+      };
+      sessionStorage.setItem('storyboard_draft', JSON.stringify(draftData));
+    }
   }, [step, selectedCharIds, idea, script, scenes, style, aspectRatio, contentType, customContentType, sceneCount, dialogueLanguage, sceneVideos, draftId]);
 
   const contentTypes = [
