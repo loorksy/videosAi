@@ -38,6 +38,36 @@ export default function StoryboardView() {
   }, [id]);
 
   const [videoStatuses, setVideoStatuses] = useState<Record<number, string>>({});
+  const [isMerging, setIsMerging] = useState(false);
+  const [mergedVideoUrl, setMergedVideoUrl] = useState<string>('');
+
+  const exportFinalVideo = async () => {
+    if (!storyboard) return;
+    const videoUrls = storyboard.scenes
+      .filter(s => s.videoClip)
+      .map(s => s.videoClip!);
+    
+    if (videoUrls.length === 0) {
+      alert('لا توجد فيديوهات لدمجها');
+      return;
+    }
+
+    setIsMerging(true);
+    try {
+      const resp = await fetch(`${window.location.origin}/api/merge-videos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_urls: videoUrls }),
+      });
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.detail || 'فشل الدمج');
+      setMergedVideoUrl(result.url);
+    } catch (e: any) {
+      alert(`فشل تصدير الفيديو: ${e.message}`);
+    } finally {
+      setIsMerging(false);
+    }
+  };
 
   const generateFullVideo = async () => {
     if (!storyboard) return;
