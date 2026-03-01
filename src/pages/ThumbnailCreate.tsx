@@ -718,7 +718,7 @@ export default function ThumbnailCreate() {
               </div>
             )}
 
-            {/* Advanced Options Accordion */}
+            {mode !== 'from_story' && (
             <div className="space-y-3 mt-6">
               <h3 className="font-bold text-slate-800 border-b pb-2">إعدادات متقدمة (اختياري)</h3>
               
