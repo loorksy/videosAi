@@ -37,7 +37,7 @@ interface ThumbnailAnalysis {
 export default function ThumbnailCreate() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
-  const [mode, setMode] = useState<'create' | 'enhance'>('create');
+  const [mode, setMode] = useState<'create' | 'enhance' | 'from_story'>('create');
   
   // Form State
   const [title, setTitle] = useState('');
