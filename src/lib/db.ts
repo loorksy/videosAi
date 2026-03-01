@@ -87,11 +87,17 @@ export const db = {
 
   async getAllCharacters(): Promise<Character[]> {
     try {
-      return await api('/api/characters/list');
+      if (cache.characters && Date.now() - cache.characters.ts < CACHE_TTL) {
+        return cache.characters.data;
+      }
+      const data = await api('/api/characters/list');
+      cache.characters = { data, ts: Date.now() };
+      return data;
     } catch { return []; }
   },
 
   async saveCharacter(character: Character) {
+    cache.characters = undefined; // invalidate
     return api('/api/characters/save', {
       method: 'POST',
       body: JSON.stringify({
