@@ -1,73 +1,79 @@
 <analysis>**original_problem_statement:**
-The user's initial request was in Arabic: شغل الموقع (Run the site).
-The project evolved into an AI-powered story and video creation application. Key user requests included:
-1.  **Features**: A login page, multiple character creation tools, an advanced storyboard generator with scene-to-scene consistency, and integration with  for video generation.
-2.  **Bugs**: Persistent video generation failures (initially with Google Veo, now with ), tools failing due to incorrect API parameters, and UI/UX issues like missing loading indicators.
-3.  **Architecture**: The user requested that all application data (characters, images, videos, stories) be saved on a server rather than in the browser's local storage.
-4.  **Deletion**: The user requested the complete removal of the Character Animation tool to focus solely on the storyboard workflow.
+The user's initial request was in Arabic: شغل الموقع (Run the site). The project has since evolved into a comprehensive AI-powered story and video creation application called StoryWeaver.
+
+Key user requests implemented and in progress include:
+1.  **Core Features**: A full-stack application with a login page, character creation, a multi-step storyboard generator (idea -> script -> scenes -> videos), and a thumbnail generator.
+2.  **AI Integration**: Utilizes Google Gemini for idea/script/image generation and  (Veo 3) for image-to-video conversion.
+3.  **Architecture**: A FastAPI backend manages all data persistence in MongoDB, serves media, and acts as a secure proxy for third-party APIs like .
+4.  **Workflow Enhancements**: Features like background video processing, auto-saving drafts, merging all scene clips into a final video, and generating thumbnails directly from story content have been added.
+5.  **Bugs & Issues**: The user has reported numerous bugs throughout development, most recently a critical issue where the steps in the story creation process seem to disappear, preventing them from creating new stories.
 
 **User's preferred language**: Arabic (العربية). You MUST respond in Arabic.
 
 **what currently exists?**
-The application is a full-stack project with a React/Vite/TypeScript frontend and a new FastAPI backend.
--   **Frontend**: Provides UI for creating characters and complex storyboards. It uses Google's Gemini API for image generation.
--   **Backend ()**: A new FastAPI server that:
-    -   Handles all data persistence using a MongoDB database.
-    -   Manages media uploads, storing files locally in .
-    -   Acts as a secure proxy for the  API, storing the user's API key.
--   **Database**: All data (characters, storyboards) has been migrated from the browser's IndexedDB to a server-side MongoDB instance.
+A full-stack application with a React/Vite/TypeScript frontend and a FastAPI/Python backend.
+-   **Frontend**: Provides a UI for user authentication, character creation, multi-step storyboard generation, viewing saved stories/videos, and a thumbnail creation tool. It features performance caching for a faster user experience.
+-   **Backend ()**: A robust FastAPI server that handles all data operations with MongoDB, manages user media uploads (), proxies  API calls, and uses  for video merging.
+-   **Database**: All application data (users, characters, storyboards, media) is persisted in a server-side MongoDB database.
+-   **Key Features**:
+    -   **Storyboard Creation**: A multi-step process to generate a full story from an idea, including script, dialogue, and scene images.
+    -   **Video Generation**: Converts storyboard scenes into video clips using  and supports background processing.
+    -   **Final Video Export**: Merges all individual scene clips into a single downloadable video.
+    -   **Thumbnail Tool**: Creates thumbnails from scratch or by analyzing a saved story to generate a relevant image, title, description, and hashtags.
+    -   **Galleries**: Separate pages to view created characters, storyboards, and media.
 
 **Last working item**:
--   **Last item agent was working**: The agent was debugging a failure in the  video generation feature. The user reported an Image fetch failed error from the  dashboard. The agent correctly diagnosed that 's service cannot access images from the application's protected preview URL. The proposed solution was to first upload the image to 's own File Upload API and then use the returned URL to start the video generation job.
--   **Status**: IN PROGRESS
+-   **Last item agent was working**: Investigating a critical bug reported by the user: There are many errors and pages have disappeared. The agent's investigation suggested the component files exist, but the user is likely experiencing a UI/UX failure within the multi-step storyboard creation process (). This issue arose immediately after the agent implemented a complex auto-save/resume draft feature using .
+-   **Status**: BLOCKED
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: backend testing agent
--   **User Testing Done**: N
+-   **Which testing method agent to use?**: frontend testing agent
+-   **User Testing Done**: Y (User tested and reported the application is broken).
 
 **All Pending/In progress Issue list**:
 
--   **Issue 1:  video generation fails due to image fetch error (P0)**
-    -   **Description**: The Convert Scenes to Videos feature fails because  cannot access the image URLs served by the app's backend (due to the preview environment's security).
-    -   **Attempted fixes**: A backend was created to serve media, but this was insufficient as the URL is not publicly accessible.
+-   **Issue 1: Story Creation Workflow is Broken - Disappeared Pages (P0)**
+    -   **Description**: The user cannot create new stories. When navigating to the Create Story page, the initial step of selecting characters is skipped, and the UI is likely stuck or presenting a confusing state. This is a major regression.
+    -   **Attempted fixes**: The agent introduced a feature to auto-save drafts to  and prompt the user to Resume or Start New. This logic is flawed and has broken the core user workflow.
     -   **Next debug checklist**:
-        1.  Modify the  endpoint in .
-        2.  Inside this function, before calling 's video generation, first make a request to 's File Upload API () with the image data.
-        3.  Extract the public URL from the File Upload API's response.
-        4.  Use this new public URL as the  when calling 's video generation endpoint.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is the final, critical step in the user's primary workflow. Fixing it will allow storyboard images to be converted into videos.
+        1.  Examine .
+        2.  Analyze the  hooks that read from . This is the likely cause of the bug, as it forces the component into a specific state on load, bypassing initial steps.
+        3.  **Simplify the logic**: Remove the complex Resume/Ignore prompt. A better approach would be to always show the Start New page (character selection) and add a small, non-intrusive button or banner like Resume your last draft if a draft exists in .
+        4.  Thoroughly test the flow for both creating a new story from scratch and resuming a draft.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is the primary function of the application. The user is completely blocked from creating content until this is fixed.
     -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Is recurring issue?**: Y (The state management of this multi-step component has been fragile).
+    -   **Should Test frontend/backend/both after fix?**: Frontend
 
 **In progress Task List**:
-
--   **Task 1: Verify server-side data migration (P1)**
-    -   **Where to resume**: The backend APIs for saving/loading data are built, and the frontend () has been refactored. The next step is a full end-to-end regression test of all features that create or use persistent data.
-    -   **What will be achieved with this?**: This will confirm that the migration from IndexedDB to MongoDB is complete and that all user data is being saved reliably on the server as requested.
-    -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: Both
-    -   **Blocked on something**: No.
+-   None. The bug is the only priority.
 
 **Upcoming and Future Tasks**
 
+-   **Upcoming Tasks**:
+    -   **Task 1 (P1)**: Migrate all AI generation (including images) to  as the primary provider, as hinted by the user.
+
 -   **Future Tasks**:
-    -   **Task 1: Re-evaluate single-character animation**. After the storyboard-to-video flow is stable, the user may want a simpler tool to animate a single character again. This could involve creating a new, simplified tool that leverages the  backend.
-    -   **Task 2: Address Google API Content Policy blocks**. This was a major source of user frustration. While the focus is now on , if the user continues to use Google's API for image generation, a better strategy for handling content blocks (e.g., prompt rewriting, user warnings) may be needed.
+    -   **Task 1**: Re-evaluate a simplified single-character animation tool.
+    -   **Task 2**: Implement a better strategy for handling potential content policy blocks from AI providers.
 
 **Completed work in this session**
--   **Architecture Overhaul**: Migrated the application from a client-only architecture to a full-stack architecture with a FastAPI backend and MongoDB database for persistent storage.
--   ** Integration**: Added  (Veo 3 model) for image-to-video conversion, including backend endpoints and a Convert to Videos button in the storyboard UI.
--   **Storyboard Tool Enhancement**:
-    -   Implemented a film director strategy where each scene visually references the previous scenes to ensure consistency.
-    -   Added new features: Generate Idea with AI, a dropdown for content genre, and a custom slider for scene count (up to 60).
-    -   Added a Regenerate button for individual scenes.
--   **Major Bug Fixes**:
-    -   Resolved widespread tool failures by removing unsupported API parameters (, ) from all Google API calls.
-    -   Implemented a global retry mechanism with exponential backoff for all API calls to improve reliability against network errors and rate limits.
--   **Feature Removal**: Deleted the Character Animation feature and its associated files () per user request.
+-   **Video Generation Fixed**: Resolved  integration bugs by correctly uploading images to their service first and parsing API responses.
+-   **Background Processing**: Implemented background video generation by saving s, allowing users to close the browser while videos render.
+-   **Final Video Export**: Added a feature using  on the backend to merge all scene clips into a single downloadable video.
+-   **Generate from Story Thumbnail Tool**: Created a new feature that analyzes a story to generate a thumbnail, title, description, and hashtags.
+-   **AI Prompt Engineering**: Significantly improved AI prompts for character consistency (director mindset), kids-friendly styles, and generating full scenes with dialogue.
+-   **Data & Performance**: Fixed numerous data persistence bugs (e.g., media deletion, relative vs. absolute URLs) and added frontend caching to speed up loading times.
+-   **Bug Fixes**:
+    -   Fixed a bug limiting scene generation to 5 scenes.
+    -   Fixed multiple  crashes due to unexpected API responses.
+    -   Resolved an issue where an invalid Gemini model name was breaking AI features.
+-   **UI/UX**:
+    -   Added a dialogue language selector.
+    -   Removed redundant UI elements (TTS, camera motion) from the story view page per user request.
+    -   Implemented (but flawed) auto-saving draft functionality for the story creator.
 
 **Earlier issues found/mentioned but not fixed**
--   The core issue of Google's API aggressively blocking content remains, though the user's focus has shifted to using  for video, which may circumvent the problem.
+-   None.
 
 **Known issue recurrence from previous fork**
 -   N/A
@@ -76,81 +82,79 @@ The application is a full-stack project with a React/Vite/TypeScript frontend an
 
 
 **Key Technical Concepts**
--   **Frontend**: React, Vite, TypeScript, TailwindCSS
--   **Backend**: FastAPI, Python
--   **Database**: MongoDB
--   **AI/ML**: Google Gemini (for images),  (for video via Veo 3 model)
--   **Architecture**: A full-stack application where the frontend handles the UI and the backend manages data persistence, media storage, and secure third-party API communication.
+-   **Frontend**: React, Vite, TypeScript, TailwindCSS,  for drafts.
+-   **Backend**: FastAPI, Python,  for video processing.
+-   **Database**: MongoDB.
+-   **AI/ML**: Google Gemini (for images/text),  (for video).
+-   **Architecture**: Full-stack with a clear separation of concerns. Backend manages data, media, and heavy processing.
 
 **key DB schema**
--   Managed in MongoDB via Pydantic models in .
--   ** collection**: Stores character data, including , , and .
--   ** collection**: Stores story data, including the Script started, output log file is 'typescript'.
+-   ****: , , ,  (array of string).
+-   ****: , Script started, output log file is 'typescript'.
 # 
-Script done. and an array of , each with image and video URLs.
+Script done.,  (array of ),  (array of ), .
+-   ****: , , , , , , .
 
 **changes in tech stack**
--   **Backend Added**: A new **FastAPI** backend was introduced.
--   **Database Changed**: Switched from client-side  to server-side **MongoDB**.
--   **Video API Changed**: Switched from direct calls to Google Veo to proxied calls to **kie.ai**.
+-    was installed and integrated into the backend for video merging.
 
 **All files of reference**
--   : **Most critical file.** Contains the  logic that needs fixing, all database models, and API endpoints.
--   : The primary frontend component where the user workflow culminates.
--   : The new frontend service for communicating with our  backend endpoints.
--   : The data service, now refactored to make API calls to the backend.
+-   : **CRITICAL FILE**. Contains the regression that broke the story creation workflow. The state management and  logic must be revised.
+-   : The backend application, which is currently stable.
+-   : The frontend data service, which includes caching logic.
+-   : The component for viewing completed stories.
 
 **Areas that need refactoring**:
--   None. The current architecture is new and needs stabilization, not refactoring.
+-   : The component's state and effect logic for handling drafts needs to be refactored for simplicity and correctness to fix the P0 bug.
 
 **key api endpoints**
--   **Our Backend (in )**:
-    -   : **(NEEDS FIX)** Handles video generation requests.
-    -   : Checks video generation progress.
-    -   : CRUD operations for characters.
-    -   : CRUD operations for storyboards.
-    -   : Serves uploaded files.
+-   : Merges scene clips into a final video.
+-   : Checks the status of multiple pending video generation tasks.
+-   : Deletes a media item from the database and storage.
+-   : Saves media items (thumbnails) to the gallery.
+-   All CRUD endpoints for  and .
+-   : Initiates video generation.
 
 **Critical Info for New Agent**
--   **PRIORITY 1: FIX THE  BUG**: The user's main goal is to generate videos from storyboards. The fix must be implemented in  by using 's File Upload API before requesting video generation.
--   **FULL-STACK APP**: Remember there is a Python backend in . The  API key is stored securely in  and all  operations are proxied through it.
--   **USER LANGUAGE IS ARABIC**: All communication must be in Arabic.
+-   **TOP PRIORITY IS THE P0 BUG**: The user cannot create stories. The disappeared pages bug in  must be fixed first. The implementation of the auto-save draft feature was flawed and introduced this regression. Your first action should be to simplify this logic.
+-   **USER LANGUAGE**: All communication MUST be in Arabic.
+-   **ARCHITECTURE**: Do not forget the backend. It's stable but responsible for all heavy lifting.
 
 **documents and test reports created in this job**
--    was updated to reflect the architectural changes and new features.
+-    (This report is outdated as a major regression was introduced after it was generated).
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Reported  video generation failed with an Image fetch failed error. **(PENDING)**
-2.  **User**: Requested all media (characters, stories) be saved on the server. **(IN PROGRESS)**
-3.  **User**: Reported the generate scenario button had no loading indicator. **(RESOLVED)**
-4.  **User**: Asked to integrate  for video generation. **(DONE)**
-5.  **User**: Provided the  API key. **(DONE)**
-6.  **User**: Requested storyboard scenes to be like consecutive shots with camera movement. **(DONE)**
-7.  **User**: Requested scene count to be customizable up to 50+. **(DONE)**
-8.  **User**: Requested new storyboard features: AI idea generation, content type, and scene count. **(DONE)**
-9.  **User**: Confirmed each scene should use previous images for context. **(DONE)**
-10. **User**: Requested to delete the Character Animation tool. **(DONE)**
+1.  **User**: There are many errors and pages have disappeared, review the old versions. **(PENDING - P0 BUG)**
+2.  **User**: The generate idea button just shows generating... - agent fixed by changing Gemini model name. **(RESOLVED)**
+3.  **User**: The thumbnail feature doesnt generate an image, and delete doesnt work from the gallery. - agent fixed both issues. **(RESOLVED)**
+4.  **User**: Requested a feature to generate thumbnails from an existing story. **(DONE)**
+5.  **User**: Requested that generation works in the background and that creation progress is not lost when navigating away. **(DONE, BUT CAUSED P0 BUG)**
+6.  **User**: Requested a feature to merge all scene videos into one final video. **(DONE)**
+7.  **User**: Provided detailed director logic for scene-to-scene consistency. **(DONE)**
+8.  **User**: Reported issues with video generation, including inconsistent frames and missing dialogue. **(RESOLVED)**
+9.  **User**: Pointed out that character names were not being used correctly in prompts. **(RESOLVED)**
+10. **User**: Confirmed that Veo3 provides audio and no separate TTS is needed. **(DONE)**
 
 **Project Health Check:**
--   **Broken**: The core video generation workflow via  is broken.
+-   **Broken**: The primary user workflow for creating a new storyboard is non-functional due to a regression.
 -   **Mocked**: N/A
 
 **3rd Party Integrations**
--   **Google Gemini API**: Used for image/text generation. Requires a User API Key provided in the UI.
+-   **Google Gemini API ()**: Used for text and image generation. Requires a User API Key.
 -   **kie.ai (Veo 3)**: Used for video generation. Requires a User API Key stored in .
--   **MongoDB**: Used for database storage.
+-   **MongoDB**: Database for all application data.
+-   **ffmpeg**: A command-line tool used on the backend for video merging.
 
 **Testing status**
--   Testing agent used after significant changes: NO
+-   Testing agent used after significant changes: YES, but a regression was introduced afterwards.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: []
--   Known regressions: The main video generation feature is not functional.
+-   Test files created: 
+-   Known regressions: The multi-step UI for storyboard creation is broken.
 
 **Credentials to test flow:**
 -   **Login Password**: 
 -   **Gemini API Key**:  (To be entered in the settings UI)
--   **kie.ai API Key**:  (This is already configured in )
+-   **kie.ai API Key**:  (Already configured in )
 
 **What agent forgot to execute**
--   The agent correctly identified the fix for the  bug (using their File Upload API) but did not proceed with the implementation.
--   The agent implemented the major backend and database migration but did not perform a full regression test to confirm all data-saving features (like character creation) work correctly with the new system.</analysis>
+-   The agent did not conduct proper end-to-end testing after implementing the complex auto-save draft feature. This lack of testing allowed a critical regression to be shipped to the user, breaking the most important part of the application. The implementation itself was overly complex, creating a poor user experience that led to the disappeared pages complaint.</analysis>
