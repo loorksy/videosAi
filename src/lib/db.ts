@@ -34,6 +34,7 @@ export interface Storyboard {
   scenes: Scene[];
   aspectRatio?: '16:9' | '9:16';
   createdAt: number;
+  videoTasks?: { taskId: string; sceneIndex: number }[];
 }
 
 export interface Scene {
