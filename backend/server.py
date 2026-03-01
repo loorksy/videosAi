@@ -284,7 +284,7 @@ async def upload_image_to_kie(image_bytes: bytes, filename: str) -> str:
     headers = {"Authorization": f"Bearer {KIE_API_KEY}"}
     async with httpx.AsyncClient(timeout=60) as c:
         resp = await c.post(
-            "https://api.kie.ai/api/file-stream-upload",
+            "https://kieai.redpandaai.co/api/file-stream-upload",
             headers=headers,
             files={"file": (filename, image_bytes, "image/jpeg")},
             data={"uploadPath": "storyweaver/images", "fileName": filename},
@@ -292,7 +292,7 @@ async def upload_image_to_kie(image_bytes: bytes, filename: str) -> str:
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail=f"kie.ai upload failed: {resp.text}")
         result = resp.json()
-        url = result.get("data", {}).get("url", "")
+        url = result.get("data", {}).get("downloadUrl", "")
         if not url:
             raise HTTPException(status_code=500, detail=f"kie.ai upload returned no URL: {result}")
         return url
