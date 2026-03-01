@@ -72,7 +72,7 @@ export default function StoryboardCreate() {
       const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
       const genre = contentType === 'مخصص' ? customContentType : contentType;
       
-      const enhancedIdea = `${idea || 'أنشئ قصة ممتعة للأطفال'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}.`;
+      const enhancedIdea = `${idea || 'أنشئ قصة ممتعة للأطفال'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}. لغة الحوار: ${dialogueLanguage}.`;
       
       const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
         name: c.name,
