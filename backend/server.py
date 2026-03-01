@@ -376,3 +376,71 @@ async def kie_upload_image(req: UploadImageRequest):
 
     kie_url = await upload_image_to_kie(image_bytes, filename)
     return {"url": kie_url}
+
+
+class MergeVideosRequest(BaseModel):
+    video_urls: List[str]
+
+
+@app.post("/api/merge-videos")
+async def merge_videos(req: MergeVideosRequest):
+    """Download all video clips and merge them into one final video using ffmpeg."""
+    import subprocess
+    import tempfile
+
+    if not req.video_urls:
+        raise HTTPException(status_code=400, detail="No video URLs provided")
+
+    tmpdir = tempfile.mkdtemp()
+    downloaded = []
+
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            for i, url in enumerate(req.video_urls):
+                if not url:
+                    continue
+                # Download video
+                resp = await client.get(url)
+                if resp.status_code != 200:
+                    continue
+                path = os.path.join(tmpdir, f"clip_{i:03d}.mp4")
+                with open(path, "wb") as f:
+                    f.write(resp.content)
+                downloaded.append(path)
+
+        if len(downloaded) < 1:
+            raise HTTPException(status_code=400, detail="No videos could be downloaded")
+
+        # Create ffmpeg concat file
+        concat_path = os.path.join(tmpdir, "list.txt")
+        with open(concat_path, "w") as f:
+            for p in downloaded:
+                f.write(f"file '{p}'\n")
+
+        # Merge with ffmpeg
+        output_name = f"{uuid.uuid4().hex}_final.mp4"
+        output_path = os.path.join(UPLOAD_DIR, output_name)
+
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_path,
+             "-c", "copy", "-movflags", "+faststart", output_path],
+            capture_output=True, text=True, timeout=300
+        )
+
+        if result.returncode != 0:
+            # Try with re-encoding if concat copy fails
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_path,
+                 "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", output_path],
+                capture_output=True, text=True, timeout=300
+            )
+
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"ffmpeg error: {result.stderr[:500]}")
+
+        return {"url": f"/api/uploads/{output_name}", "clips_count": len(downloaded)}
+
+    finally:
+        # Cleanup temp files
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
