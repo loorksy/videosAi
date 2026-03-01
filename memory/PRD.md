@@ -9,52 +9,38 @@
 - AI: Google Gemini API (text/image) + kie.ai (Veo 3 video)
 - Storage: Server filesystem + MongoDB
 
-## الهندسة المعمارية
-- Frontend: React SPA (port 3000, vite preview)
-- Backend: FastAPI (port 8001, /api prefix)
-- MongoDB: metadata for characters, storyboards, media
-- File storage: /app/backend/uploads/ served as /api/uploads/
-
 ## ما تم تنفيذه
-- [x] تسجيل دخول (كلمة مرور: Ahmetlork0009)
-- [x] إنشاء شخصيات (خيالية، بشري مضحك، مخلوقات، هجينة)
-- [x] منشئ ورقة الشخصية
-- [x] أفكار فيروسية
-- [x] استوديو المنتجات والإعلانات
+- [x] تسجيل دخول
+- [x] إنشاء شخصيات
 - [x] قصص مصورة متقدمة (سيناريو + صور + فيديو)
 - [x] ربط kie.ai Veo 3 لتوليد الفيديو
-- [x] نقل التخزين من IndexedDB إلى Server (MongoDB + filesystem)
-- [x] إصلاح خطأ "Image fetch failed" في kie.ai - رفع الصور لـ CDN قبل التوليد
-- [x] إصلاح endpoint حالة المهمة (record-info بدل record-detail)
-- [x] إصلاح resultUrls path في response (data.response.resultUrls)
+- [x] نقل التخزين من IndexedDB إلى Server
+- [x] إصلاح kie.ai - رفع الصور لـ CDN + record-info + resultUrls
 - [x] إصلاح روابط الصور (نسبية بدل كاملة)
-- [x] حفظ الفيديوهات مع القصة في قاعدة البيانات
+- [x] حفظ الفيديوهات مع القصة
 - [x] عرض الفيديوهات في صفحة عرض القصة
-- [x] إخفاء أزرار التوليد عند وجود جميع الفيديوهات
-- [x] زر "توليد فكرة بالذكاء الاصطناعي" يولد القصة الكاملة مع المشاهد والحوار
-- [x] ثبات ملابس وتفاصيل الشخصيات بين المشاهد
-- [x] ألوان وبيئات مناسبة للأطفال
-- [x] تخزين مؤقت (Cache) للشخصيات والقصص لأداء أسرع
-- [x] استراتيجية الإطارات المرجعية المتتالية للفيديو
-- [x] حوار مع تحريك الشفاه في كل مشهد
+- [x] زر "توليد فكرة" يولد القصة الكاملة + المشاهد + الحوار
+- [x] خيار لغة الحوار (عربية، إنجليزية، فرنسية، إلخ)
+- [x] عرض الحوار تحت كل مشهد
+- [x] إصلاح حرج: تحويل صور الشخصيات من URL إلى base64 قبل إرسالها لـ Gemini
+- [x] ثبات ملابس وتفاصيل الشخصيات
+- [x] ألوان وبيئات أطفال (باستيل دافئة)
+- [x] تخزين مؤقت (Cache) للأداء
+- [x] استراتيجية الإطارات المرجعية (صور شخصيات + مشهد سابق)
 
-## الملفات الرئيسية
-- /app/backend/server.py - FastAPI backend
-- /app/src/lib/gemini.ts - Gemini AI service
-- /app/src/lib/kie.ts - kie.ai video service
-- /app/src/lib/db.ts - Server API client with caching
-- /app/src/pages/StoryboardCreate.tsx - أداة إنشاء القصص
-- /app/src/pages/StoryboardView.tsx - أداة عرض القصص
+## استراتيجية توليد المشاهد
+- مشهد 1: صور الشخصيات + سكربت المشهد 1 → صورة
+- مشهد 2: صور الشخصيات + سكربت المشهد 2 + صورة المشهد 1 → صورة
+- مشهد 3: صور الشخصيات + سكربت المشهد 3 + صورة المشهد 2 → صورة
+- وهكذا...
 
 ## kie.ai API Endpoints
 - Upload: POST https://kieai.redpandaai.co/api/file-stream-upload
 - Generate: POST https://api.kie.ai/api/v1/veo/generate
 - Status: GET https://api.kie.ai/api/v1/veo/record-info?taskId={id}
-- successFlag: 0=generating, 1=success, 2=failed, 3=generation_failed
 - Video URL in: data.response.resultUrls[0]
 
 ## المهام المستقبلية
-- [ ] إعادة تقييم أداة تحريك الشخصية المفردة
 - [ ] تحسين التعامل مع حظر Google API
-- [ ] إضافة pagination للقوائم
-- [ ] تحسين أداء تحميل الصور الكبيرة (lazy loading)
+- [ ] تصدير الفيديو النهائي (دمج المقاطع)
+- [ ] إضافة صوت/تعليق صوتي
