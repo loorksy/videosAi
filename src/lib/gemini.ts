@@ -320,26 +320,20 @@ ${charContext}
     
     // === STEP 1: Character reference images FIRST (highest priority) ===
     if (characterImages.length > 0) {
-      parts.push({ text: `REFERENCE IMAGES - The characters in this scene MUST look EXACTLY like these images. Copy their face, body, fur, clothing, colors pixel by pixel:` });
+      parts.push({ text: `REFERENCE CHARACTER IMAGES - The characters in this scene MUST look EXACTLY like these. Copy their face, body, fur, clothing, colors PIXEL BY PIXEL. DO NOT redesign:` });
       characterImages.slice(0, 3).forEach((img) => {
         const base64Data = img.includes(',') ? img.split(',')[1] : img;
-        parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+        if (base64Data.length > 100) {
+          parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+        }
       });
     }
 
-    // === STEP 2: Scene reference images ===
-    if (sceneIndex > 0) {
-      // Always include FIRST scene (establishing shot) as base reference
-      if (firstSceneImage) {
-        parts.push({ text: `\nESTABLISHING SHOT (Scene 1) - BASE REFERENCE for the entire story. Same world, art style, color palette:` });
-        const firstData = firstSceneImage.includes(',') ? firstSceneImage.split(',')[1] : firstSceneImage;
-        parts.push({ inlineData: { mimeType: 'image/jpeg', data: firstData } });
-      }
-      
-      // Include PREVIOUS scene for direct continuity (skip if same as first)
-      if (previousSceneImage && previousSceneImage !== firstSceneImage) {
-        parts.push({ text: `\nPREVIOUS SCENE (Scene ${sceneIndex}) - Continue directly from here:` });
-        const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
+    // === STEP 2: Previous scene image for continuity ===
+    if (sceneIndex > 0 && previousSceneImage) {
+      parts.push({ text: `\nPREVIOUS SCENE (Scene ${sceneIndex}) - Your new scene MUST continue directly from this image. Same world, same character appearance, same art style:` });
+      const prevData = previousSceneImage.includes(',') ? previousSceneImage.split(',')[1] : previousSceneImage;
+      if (prevData.length > 100) {
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: prevData } });
       }
     }
