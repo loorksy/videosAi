@@ -209,9 +209,13 @@ export const db = {
     return api('/api/media/upload', {
       method: 'POST',
       body: JSON.stringify({
+        id: item.id,
         data: item.data,
         type: item.type,
         source: item.source,
+        title: item.title || '',
+        description: item.description || '',
+        aspectRatio: item.aspectRatio || '16:9',
       }),
     });
   },
