@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
+from pymongo import MongoClient
+from datetime import datetime, timezone
 import httpx
 import os
 import uuid
@@ -17,44 +19,207 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 KIE_API_KEY = os.environ.get("KIE_API_KEY", "")
 KIE_BASE_URL = "https://api.kie.ai/api/v1"
 APP_URL = os.environ.get("APP_URL", "")
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+DB_NAME = os.environ.get("DB_NAME", "storyweaver")
 
-# Create temp directory for images
+# MongoDB
+client = MongoClient(MONGO_URL)
+db = client[DB_NAME]
+
+# Upload directory
 UPLOAD_DIR = "/app/backend/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Serve uploaded images as static files
 app.mount("/api/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+
+# ============ HELPERS ============
+
+def save_base64_file(data: str, ext: str = "jpg") -> str:
+    if "," in data:
+        data = data.split(",")[1]
+    img_bytes = base64.b64decode(data)
+    fname = f"{uuid.uuid4().hex}.{ext}"
+    with open(os.path.join(UPLOAD_DIR, fname), "wb") as f:
+        f.write(img_bytes)
+    return f"{APP_URL}/api/uploads/{fname}"
+
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ============ HEALTH ============
 
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
 
 
-class UploadImageRequest(BaseModel):
-    image_base64: str
-    filename: Optional[str] = None
+# ============ MEDIA UPLOAD ============
+
+class MediaUploadRequest(BaseModel):
+    data: str  # base64
+    type: str = "image"  # image or video
+    source: str = ""  # which tool
 
 
-@app.post("/api/kie/upload-image")
-async def upload_image(req: UploadImageRequest):
-    try:
-        data = req.image_base64
-        if "," in data:
-            data = data.split(",")[1]
+@app.post("/api/media/upload")
+async def upload_media(req: MediaUploadRequest):
+    ext = "mp4" if req.type == "video" else "jpg"
+    url = save_base64_file(req.data, ext)
+    doc = {
+        "id": uuid.uuid4().hex,
+        "url": url,
+        "type": req.type,
+        "source": req.source,
+        "createdAt": now_iso(),
+    }
+    db.media.insert_one(doc)
+    return {"id": doc["id"], "url": url}
 
-        img_bytes = base64.b64decode(data)
-        fname = req.filename or f"{uuid.uuid4().hex}.jpg"
-        fpath = os.path.join(UPLOAD_DIR, fname)
 
-        with open(fpath, "wb") as f:
-            f.write(img_bytes)
+@app.get("/api/media/list")
+async def list_media(type: Optional[str] = None, source: Optional[str] = None):
+    query = {}
+    if type:
+        query["type"] = type
+    if source:
+        query["source"] = source
+    items = list(db.media.find(query, {"_id": 0}).sort("createdAt", -1).limit(100))
+    return items
 
-        image_url = f"{APP_URL}/api/uploads/{fname}"
-        return {"url": image_url, "filename": fname}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+# ============ CHARACTERS ============
+
+class CharacterSaveRequest(BaseModel):
+    id: Optional[str] = None
+    name: str
+    description: str
+    visualTraits: str = ""
+    images: Dict[str, str] = {}  # key -> base64
+
+
+@app.post("/api/characters/save")
+async def save_character(req: CharacterSaveRequest):
+    char_id = req.id or uuid.uuid4().hex
+
+    # Upload images and convert base64 to URLs
+    image_urls = {}
+    for key, val in req.images.items():
+        if val and len(val) > 200:
+            if val.startswith("http"):
+                image_urls[key] = val
+            else:
+                image_urls[key] = save_base64_file(val)
+
+    doc = {
+        "id": char_id,
+        "name": req.name,
+        "description": req.description,
+        "visualTraits": req.visualTraits,
+        "images": image_urls,
+        "createdAt": now_iso(),
+    }
+
+    db.characters.update_one({"id": char_id}, {"$set": doc}, upsert=True)
+    return doc
+
+
+@app.get("/api/characters/list")
+async def list_characters():
+    chars = list(db.characters.find({}, {"_id": 0}).sort("createdAt", -1))
+    return chars
+
+
+@app.delete("/api/characters/{char_id}")
+async def delete_character(char_id: str):
+    db.characters.delete_one({"id": char_id})
+    return {"ok": True}
+
+
+@app.get("/api/characters/{char_id}")
+async def get_character(char_id: str):
+    char = db.characters.find_one({"id": char_id}, {"_id": 0})
+    if not char:
+        raise HTTPException(status_code=404, detail="Character not found")
+    return char
+
+
+# ============ STORYBOARDS ============
+
+class SceneSave(BaseModel):
+    description: str
+    characterIds: List[str] = []
+    dialogue: str = ""
+    frameImage: str = ""  # base64 or url
+    videoUrl: str = ""
+
+
+class StoryboardSaveRequest(BaseModel):
+    id: Optional[str] = None
+    title: str = ""
+    script: str = ""
+    style: str = ""
+    aspectRatio: str = "16:9"
+    scenes: List[SceneSave] = []
+
+
+@app.post("/api/storyboards/save")
+async def save_storyboard(req: StoryboardSaveRequest):
+    sb_id = req.id or uuid.uuid4().hex
+
+    saved_scenes = []
+    for scene in req.scenes:
+        frame_url = ""
+        if scene.frameImage and len(scene.frameImage) > 200:
+            if scene.frameImage.startswith("http"):
+                frame_url = scene.frameImage
+            else:
+                frame_url = save_base64_file(scene.frameImage)
+
+        saved_scenes.append({
+            "description": scene.description,
+            "characterIds": scene.characterIds,
+            "dialogue": scene.dialogue,
+            "frameImage": frame_url,
+            "videoUrl": scene.videoUrl,
+        })
+
+    doc = {
+        "id": sb_id,
+        "title": req.title,
+        "script": req.script,
+        "style": req.style,
+        "aspectRatio": req.aspectRatio,
+        "scenes": saved_scenes,
+        "createdAt": now_iso(),
+    }
+
+    db.storyboards.update_one({"id": sb_id}, {"$set": doc}, upsert=True)
+    return doc
+
+
+@app.get("/api/storyboards/list")
+async def list_storyboards():
+    items = list(db.storyboards.find({}, {"_id": 0}).sort("createdAt", -1))
+    return items
+
+
+@app.get("/api/storyboards/{sb_id}")
+async def get_storyboard(sb_id: str):
+    sb = db.storyboards.find_one({"id": sb_id}, {"_id": 0})
+    if not sb:
+        raise HTTPException(status_code=404, detail="Storyboard not found")
+    return sb
+
+
+@app.delete("/api/storyboards/{sb_id}")
+async def delete_storyboard(sb_id: str):
+    db.storyboards.delete_one({"id": sb_id})
+    return {"ok": True}
+
+
+# ============ KIE.AI VIDEO ============
 
 class GenerateVideoRequest(BaseModel):
     prompt: str
@@ -74,36 +239,18 @@ async def generate_video(req: GenerateVideoRequest):
         "model": req.model,
         "aspect_ratio": req.aspect_ratio,
     }
-
     if req.image_url:
         payload["imageUrls"] = [req.image_url]
-        if req.generation_mode:
-            payload["generation_mode"] = req.generation_mode
+        payload["generation_mode"] = req.generation_mode
 
-    headers = {
-        "Authorization": f"Bearer {KIE_API_KEY}",
-        "Content-Type": "application/json",
-    }
+    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
 
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                f"{KIE_BASE_URL}/veo/generate",
-                json=payload,
-                headers=headers,
-            )
-            result = resp.json()
-
-            if resp.status_code == 402:
-                raise HTTPException(status_code=402, detail="رصيد kie.ai غير كافٍ. اشحن حسابك.")
-            if resp.status_code == 401:
-                raise HTTPException(status_code=401, detail="مفتاح kie.ai غير صالح.")
-            if resp.status_code != 200:
-                raise HTTPException(status_code=resp.status_code, detail=result.get("message", "خطأ غير معروف"))
-
-            return result
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"فشل الاتصال بـ kie.ai: {str(e)}")
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(f"{KIE_BASE_URL}/veo/generate", json=payload, headers=headers)
+        result = resp.json()
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=result.get("message", str(result)))
+        return result
 
 
 @app.get("/api/kie/task-status/{task_id}")
@@ -111,23 +258,13 @@ async def task_status(task_id: str):
     if not KIE_API_KEY:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
-    headers = {
-        "Authorization": f"Bearer {KIE_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(
-                f"{KIE_BASE_URL}/veo/record-detail?taskId={task_id}",
-                headers=headers,
-            )
-            return resp.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"فشل التحقق من حالة المهمة: {str(e)}")
+    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(f"{KIE_BASE_URL}/veo/record-detail?taskId={task_id}", headers=headers)
+        return resp.json()
 
 
-class GenerateVideoFromImageRequest(BaseModel):
+class ImageToVideoRequest(BaseModel):
     prompt: str
     image_base64: str
     model: str = "veo3_fast"
@@ -135,23 +272,9 @@ class GenerateVideoFromImageRequest(BaseModel):
 
 
 @app.post("/api/kie/image-to-video")
-async def image_to_video(req: GenerateVideoFromImageRequest):
-    """All-in-one: upload image + generate video"""
-    # Step 1: Upload image
-    data = req.image_base64
-    if "," in data:
-        data = data.split(",")[1]
+async def image_to_video(req: ImageToVideoRequest):
+    image_url = save_base64_file(req.image_base64)
 
-    img_bytes = base64.b64decode(data)
-    fname = f"{uuid.uuid4().hex}.jpg"
-    fpath = os.path.join(UPLOAD_DIR, fname)
-
-    with open(fpath, "wb") as f:
-        f.write(img_bytes)
-
-    image_url = f"{APP_URL}/api/uploads/{fname}"
-
-    # Step 2: Call kie.ai
     if not KIE_API_KEY:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
@@ -161,28 +284,11 @@ async def image_to_video(req: GenerateVideoFromImageRequest):
         "aspect_ratio": req.aspect_ratio,
         "imageUrls": [image_url],
     }
+    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
 
-    headers = {
-        "Authorization": f"Bearer {KIE_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                f"{KIE_BASE_URL}/veo/generate",
-                json=payload,
-                headers=headers,
-            )
-            result = resp.json()
-
-            if resp.status_code == 402:
-                raise HTTPException(status_code=402, detail="رصيد kie.ai غير كافٍ.")
-            if resp.status_code == 401:
-                raise HTTPException(status_code=401, detail="مفتاح kie.ai غير صالح.")
-            if resp.status_code != 200:
-                raise HTTPException(status_code=resp.status_code, detail=result.get("message", str(result)))
-
-            return {"taskId": result.get("data", {}).get("taskId", result.get("taskId")), "imageUrl": image_url}
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"فشل الاتصال بـ kie.ai: {str(e)}")
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(f"{KIE_BASE_URL}/veo/generate", json=payload, headers=headers)
+        result = resp.json()
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=result.get("message", str(result)))
+        return {"taskId": result.get("data", {}).get("taskId", result.get("taskId")), "imageUrl": image_url}
