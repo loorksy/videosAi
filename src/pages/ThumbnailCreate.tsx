@@ -332,29 +332,41 @@ export default function ThumbnailCreate() {
             <button 
               onClick={() => setMode('create')} 
               className={cn(
-                "flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2", 
+                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
                 mode === 'create' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <Sparkles className="w-4 h-4" />
-              إنشاء من الصفر
+              <Sparkles className="w-3 h-3" />
+              من الصفر
+            </button>
+            <button 
+              onClick={() => setMode('from_story' as any)} 
+              className={cn(
+                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                mode === 'from_story' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              <BookOpen className="w-3 h-3" />
+              من القصة
             </button>
             <button 
               onClick={() => setMode('enhance')} 
               className={cn(
-                "flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2", 
+                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
                 mode === 'enhance' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <Wand2 className="w-4 h-4" />
-              تحسين صورة موجودة
+              <Wand2 className="w-3 h-3" />
+              تحسين
             </button>
           </div>
 
           <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-sm text-red-800 leading-relaxed">
             {mode === 'create' 
-              ? "صمم صورة مصغرة جذابة (Clickbait) لفيديو اليوتيوب الخاص بك بأساليب أشهر القنوات."
-              : "ارفع صورة مصغرة جاهزة وسيقوم الذكاء الاصطناعي بتحسين جودتها، أو استبدال الوجوه بشخصياتك، أو تغيير النص المكتوب عليها."}
+              ? "صمم صورة مصغرة جذابة (Clickbait) لفيديو اليوتيوب الخاص بك."
+              : mode === 'from_story'
+              ? "اختر قصة وسيقوم الذكاء الاصطناعي بتحليلها وإنشاء صورة مصغرة + عنوان + وصف + هاشتاقات تلقائياً."
+              : "ارفع صورة مصغرة جاهزة وسيقوم الذكاء الاصطناعي بتحسينها."}
           </div>
 
           <div className="space-y-6">
