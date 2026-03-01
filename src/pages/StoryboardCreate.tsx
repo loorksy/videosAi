@@ -364,6 +364,7 @@ export default function StoryboardCreate() {
       createdAt: Date.now()
     };
     await db.saveStoryboard(storyboard);
+    sessionStorage.removeItem('storyboard_draft');
     navigate('/storyboards');
   };
 
