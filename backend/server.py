@@ -196,6 +196,8 @@ async def save_storyboard(req: StoryboardSaveRequest):
         "scenes": saved_scenes,
         "createdAt": now_iso(),
     }
+    if req.videoTasks is not None:
+        doc["videoTasks"] = req.videoTasks
 
     db.storyboards.update_one({"id": sb_id}, {"$set": doc}, upsert=True)
     return doc
