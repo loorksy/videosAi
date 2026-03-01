@@ -341,7 +341,7 @@ ${charContext}
       return JSON.parse(jsonString);
     } catch (error: any) {
       if (isPermissionError(error)) {
-        throw new Error("فشل توليد السيناريو (403). تأكد من أن المفتاح العام لديه صلاحية الوصول لنموذج gemini-3.1-pro-preview.");
+        throw new Error("فشل توليد السيناريو. تأكد من صحة مفتاح Gemini API.");
       }
       throw error;
     }
