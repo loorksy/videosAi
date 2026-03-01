@@ -347,21 +347,22 @@ ${charContext}
     // === STEP 3: Scene description ===
     let promptText = `\nGenerate scene ${sceneIndex + 1} of ${totalScenes}. Style: ${style}.
 
-CHARACTER DNA (NEVER change these details):
+CHARACTER DNA (NEVER change these details - copy them EXACTLY from reference images):
 ${characterDNA}
 
 SCENE DESCRIPTION:
 ${sceneDescription}
 
-RULES:
-- The characters MUST be identical copies of the reference images above. Do NOT redesign them.
-- NEVER change character clothes, hair, colors, or any detail between scenes.
-- Same outfit, same accessories, same everything - pixel perfect consistency.
-- Colors: Use bright, warm, child-friendly pastel colors (soft yellow, sky blue, light green, gentle pink).
+CRITICAL RULES:
+- LOOK at the character reference images above and COPY them exactly. Same face, same body, same fur/skin, same clothes, same colors.
+- The character in this scene MUST be a pixel-perfect copy of the reference images. Do NOT redesign or reinterpret.
+- NEVER change character clothes, hair, accessories, or any visual detail between scenes.
+- If the reference shows a monkey in a black ninja outfit with glasses, the scene MUST show that EXACT monkey in that EXACT outfit.
+- Colors: Bright, warm, child-friendly pastel colors (soft yellow, sky blue, light green, gentle pink).
 - Lighting: Bright and warm like children's YouTube videos.
-- Background: Cheerful, colorful, kid-friendly environment.
-- Characters speaking: Mouth should be slightly open, showing they are talking.
-- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly with bright kid-friendly colors.' : 'Continue from the scene images above. Same location, same lighting, same world, same character clothes.'}`;
+- Background: Cheerful, colorful, kid-friendly environment with pastel tones.
+- Characters speaking: Mouth slightly open as if talking.
+- ${sceneIndex === 0 ? 'ESTABLISHING SHOT. Define the kid-friendly environment clearly.' : 'Continue from previous scene. Same location, same character appearance.'}`;
 
     parts.push({ text: promptText });
 
