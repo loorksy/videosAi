@@ -25,6 +25,8 @@ export default function StoryboardCreate() {
   const [customContentType, setCustomContentType] = useState('');
   const [sceneCount, setSceneCount] = useState(5);
   const [isGeneratingIdea, setIsGeneratingIdea] = useState(false);
+  const [sceneVideos, setSceneVideos] = useState<Record<number, { status: string; url?: string }>>({});
+  const [isGeneratingVideos, setIsGeneratingVideos] = useState(false);
 
   const contentTypes = [
     'قصة درامية', 'كوميدي', 'مغامرة', 'رومانسي', 'خيال علمي', 'فانتازيا',
