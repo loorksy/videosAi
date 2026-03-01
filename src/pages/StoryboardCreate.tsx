@@ -471,6 +471,21 @@ export default function StoryboardCreate() {
             </div>
           </div>
 
+          {/* Dialogue Language */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">لغة الحوار</label>
+            <select
+              value={dialogueLanguage}
+              onChange={(e) => setDialogueLanguage(e.target.value)}
+              className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              data-testid="dialogue-language-select"
+            >
+              {dialogueLanguages.map(lang => (
+                <option key={lang} value={lang}>{lang}</option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={generateScript}
             disabled={isProcessing || (contentType === 'مخصص' && !customContentType)}
