@@ -33,9 +33,64 @@ export default function StoryboardView() {
 
   useEffect(() => {
     if (id) {
-      db.getStoryboard(id).then(setStoryboard);
+      db.getStoryboard(id).then(sb => {
+        setStoryboard(sb);
+        // Auto-resume polling for pending video tasks
+        if (sb?.videoTasks && sb.videoTasks.length > 0) {
+          resumePendingTasks(sb);
+        }
+      });
     }
   }, [id]);
+
+  const resumePendingTasks = async (sb: Storyboard) => {
+    const pendingTasks = (sb.videoTasks || []).filter((t: any) => {
+      const idx = t.sceneIndex;
+      return idx >= 0 && idx < sb.scenes.length && !sb.scenes[idx]?.videoClip;
+    });
+    if (pendingTasks.length === 0) return;
+
+    setIsGenerating(true);
+    const newScenes = [...sb.scenes];
+    const taskIds = pendingTasks.map((t: any) => t.taskId);
+
+    // Check status via batch endpoint
+    let pollCount = 0;
+    const pending = new Set(pendingTasks.map((t: any) => t.taskId));
+
+    while (pending.size > 0 && pollCount < 60) {
+      await new Promise(r => setTimeout(r, 5000));
+      pollCount++;
+
+      try {
+        const resp = await fetch(`${window.location.origin}/api/kie/batch-task-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_ids: [...pending], storyboard_id: sb.id }),
+        });
+        const results = await resp.json();
+
+        for (const task of pendingTasks) {
+          const r = results[task.taskId];
+          if (!r) continue;
+          if (r.status === 'completed' && r.videoUrl) {
+            newScenes[task.sceneIndex].videoClip = r.videoUrl;
+            pending.delete(task.taskId);
+            setVideoStatuses(prev => ({ ...prev, [task.sceneIndex]: 'مكتمل' }));
+            const updated = { ...sb, scenes: newScenes };
+            setStoryboard(updated);
+            await db.saveStoryboard(updated);
+          } else if (r.status === 'failed') {
+            pending.delete(task.taskId);
+            setVideoStatuses(prev => ({ ...prev, [task.sceneIndex]: 'فشل' }));
+          } else {
+            setVideoStatuses(prev => ({ ...prev, [task.sceneIndex]: `جاري التوليد... (${pollCount})` }));
+          }
+        }
+      } catch { /* continue */ }
+    }
+    setIsGenerating(false);
+  };
 
   const [videoStatuses, setVideoStatuses] = useState<Record<number, string>>({});
   const [isMerging, setIsMerging] = useState(false);
