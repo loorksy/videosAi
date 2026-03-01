@@ -329,11 +329,12 @@ class BatchTaskRequest(BaseModel):
 @app.post("/api/kie/batch-task-status")
 async def batch_task_status(req: BatchTaskRequest):
     """Check status of multiple tasks at once. Auto-update storyboard if provided."""
-    if not KIE_API_KEY:
+    api_key = get_kie_api_key()
+    if not api_key:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
     results = {}
-    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     async with httpx.AsyncClient(timeout=30) as client:
         for tid in req.task_ids:
