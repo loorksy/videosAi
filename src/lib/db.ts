@@ -104,13 +104,37 @@ export const db = {
   // Storyboards
   async getStoryboard(id: string): Promise<Storyboard | undefined> {
     try {
-      return await api(`/api/storyboards/${id}`);
+      const data = await api(`/api/storyboards/${id}`);
+      if (data && data.scenes) {
+        data.scenes = data.scenes.map((s: any, i: number) => ({
+          id: s.id || `scene-${i}`,
+          description: s.description || '',
+          characterIds: s.characterIds || [],
+          dialogue: s.dialogue || '',
+          frameImage: s.frameImage || '',
+          videoClip: s.videoUrl || s.videoClip || '',
+          audioClip: s.audioClip || '',
+        }));
+      }
+      return data;
     } catch { return undefined; }
   },
 
   async getAllStoryboards(): Promise<Storyboard[]> {
     try {
-      return await api('/api/storyboards/list');
+      const items = await api('/api/storyboards/list');
+      return items.map((sb: any) => ({
+        ...sb,
+        scenes: (sb.scenes || []).map((s: any, i: number) => ({
+          id: s.id || `scene-${i}`,
+          description: s.description || '',
+          characterIds: s.characterIds || [],
+          dialogue: s.dialogue || '',
+          frameImage: s.frameImage || '',
+          videoClip: s.videoUrl || s.videoClip || '',
+          audioClip: s.audioClip || '',
+        })),
+      }));
     } catch { return []; }
   },
 
