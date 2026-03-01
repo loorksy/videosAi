@@ -316,5 +316,107 @@ class TestMediaUpload:
         print(f"✓ Media list returned {len(data)} items")
 
 
+class TestSettings:
+    """Settings endpoint tests - provider selection, API keys, models"""
+    
+    def test_get_settings_returns_defaults(self):
+        """GET /api/settings should return default settings"""
+        response = requests.get(f"{BASE_URL}/api/settings")
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Should have required fields
+        assert "provider" in data
+        assert "text_model" in data
+        assert "image_model" in data
+        assert "video_model" in data
+        assert "has_kie_key" in data
+        print(f"✓ Settings returned: provider={data.get('provider')}, has_kie_key={data.get('has_kie_key')}")
+    
+    def test_save_settings_with_kie_provider(self):
+        """POST /api/settings should save provider settings"""
+        # Save kie.ai as provider
+        payload = {
+            "kie_api_key": "test_api_key_123",
+            "provider": "kie",
+            "text_model": "deepseek-chat",
+            "image_model": "gpt-image-1",
+            "video_model": "veo3_fast"
+        }
+        response = requests.post(f"{BASE_URL}/api/settings", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("ok") == True
+        print(f"✓ Settings saved with kie provider")
+        
+        # Verify saved settings via GET
+        get_response = requests.get(f"{BASE_URL}/api/settings")
+        assert get_response.status_code == 200
+        saved = get_response.json()
+        assert saved.get("provider") == "kie"
+        assert saved.get("text_model") == "deepseek-chat"
+        assert saved.get("image_model") == "gpt-image-1"
+        assert saved.get("video_model") == "veo3_fast"
+        assert saved.get("has_kie_key") == True
+        print(f"✓ Settings verified: provider={saved.get('provider')}, text_model={saved.get('text_model')}")
+    
+    def test_save_settings_with_gemini_provider(self):
+        """POST /api/settings should save Gemini provider settings"""
+        payload = {
+            "provider": "gemini",
+            "text_model": "gemini-2.5-flash",
+            "image_model": "gemini-3-pro-image-preview",
+            "video_model": "veo3_fast"
+        }
+        response = requests.post(f"{BASE_URL}/api/settings", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("ok") == True
+        
+        # Verify settings
+        get_response = requests.get(f"{BASE_URL}/api/settings")
+        saved = get_response.json()
+        assert saved.get("provider") == "gemini"
+        assert saved.get("text_model") == "gemini-2.5-flash"
+        print(f"✓ Settings verified for Gemini provider")
+
+
+class TestKieTextAndImage:
+    """Kie.ai Text and Image generation endpoint tests (new endpoints)"""
+    
+    def test_kie_generate_text_endpoint_exists(self):
+        """POST /api/kie/generate-text endpoint should exist and accept requests"""
+        payload = {
+            "prompt": "Test prompt",
+            "model": "deepseek-chat"
+        }
+        response = requests.post(f"{BASE_URL}/api/kie/generate-text", json=payload)
+        # Endpoint exists - may fail due to auth but should not be 404
+        assert response.status_code != 404
+        print(f"✓ /api/kie/generate-text endpoint exists, status: {response.status_code}")
+    
+    def test_kie_generate_image_endpoint_exists(self):
+        """POST /api/kie/generate-image endpoint should exist and accept requests"""
+        payload = {
+            "prompt": "Test image prompt",
+            "model": "gpt-image-1",
+            "size": "1:1"
+        }
+        response = requests.post(f"{BASE_URL}/api/kie/generate-image", json=payload)
+        # Endpoint exists - may fail due to auth but should not be 404
+        assert response.status_code != 404
+        print(f"✓ /api/kie/generate-image endpoint exists, status: {response.status_code}")
+    
+    def test_kie_image_status_endpoint_exists(self):
+        """GET /api/kie/image-status/{task_id} endpoint should exist"""
+        response = requests.get(f"{BASE_URL}/api/kie/image-status/fake-task-id")
+        # Endpoint exists - returns status info for any task_id
+        assert response.status_code == 200
+        data = response.json()
+        assert "status" in data
+        assert "imageUrl" in data
+        print(f"✓ /api/kie/image-status endpoint exists, status: {data.get('status')}")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
