@@ -282,7 +282,6 @@ async def task_status(task_id: str):
             status = "completed"
             urls_str = data.get("resultUrls", "[]")
             try:
-                import json
                 urls = json.loads(urls_str) if isinstance(urls_str, str) else urls_str
                 video_url = urls[0] if urls else ""
             except Exception:
