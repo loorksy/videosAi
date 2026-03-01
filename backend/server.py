@@ -289,10 +289,11 @@ async def generate_video(req: GenerateVideoRequest):
 
 @app.get("/api/kie/task-status/{task_id}")
 async def task_status(task_id: str):
-    if not KIE_API_KEY:
+    api_key = get_kie_api_key()
+    if not api_key:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
-    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(f"{KIE_BASE_URL}/veo/record-info?taskId={task_id}", headers=headers)
         result = resp.json()
