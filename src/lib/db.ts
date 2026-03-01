@@ -111,6 +111,7 @@ export const db = {
   },
 
   async deleteCharacter(id: string) {
+    cache.characters = undefined; // invalidate
     return api(`/api/characters/${id}`, { method: 'DELETE' });
   },
 
