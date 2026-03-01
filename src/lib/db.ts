@@ -136,8 +136,11 @@ export const db = {
 
   async getAllStoryboards(): Promise<Storyboard[]> {
     try {
+      if (cache.storyboards && Date.now() - cache.storyboards.ts < CACHE_TTL) {
+        return cache.storyboards.data;
+      }
       const items = await api('/api/storyboards/list');
-      return items.map((sb: any) => ({
+      const result = items.map((sb: any) => ({
         ...sb,
         scenes: (sb.scenes || []).map((s: any, i: number) => ({
           id: s.id || `scene-${i}`,
@@ -149,10 +152,13 @@ export const db = {
           audioClip: s.audioClip || '',
         })),
       }));
+      cache.storyboards = { data: result, ts: Date.now() };
+      return result;
     } catch { return []; }
   },
 
   async saveStoryboard(storyboard: Storyboard) {
+    cache.storyboards = undefined; // invalidate
     return api('/api/storyboards/save', {
       method: 'POST',
       body: JSON.stringify({
