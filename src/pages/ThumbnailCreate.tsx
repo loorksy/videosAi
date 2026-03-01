@@ -204,21 +204,41 @@ export default function ThumbnailCreate() {
       alert('الرجاء رفع صورة الأساس أولاً للتحسين.');
       return;
     }
+    if (mode === 'from_story' && !selectedStoryId) {
+      alert('الرجاء اختيار قصة أولاً.');
+      return;
+    }
 
     setIsProcessing(true);
     setStep('generating');
     
     try {
-      // Gather all reference images (selected DB characters + uploaded characters)
+      // Helper to convert URL to base64
+      const toBase64 = async (img: string): Promise<string> => {
+        if (!img) return '';
+        if (img.length > 200) return img;
+        try {
+          const resp = await fetch(img.startsWith('/') ? `${window.location.origin}${img}` : img);
+          const blob = await resp.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch { return ''; }
+      };
+
+      // Gather all reference images
       const referenceImages: { name: string; dataUrl: string }[] = [];
       
-      // 1. Add selected DB characters
-      selectedCharIds.forEach(id => {
+      // 1. Add selected DB characters (convert URLs to base64)
+      for (const id of selectedCharIds) {
         const char = characters.find(c => c.id === id);
         if (char && char.images.front) {
-          referenceImages.push({ name: char.name, dataUrl: char.images.front });
+          const b64 = await toBase64(char.images.front);
+          if (b64) referenceImages.push({ name: char.name, dataUrl: b64 });
         }
-      });
+      }
 
       // 2. Add uploaded character images
       uploadedImages.filter(img => img.type === 'character').forEach(img => {
