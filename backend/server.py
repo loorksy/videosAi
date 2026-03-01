@@ -271,24 +271,57 @@ class ImageToVideoRequest(BaseModel):
     aspect_ratio: str = "16:9"
 
 
+async def upload_image_to_kie(image_bytes: bytes, filename: str) -> str:
+    """Upload image to kie.ai's File Upload API and return the CDN URL."""
+    headers = {"Authorization": f"Bearer {KIE_API_KEY}"}
+    async with httpx.AsyncClient(timeout=60) as c:
+        resp = await c.post(
+            "https://api.kie.ai/api/file-stream-upload",
+            headers=headers,
+            files={"file": (filename, image_bytes, "image/jpeg")},
+            data={"uploadPath": "storyweaver/images", "fileName": filename},
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=f"kie.ai upload failed: {resp.text}")
+        result = resp.json()
+        url = result.get("data", {}).get("url", "")
+        if not url:
+            raise HTTPException(status_code=500, detail=f"kie.ai upload returned no URL: {result}")
+        return url
+
+
 @app.post("/api/kie/image-to-video")
 async def image_to_video(req: ImageToVideoRequest):
-    image_url = save_base64_file(req.image_base64)
-
     if not KIE_API_KEY:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
+
+    # Decode base64 image
+    img_data = req.image_base64
+    if "," in img_data:
+        img_data = img_data.split(",")[1]
+    image_bytes = base64.b64decode(img_data)
+    filename = f"{uuid.uuid4().hex}.jpg"
+
+    # Save locally for reference
+    local_path = os.path.join(UPLOAD_DIR, filename)
+    with open(local_path, "wb") as f:
+        f.write(image_bytes)
+    local_url = f"{APP_URL}/api/uploads/{filename}"
+
+    # Upload to kie.ai CDN so their service can access the image
+    kie_image_url = await upload_image_to_kie(image_bytes, filename)
 
     payload = {
         "prompt": req.prompt,
         "model": req.model,
         "aspect_ratio": req.aspect_ratio,
-        "imageUrls": [image_url],
+        "imageUrls": [kie_image_url],
     }
     headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(f"{KIE_BASE_URL}/veo/generate", json=payload, headers=headers)
+    async with httpx.AsyncClient(timeout=30) as c:
+        resp = await c.post(f"{KIE_BASE_URL}/veo/generate", json=payload, headers=headers)
         result = resp.json()
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail=result.get("message", str(result)))
-        return {"taskId": result.get("data", {}).get("taskId", result.get("taskId")), "imageUrl": image_url}
+        return {"taskId": result.get("data", {}).get("taskId", result.get("taskId")), "imageUrl": local_url}
