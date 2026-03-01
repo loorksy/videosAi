@@ -163,6 +163,7 @@ class StoryboardSaveRequest(BaseModel):
     style: str = ""
     aspectRatio: str = "16:9"
     scenes: List[SceneSave] = []
+    videoTasks: Optional[List[Dict[str, Any]]] = None
 
 
 @app.post("/api/storyboards/save")
