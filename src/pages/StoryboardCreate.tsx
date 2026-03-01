@@ -185,8 +185,8 @@ export default function StoryboardCreate() {
       setScenes(result.scenes.map(s => ({
         id: uuidv4(),
         description: s.description,
+        dialogue: s.dialogue || '',
         characterIds: s.characters.map(name => {
-            // Try to map back to IDs, fuzzy match or just use the first match
             const found = selectedChars.find(c => c.name.includes(name) || name.includes(c.name));
             return found ? found.id : '';
         }).filter(Boolean),
