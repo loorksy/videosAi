@@ -339,7 +339,7 @@ async def image_to_video(req: ImageToVideoRequest):
     local_path = os.path.join(UPLOAD_DIR, filename)
     with open(local_path, "wb") as f:
         f.write(image_bytes)
-    local_url = f"{APP_URL}/api/uploads/{filename}"
+    local_url = f"/api/uploads/{filename}"
 
     # Upload to kie.ai CDN so their service can access the image
     kie_image_url = await upload_image_to_kie(image_bytes, filename)
