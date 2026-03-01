@@ -489,23 +489,10 @@ export default function StoryboardView() {
               
               <p className="text-xs text-slate-600 mb-3 leading-relaxed">{scene.description}</p>
               
-              {/* Dialogue & Audio */}
+              {/* Dialogue */}
               {scene.dialogue && (
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <p className="text-xs font-medium text-slate-700 mb-2">💬 الحوار: "{scene.dialogue}"</p>
-                  
-                  {scene.audioClip ? (
-                    <audio src={scene.audioClip} controls className="w-full h-8" />
-                  ) : (
-                    <button 
-                      onClick={() => generateAudioForScene(idx)}
-                      disabled={isGeneratingAudio || isAutoPilotRunning}
-                      className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50"
-                    >
-                      <Mic className="w-3 h-3" />
-                      توليد تعليق صوتي (TTS)
-                    </button>
-                  )}
+                  <p className="text-xs font-medium text-slate-700">الحوار: "{scene.dialogue}"</p>
                 </div>
               )}
 
