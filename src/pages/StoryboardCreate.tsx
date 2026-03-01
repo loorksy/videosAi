@@ -263,7 +263,10 @@ export default function StoryboardCreate() {
       title: idea.slice(0, 30) + (idea.length > 30 ? '...' : ''),
       script,
       characters: selectedCharIds,
-      scenes,
+      scenes: scenes.map((s, i) => ({
+        ...s,
+        videoClip: sceneVideos[i]?.url || s.videoClip || '',
+      })),
       aspectRatio,
       createdAt: Date.now()
     };
