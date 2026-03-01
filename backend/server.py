@@ -42,7 +42,7 @@ def save_base64_file(data: str, ext: str = "jpg") -> str:
     fname = f"{uuid.uuid4().hex}.{ext}"
     with open(os.path.join(UPLOAD_DIR, fname), "wb") as f:
         f.write(img_bytes)
-    return f"{APP_URL}/api/uploads/{fname}"
+    return f"/api/uploads/{fname}"
 
 
 def now_iso():
