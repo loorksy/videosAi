@@ -430,7 +430,7 @@ async def image_to_video(req: ImageToVideoRequest):
         "aspect_ratio": req.aspect_ratio,
         "imageUrls": [kie_image_url],
     }
-    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     async with httpx.AsyncClient(timeout=30) as c:
         resp = await c.post(f"{KIE_BASE_URL}/veo/generate", json=payload, headers=headers)
