@@ -298,6 +298,59 @@ async def task_status(task_id: str):
         }
 
 
+class BatchTaskRequest(BaseModel):
+    task_ids: List[str]
+    storyboard_id: Optional[str] = None
+
+
+@app.post("/api/kie/batch-task-status")
+async def batch_task_status(req: BatchTaskRequest):
+    """Check status of multiple tasks at once. Auto-update storyboard if provided."""
+    if not KIE_API_KEY:
+        raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
+
+    results = {}
+    headers = {"Authorization": f"Bearer {KIE_API_KEY}", "Content-Type": "application/json"}
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        for tid in req.task_ids:
+            try:
+                resp = await client.get(f"{KIE_BASE_URL}/veo/record-info?taskId={tid}", headers=headers)
+                result = resp.json()
+                data = result.get("data") or {}
+                sf = data.get("successFlag", 0)
+                video_url = ""
+                if sf == 1:
+                    response_obj = data.get("response") or {}
+                    urls = response_obj.get("resultUrls") or []
+                    video_url = urls[0] if urls else ""
+                results[tid] = {
+                    "status": "completed" if sf == 1 else "failed" if sf in (2, 3) else "processing",
+                    "videoUrl": video_url,
+                }
+            except Exception:
+                results[tid] = {"status": "processing", "videoUrl": ""}
+
+    # Auto-update storyboard scenes with completed video URLs
+    if req.storyboard_id:
+        sb = db.storyboards.find_one({"id": req.storyboard_id}, {"_id": 0})
+        if sb and sb.get("videoTasks"):
+            updated = False
+            scenes = sb.get("scenes", [])
+            for task in sb["videoTasks"]:
+                tid = task.get("taskId")
+                idx = task.get("sceneIndex", -1)
+                if tid in results and results[tid]["status"] == "completed" and results[tid]["videoUrl"]:
+                    if 0 <= idx < len(scenes) and not scenes[idx].get("videoUrl"):
+                        scenes[idx]["videoUrl"] = results[tid]["videoUrl"]
+                        updated = True
+            if updated:
+                db.storyboards.update_one({"id": req.storyboard_id}, {"$set": {"scenes": scenes}})
+
+    return results
+
+
+
 class ImageToVideoRequest(BaseModel):
     prompt: str
     image_base64: str
