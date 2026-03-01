@@ -518,18 +518,42 @@ export default function StoryboardView() {
         </div>
       </div>
 
-      {/* Fixed Bottom Action Bar - show only when videos are missing */}
+      {/* Merged Video Modal */}
+      {mergedVideoUrl && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setMergedVideoUrl('')}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-center">الفيديو النهائي</h3>
+            <video src={mergedVideoUrl} controls className="w-full rounded-xl" autoPlay />
+            <a
+              href={mergedVideoUrl}
+              download="final_video.mp4"
+              className="block w-full py-3 bg-green-600 text-white rounded-xl font-bold text-center hover:bg-green-700 transition-colors"
+            >
+              <Download className="w-4 h-4 inline ml-2" />
+              تحميل الفيديو
+            </a>
+            <button
+              onClick={() => setMergedVideoUrl('')}
+              className="block w-full py-2 text-slate-500 text-sm"
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed Bottom Action Bar */}
       {(() => {
         const hasAllVideos = storyboard.scenes.slice(0, -1).every(s => s.videoClip);
+        const hasAnyVideos = storyboard.scenes.some(s => s.videoClip);
         const hasAnyImages = storyboard.scenes.some(s => s.frameImage);
         const hasMissingImages = storyboard.scenes.some(s => !s.frameImage);
-        
-        if (hasAllVideos && !hasMissingImages) return null;
         
         return (
           <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/60 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
             <div className="max-w-lg mx-auto space-y-2.5">
               
+              {/* Camera motion selector - only when generating videos */}
               {hasAnyImages && !hasAllVideos && (
                 <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
                   <span className="text-xs font-medium text-slate-600 flex items-center gap-1">
@@ -546,6 +570,7 @@ export default function StoryboardView() {
                 </div>
               )}
 
+              {/* Auto-pilot button - when images are missing */}
               {hasMissingImages && (
                 <button
                   onClick={runAutoPilot}
@@ -566,6 +591,7 @@ export default function StoryboardView() {
                 </button>
               )}
 
+              {/* Generate videos button - when images exist but videos don't */}
               {hasAnyImages && !hasAllVideos && (
                 <button
                   onClick={generateFullVideo}
@@ -581,6 +607,28 @@ export default function StoryboardView() {
                     <>
                       <Play className="w-5 h-5" />
                       <span>توليد الفيديوهات (Veo3)</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Export final video button - when videos exist */}
+              {hasAnyVideos && (
+                <button
+                  onClick={exportFinalVideo}
+                  disabled={isMerging}
+                  className="w-full py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                  data-testid="export-final-video-btn"
+                >
+                  {isMerging ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري دمج الفيديوهات...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5" />
+                      <span>تصدير الفيديو النهائي</span>
                     </>
                   )}
                 </button>
