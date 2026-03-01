@@ -1,9 +1,12 @@
 // kie.ai Video Generation Service via Backend API
 
 const getApiBase = () => {
-  // Use the same origin in production, or REACT_APP_BACKEND_URL
   return window.location.origin;
 };
+
+function getVideoModel(): string {
+  return localStorage.getItem('AI_VIDEO_MODEL') || 'veo3_fast';
+}
 
 export interface KieVideoTask {
   taskId: string;
