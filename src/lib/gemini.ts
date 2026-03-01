@@ -338,7 +338,11 @@ ${charContext}
 
       const text = result.text || "{}";
       const jsonString = text.replace(/```json\n?|\n?```/g, "").trim();
-      return JSON.parse(jsonString);
+      const parsed = JSON.parse(jsonString);
+      return {
+        script: parsed.script || '',
+        scenes: Array.isArray(parsed.scenes) ? parsed.scenes : [],
+      };
     } catch (error: any) {
       if (isPermissionError(error)) {
         throw new Error("فشل توليد السيناريو. تأكد من صحة مفتاح Gemini API.");
