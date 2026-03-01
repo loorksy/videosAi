@@ -401,6 +401,19 @@ export default function StoryboardView() {
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>
+                    {/* Video generation status overlay */}
+                    {videoStatuses[idx] && !scene.videoClip && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs text-center py-2">
+                        {videoStatuses[idx].includes('فشل') ? (
+                          <span className="text-red-400">{videoStatuses[idx]}</span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {videoStatuses[idx]}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 gap-3">
