@@ -117,6 +117,51 @@ const extractImage = (result: any) => {
 };
 
 export const GeminiService = {
+  // Generate story metadata (title, description, hashtags) for thumbnail
+  async generateStoryMetadata(story: any): Promise<{ videoTitle: string; videoDescription: string; hashtags: string }> {
+    const ai = getAI();
+    const sceneSummary = (story.scenes || []).map((s: any, i: number) => 
+      `مشهد ${i + 1}: ${s.description || ''}. الحوار: ${s.dialogue || 'بدون'}`
+    ).join('\n');
+    
+    const dialogueLang = (story.scenes || []).find((s: any) => s.dialogue)?.dialogue || '';
+    const isArabic = /[\u0600-\u06FF]/.test(dialogueLang);
+    const lang = isArabic ? 'العربية' : 'الإنجليزية';
+    
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: `أنت خبير يوتيوب محترف متخصص في محتوى الأطفال.
+
+حلل هذه القصة وأنشئ بيانات الفيديو بلغة ${lang}:
+
+القصة: ${story.script || story.title || ''}
+
+المشاهد:
+${sceneSummary}
+
+أنشئ:
+1. "videoTitle": عنوان فيديو جذاب (hook) يجذب المشاهدين - قصير ومثير (أقل من 70 حرف)
+2. "videoDescription": وصف مفصل للفيديو (3-5 أسطر) يتضمن ملخص القصة + دعوة للاشتراك
+3. "hashtags": 15-20 هاشتاق مناسب مفصول بمسافات (مثل #أطفال #قصص_أطفال)
+
+أخرج JSON فقط.` }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            videoTitle: { type: Type.STRING },
+            videoDescription: { type: Type.STRING },
+            hashtags: { type: Type.STRING },
+          }
+        }
+      }
+    });
+    const text = result.text || '{}';
+    return JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim());
+  },
+
+
   // Generate a story idea using AI
   async generateStoryIdea(charNames: string[], genre: string, hint?: string): Promise<string> {
     const ai = getAI();
