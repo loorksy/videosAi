@@ -355,7 +355,7 @@ async def image_to_video(req: ImageToVideoRequest):
         result = resp.json()
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail=result.get("message", str(result)))
-        return {"taskId": result.get("data", {}).get("taskId", result.get("taskId")), "imageUrl": local_url}
+        return {"taskId": (result.get("data") or {}).get("taskId", result.get("taskId")), "imageUrl": local_url}
 
 
 
