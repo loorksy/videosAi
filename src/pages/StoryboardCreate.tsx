@@ -605,6 +605,11 @@ export default function StoryboardCreate() {
                     )}
                   </div>
                   <p className="text-xs text-slate-500">{scene.description}</p>
+                  {scene.dialogue && (
+                    <div className="bg-indigo-50 p-2 rounded-lg border border-indigo-100">
+                      <p className="text-xs font-medium text-indigo-700">الحوار: "{scene.dialogue}"</p>
+                    </div>
+                  )}
                   {/* Video status */}
                   {sceneVideos[idx] && (
                     <div className="mt-2">
