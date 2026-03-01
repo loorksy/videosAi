@@ -75,6 +75,70 @@ export default function StoryboardCreate() {
     }
   };
 
+  // Generate videos for all scenes using kie.ai
+  const generateVideos = async () => {
+    setIsGeneratingVideos(true);
+    const videos: Record<number, { status: string; url?: string }> = {};
+    
+    // Step 1: Start all video tasks
+    const tasks: { idx: number; taskId: string }[] = [];
+    for (let i = 0; i < scenes.length; i++) {
+      if (!scenes[i].frameImage) continue;
+      videos[i] = { status: 'جاري الرفع...' };
+      setSceneVideos({ ...videos });
+      
+      try {
+        const result = await KieService.generateImageToVideo(
+          scenes[i].frameImage!,
+          scenes[i].description,
+          'veo3_fast',
+          aspectRatio
+        );
+        tasks.push({ idx: i, taskId: result.taskId });
+        videos[i] = { status: 'جاري التوليد...' };
+        setSceneVideos({ ...videos });
+      } catch (e: any) {
+        videos[i] = { status: `فشل: ${e.message}` };
+        setSceneVideos({ ...videos });
+      }
+    }
+
+    // Step 2: Poll all tasks
+    const pending = new Set(tasks.map(t => t.idx));
+    let pollCount = 0;
+    while (pending.size > 0 && pollCount < 120) {
+      await new Promise(r => setTimeout(r, 5000));
+      pollCount++;
+      
+      for (const task of tasks) {
+        if (!pending.has(task.idx)) continue;
+        try {
+          const resp = await fetch(`${window.location.origin}/api/kie/task-status/${task.taskId}`);
+          const result = await resp.json();
+          const data = result.data || result;
+          const status = data.status || data.state || '';
+
+          if (status === 'completed' || status === 'SUCCESS' || status === 'success') {
+            const videoUrl = data.videoUrl || data.resultUrl || data.video_url || 
+              (data.resultUrls && data.resultUrls[0]) ||
+              (data.works && data.works[0]?.resource?.resource);
+            if (videoUrl) {
+              videos[task.idx] = { status: 'مكتمل', url: videoUrl };
+              pending.delete(task.idx);
+            }
+          } else if (status === 'failed' || status === 'FAILED') {
+            videos[task.idx] = { status: 'فشل التوليد' };
+            pending.delete(task.idx);
+          } else {
+            videos[task.idx] = { status: `جاري التوليد... (${pollCount})` };
+          }
+          setSceneVideos({ ...videos });
+        } catch { /* continue polling */ }
+      }
+    }
+    setIsGeneratingVideos(false);
+  };
+
   const generateScript = async () => {
     if (selectedCharIds.length === 0) return;
     setIsProcessing(true);
