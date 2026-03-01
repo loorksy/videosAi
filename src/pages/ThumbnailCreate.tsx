@@ -796,14 +796,16 @@ export default function ThumbnailCreate() {
                 )}
               </div>
             </div>
+            )}
           </div>
 
           <button
             onClick={startGeneration}
+            disabled={mode === 'from_story' && (!selectedStoryId || isAnalyzingStory || !storyMetadata)}
             className="w-full py-4 bg-red-600 text-white rounded-xl font-bold shadow-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-8"
           >
             {mode === 'enhance' ? <Wand2 className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-            <span>{mode === 'enhance' ? 'تحسين الصورة المصغرة' : 'توليد الصورة المصغرة'}</span>
+            <span>{mode === 'from_story' ? 'توليد صورة مصغرة للقصة' : mode === 'enhance' ? 'تحسين الصورة المصغرة' : 'توليد الصورة المصغرة'}</span>
           </button>
         </div>
       )}
