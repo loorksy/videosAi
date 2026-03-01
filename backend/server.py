@@ -384,7 +384,8 @@ class ImageToVideoRequest(BaseModel):
 
 async def upload_image_to_kie(image_bytes: bytes, filename: str) -> str:
     """Upload image to kie.ai's File Upload API and return the CDN URL."""
-    headers = {"Authorization": f"Bearer {KIE_API_KEY}"}
+    api_key = get_kie_api_key()
+    headers = {"Authorization": f"Bearer {api_key}"}
     async with httpx.AsyncClient(timeout=60) as c:
         resp = await c.post(
             "https://kieai.redpandaai.co/api/file-stream-upload",
