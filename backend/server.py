@@ -404,7 +404,8 @@ async def upload_image_to_kie(image_bytes: bytes, filename: str) -> str:
 
 @app.post("/api/kie/image-to-video")
 async def image_to_video(req: ImageToVideoRequest):
-    if not KIE_API_KEY:
+    api_key = get_kie_api_key()
+    if not api_key:
         raise HTTPException(status_code=500, detail="KIE_API_KEY not configured")
 
     # Decode base64 image
