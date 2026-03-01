@@ -37,36 +37,83 @@ export default function StoryboardView() {
     }
   }, [id]);
 
+  const [videoStatuses, setVideoStatuses] = useState<Record<number, string>>({});
+
   const generateFullVideo = async () => {
     if (!storyboard) return;
     setIsGenerating(true);
 
     const newScenes = [...storyboard.scenes];
+    const tasks: { idx: number; taskId: string }[] = [];
     
     try {
+      // Step 1: Submit all video generation tasks (consecutive pairs)
       for (let i = 0; i < newScenes.length - 1; i++) {
-        if (newScenes[i].videoClip) continue; // Skip if already generated
+        if (newScenes[i].videoClip) continue;
+
+        const startFrame = newScenes[i].frameImage;
+        if (!startFrame) continue;
 
         setCurrentGeneratingIndex(i);
-        const startFrame = newScenes[i].frameImage;
-        const endFrame = newScenes[i+1].frameImage;
+        setVideoStatuses(prev => ({ ...prev, [i]: 'جاري الرفع...' }));
 
-        if (startFrame && endFrame) {
-            const aspectRatio = storyboard.aspectRatio || '16:9';
-            const motionPrompt = cameraMotion !== 'Static' ? cameraMotion : undefined;
-            const videoUrl = await GeminiService.generateVideoClip(startFrame, endFrame, aspectRatio, motionPrompt);
-            newScenes[i].videoClip = videoUrl;
-            
-            // Save progress
-            const updatedStoryboard = { ...storyboard, scenes: newScenes };
-            setStoryboard(updatedStoryboard);
-            await db.saveStoryboard(updatedStoryboard);
+        // Build prompt with dialogue
+        let prompt = newScenes[i].description;
+        if (newScenes[i].dialogue) {
+          prompt += `. الشخصية تتحدث بوضوح مع تحريك الشفاه طوال المشهد: "${newScenes[i].dialogue}"`;
+        }
+        if (cameraMotion !== 'Static') {
+          prompt += `. Camera motion: ${cameraMotion}`;
+        }
+        prompt += `. انتقال سلس إلى المشهد التالي.`;
+
+        try {
+          const result = await KieService.generateImageToVideo(
+            startFrame,
+            prompt,
+            'veo3_fast',
+            storyboard.aspectRatio || '16:9'
+          );
+          tasks.push({ idx: i, taskId: result.taskId });
+          setVideoStatuses(prev => ({ ...prev, [i]: 'جاري التوليد...' }));
+        } catch (e: any) {
+          setVideoStatuses(prev => ({ ...prev, [i]: `فشل: ${e.message}` }));
+        }
+      }
+
+      // Step 2: Poll all tasks
+      const pending = new Set(tasks.map(t => t.idx));
+      let pollCount = 0;
+      while (pending.size > 0 && pollCount < 120) {
+        await new Promise(r => setTimeout(r, 5000));
+        pollCount++;
+
+        for (const task of tasks) {
+          if (!pending.has(task.idx)) continue;
+          try {
+            const resp = await fetch(`${window.location.origin}/api/kie/task-status/${task.taskId}`);
+            const result = await resp.json();
+
+            if (result.status === 'completed' && result.videoUrl) {
+              newScenes[task.idx].videoClip = result.videoUrl;
+              pending.delete(task.idx);
+              setVideoStatuses(prev => ({ ...prev, [task.idx]: 'مكتمل' }));
+              // Save progress
+              const updated = { ...storyboard, scenes: newScenes };
+              setStoryboard(updated);
+              await db.saveStoryboard(updated);
+            } else if (result.status === 'failed') {
+              pending.delete(task.idx);
+              setVideoStatuses(prev => ({ ...prev, [task.idx]: 'فشل التوليد' }));
+            } else {
+              setVideoStatuses(prev => ({ ...prev, [task.idx]: `جاري التوليد... (${pollCount})` }));
+            }
+          } catch { /* continue */ }
         }
       }
     } catch (error: any) {
       console.error(error);
-      const msg = error.message || 'حدث خطأ غير معروف';
-      alert(`فشل توليد الفيديو: ${msg}`);
+      alert(`فشل توليد الفيديو: ${error.message}`);
     } finally {
       setIsGenerating(false);
       setCurrentGeneratingIndex(-1);
