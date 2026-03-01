@@ -1,0 +1,156 @@
+<analysis>**original_problem_statement:**
+The user's initial request was in Arabic: شغل الموقع (Run the site).
+The project evolved into an AI-powered story and video creation application. Key user requests included:
+1.  **Features**: A login page, multiple character creation tools, an advanced storyboard generator with scene-to-scene consistency, and integration with  for video generation.
+2.  **Bugs**: Persistent video generation failures (initially with Google Veo, now with ), tools failing due to incorrect API parameters, and UI/UX issues like missing loading indicators.
+3.  **Architecture**: The user requested that all application data (characters, images, videos, stories) be saved on a server rather than in the browser's local storage.
+4.  **Deletion**: The user requested the complete removal of the Character Animation tool to focus solely on the storyboard workflow.
+
+**User's preferred language**: Arabic (العربية). You MUST respond in Arabic.
+
+**what currently exists?**
+The application is a full-stack project with a React/Vite/TypeScript frontend and a new FastAPI backend.
+-   **Frontend**: Provides UI for creating characters and complex storyboards. It uses Google's Gemini API for image generation.
+-   **Backend ()**: A new FastAPI server that:
+    -   Handles all data persistence using a MongoDB database.
+    -   Manages media uploads, storing files locally in .
+    -   Acts as a secure proxy for the  API, storing the user's API key.
+-   **Database**: All data (characters, storyboards) has been migrated from the browser's IndexedDB to a server-side MongoDB instance.
+
+**Last working item**:
+-   **Last item agent was working**: The agent was debugging a failure in the  video generation feature. The user reported an Image fetch failed error from the  dashboard. The agent correctly diagnosed that 's service cannot access images from the application's protected preview URL. The proposed solution was to first upload the image to 's own File Upload API and then use the returned URL to start the video generation job.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: backend testing agent
+-   **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+
+-   **Issue 1:  video generation fails due to image fetch error (P0)**
+    -   **Description**: The Convert Scenes to Videos feature fails because  cannot access the image URLs served by the app's backend (due to the preview environment's security).
+    -   **Attempted fixes**: A backend was created to serve media, but this was insufficient as the URL is not publicly accessible.
+    -   **Next debug checklist**:
+        1.  Modify the  endpoint in .
+        2.  Inside this function, before calling 's video generation, first make a request to 's File Upload API () with the image data.
+        3.  Extract the public URL from the File Upload API's response.
+        4.  Use this new public URL as the  when calling 's video generation endpoint.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is the final, critical step in the user's primary workflow. Fixing it will allow storyboard images to be converted into videos.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Both
+
+**In progress Task List**:
+
+-   **Task 1: Verify server-side data migration (P1)**
+    -   **Where to resume**: The backend APIs for saving/loading data are built, and the frontend () has been refactored. The next step is a full end-to-end regression test of all features that create or use persistent data.
+    -   **What will be achieved with this?**: This will confirm that the migration from IndexedDB to MongoDB is complete and that all user data is being saved reliably on the server as requested.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on something**: No.
+
+**Upcoming and Future Tasks**
+
+-   **Future Tasks**:
+    -   **Task 1: Re-evaluate single-character animation**. After the storyboard-to-video flow is stable, the user may want a simpler tool to animate a single character again. This could involve creating a new, simplified tool that leverages the  backend.
+    -   **Task 2: Address Google API Content Policy blocks**. This was a major source of user frustration. While the focus is now on , if the user continues to use Google's API for image generation, a better strategy for handling content blocks (e.g., prompt rewriting, user warnings) may be needed.
+
+**Completed work in this session**
+-   **Architecture Overhaul**: Migrated the application from a client-only architecture to a full-stack architecture with a FastAPI backend and MongoDB database for persistent storage.
+-   ** Integration**: Added  (Veo 3 model) for image-to-video conversion, including backend endpoints and a Convert to Videos button in the storyboard UI.
+-   **Storyboard Tool Enhancement**:
+    -   Implemented a film director strategy where each scene visually references the previous scenes to ensure consistency.
+    -   Added new features: Generate Idea with AI, a dropdown for content genre, and a custom slider for scene count (up to 60).
+    -   Added a Regenerate button for individual scenes.
+-   **Major Bug Fixes**:
+    -   Resolved widespread tool failures by removing unsupported API parameters (, ) from all Google API calls.
+    -   Implemented a global retry mechanism with exponential backoff for all API calls to improve reliability against network errors and rate limits.
+-   **Feature Removal**: Deleted the Character Animation feature and its associated files () per user request.
+
+**Earlier issues found/mentioned but not fixed**
+-   The core issue of Google's API aggressively blocking content remains, though the user's focus has shifted to using  for video, which may circumvent the problem.
+
+**Known issue recurrence from previous fork**
+-   N/A
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Frontend**: React, Vite, TypeScript, TailwindCSS
+-   **Backend**: FastAPI, Python
+-   **Database**: MongoDB
+-   **AI/ML**: Google Gemini (for images),  (for video via Veo 3 model)
+-   **Architecture**: A full-stack application where the frontend handles the UI and the backend manages data persistence, media storage, and secure third-party API communication.
+
+**key DB schema**
+-   Managed in MongoDB via Pydantic models in .
+-   ** collection**: Stores character data, including , , and .
+-   ** collection**: Stores story data, including the Script started, output log file is 'typescript'.
+# 
+Script done. and an array of , each with image and video URLs.
+
+**changes in tech stack**
+-   **Backend Added**: A new **FastAPI** backend was introduced.
+-   **Database Changed**: Switched from client-side  to server-side **MongoDB**.
+-   **Video API Changed**: Switched from direct calls to Google Veo to proxied calls to **kie.ai**.
+
+**All files of reference**
+-   : **Most critical file.** Contains the  logic that needs fixing, all database models, and API endpoints.
+-   : The primary frontend component where the user workflow culminates.
+-   : The new frontend service for communicating with our  backend endpoints.
+-   : The data service, now refactored to make API calls to the backend.
+
+**Areas that need refactoring**:
+-   None. The current architecture is new and needs stabilization, not refactoring.
+
+**key api endpoints**
+-   **Our Backend (in )**:
+    -   : **(NEEDS FIX)** Handles video generation requests.
+    -   : Checks video generation progress.
+    -   : CRUD operations for characters.
+    -   : CRUD operations for storyboards.
+    -   : Serves uploaded files.
+
+**Critical Info for New Agent**
+-   **PRIORITY 1: FIX THE  BUG**: The user's main goal is to generate videos from storyboards. The fix must be implemented in  by using 's File Upload API before requesting video generation.
+-   **FULL-STACK APP**: Remember there is a Python backend in . The  API key is stored securely in  and all  operations are proxied through it.
+-   **USER LANGUAGE IS ARABIC**: All communication must be in Arabic.
+
+**documents and test reports created in this job**
+-    was updated to reflect the architectural changes and new features.
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User**: Reported  video generation failed with an Image fetch failed error. **(PENDING)**
+2.  **User**: Requested all media (characters, stories) be saved on the server. **(IN PROGRESS)**
+3.  **User**: Reported the generate scenario button had no loading indicator. **(RESOLVED)**
+4.  **User**: Asked to integrate  for video generation. **(DONE)**
+5.  **User**: Provided the  API key. **(DONE)**
+6.  **User**: Requested storyboard scenes to be like consecutive shots with camera movement. **(DONE)**
+7.  **User**: Requested scene count to be customizable up to 50+. **(DONE)**
+8.  **User**: Requested new storyboard features: AI idea generation, content type, and scene count. **(DONE)**
+9.  **User**: Confirmed each scene should use previous images for context. **(DONE)**
+10. **User**: Requested to delete the Character Animation tool. **(DONE)**
+
+**Project Health Check:**
+-   **Broken**: The core video generation workflow via  is broken.
+-   **Mocked**: N/A
+
+**3rd Party Integrations**
+-   **Google Gemini API**: Used for image/text generation. Requires a User API Key provided in the UI.
+-   **kie.ai (Veo 3)**: Used for video generation. Requires a User API Key stored in .
+-   **MongoDB**: Used for database storage.
+
+**Testing status**
+-   Testing agent used after significant changes: NO
+-   Troubleshoot agent used after agent stuck in loop: NO
+-   Test files created: []
+-   Known regressions: The main video generation feature is not functional.
+
+**Credentials to test flow:**
+-   **Login Password**: 
+-   **Gemini API Key**:  (To be entered in the settings UI)
+-   **kie.ai API Key**:  (This is already configured in )
+
+**What agent forgot to execute**
+-   The agent correctly identified the fix for the  bug (using their File Upload API) but did not proceed with the implementation.
+-   The agent implemented the major backend and database migration but did not perform a full regression test to confirm all data-saving features (like character creation) work correctly with the new system.</analysis>
