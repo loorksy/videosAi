@@ -74,18 +74,65 @@ export default function ThumbnailCreate() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [thumbnailSaved, setThumbnailSaved] = useState(false);
 
+  // Story mode state
+  const [storyboards, setStoryboards] = useState<Storyboard[]>([]);
+  const [selectedStoryId, setSelectedStoryId] = useState<string>('');
+  const [storyMetadata, setStoryMetadata] = useState<{
+    videoTitle: string;
+    videoDescription: string;
+    hashtags: string;
+  } | null>(null);
+  const [isAnalyzingStory, setIsAnalyzingStory] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseThumbInputRef = useRef<HTMLInputElement>(null);
   const [uploadType, setUploadType] = useState<'character' | 'element'>('character');
 
   useEffect(() => {
     loadCharacters();
+    loadStoryboards();
   }, []);
 
   async function loadCharacters() {
     const chars = await db.getAllCharacters();
     setCharacters(chars.sort((a, b) => b.createdAt - a.createdAt));
   }
+
+  async function loadStoryboards() {
+    const sbs = await db.getAllStoryboards();
+    setStoryboards(sbs.sort((a, b) => b.createdAt - a.createdAt));
+  }
+
+  const selectStory = async (storyId: string) => {
+    setSelectedStoryId(storyId);
+    const story = storyboards.find(s => s.id === storyId);
+    if (!story) return;
+
+    setIsAnalyzingStory(true);
+    try {
+      // Auto-select characters used in this story
+      const charIds = [...new Set(story.scenes.flatMap(s => s.characterIds || []))];
+      if (charIds.length > 0) {
+        setSelectedCharIds(charIds);
+      } else if (story.characters?.length) {
+        setSelectedCharIds(story.characters);
+      }
+
+      // Use AI to analyze story and generate metadata
+      const metadata = await GeminiService.generateStoryMetadata(story);
+      setStoryMetadata(metadata);
+      setTitle(metadata.videoTitle);
+      setImageText(metadata.videoTitle);
+    } catch (e: any) {
+      console.error('Failed to analyze story:', e);
+    } finally {
+      setIsAnalyzingStory(false);
+    }
+  };
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
   const toggleCharacterSelection = (id: string) => {
     setSelectedCharIds(prev => 
