@@ -693,6 +693,7 @@ export default function ThumbnailCreate() {
               />
             </div>
 
+            {mode !== 'from_story' && (
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1">أسلوب التصميم (ستايل القناة)</label>
               <CustomSelect 
@@ -702,6 +703,7 @@ export default function ThumbnailCreate() {
                 className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" 
               />
             </div>
+            )}
 
             {mode === 'create' && (
               <div>
