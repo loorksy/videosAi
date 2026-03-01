@@ -300,8 +300,12 @@ export default function ThumbnailCreate() {
       const mediaItem: MediaItem = {
         id: `thumb-${Date.now()}`,
         type: 'thumbnail',
-        title: title ? `صورة مصغرة: ${title}` : `صورة مصغرة - ${style.split(' (')[0]}`,
-        description: `${style} | ${elements || 'بدون عناصر إضافية'}`,
+        title: mode === 'from_story' && storyMetadata
+          ? `صورة مصغرة: ${storyMetadata.videoTitle}`
+          : title ? `صورة مصغرة: ${title}` : `صورة مصغرة - ${style.split(' (')[0]}`,
+        description: mode === 'from_story' && storyMetadata
+          ? `${storyMetadata.videoDescription}\n\n${storyMetadata.hashtags}`
+          : `${style} | ${elements || 'بدون عناصر إضافية'}`,
         data: image,
         source: 'thumbnail',
         aspectRatio,
