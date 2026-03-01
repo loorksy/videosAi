@@ -178,6 +178,7 @@ export const db = {
   },
 
   async deleteStoryboard(id: string) {
+    cache.storyboards = undefined; // invalidate
     return api(`/api/storyboards/${id}`, { method: 'DELETE' });
   },
 
