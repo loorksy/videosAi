@@ -115,18 +115,11 @@ export default function StoryboardCreate() {
         try {
           const resp = await fetch(`${window.location.origin}/api/kie/task-status/${task.taskId}`);
           const result = await resp.json();
-          const data = result.data || result;
-          const status = data.status || data.state || '';
 
-          if (status === 'completed' || status === 'SUCCESS' || status === 'success') {
-            const videoUrl = data.videoUrl || data.resultUrl || data.video_url || 
-              (data.resultUrls && data.resultUrls[0]) ||
-              (data.works && data.works[0]?.resource?.resource);
-            if (videoUrl) {
-              videos[task.idx] = { status: 'مكتمل', url: videoUrl };
-              pending.delete(task.idx);
-            }
-          } else if (status === 'failed' || status === 'FAILED') {
+          if (result.status === 'completed' && result.videoUrl) {
+            videos[task.idx] = { status: 'مكتمل', url: result.videoUrl };
+            pending.delete(task.idx);
+          } else if (result.status === 'failed') {
             videos[task.idx] = { status: 'فشل التوليد' };
             pending.delete(task.idx);
           } else {
