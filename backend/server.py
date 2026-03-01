@@ -10,6 +10,7 @@ import httpx
 import os
 import uuid
 import base64
+import json
 
 load_dotenv("/app/.env")
 
