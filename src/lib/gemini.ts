@@ -211,7 +211,7 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
       const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
 
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [
           {
             role: "user",
@@ -229,7 +229,7 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
       return result.text || "";
     } catch (error: any) {
       if (isPermissionError(error)) {
-        throw new Error("فشل تحليل الشخصية (403). تأكد من أن المفتاح العام لديه صلاحية الوصول لنموذج gemini-3.1-pro-preview.");
+        throw new Error("فشل تحليل الشخصية (403). تأكد من أن المفتاح العام لديه صلاحية الوصول لنموذج gemini-2.5-flash.");
       }
       throw error;
     }
@@ -645,7 +645,7 @@ DIRECTOR'S RULES:
     try {
       // 1. Generate the character profile and name using text model
       const textResult = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: `${prompt}\n\nOutput a JSON object with exactly these keys: "name" (a creative Arabic name), "description" (a short Arabic backstory/description).` }] }],
         config: {
           responseMimeType: "application/json",
@@ -719,7 +719,7 @@ DIRECTOR'S RULES:
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -779,7 +779,7 @@ DIRECTOR'S RULES:
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -880,7 +880,7 @@ DIRECTOR'S RULES:
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -968,7 +968,7 @@ DIRECTOR'S RULES:
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -1144,7 +1144,7 @@ DIRECTOR'S RULES:
       const mimeType = imageBase64.includes(',') ? imageBase64.substring(imageBase64.indexOf(':') + 1, imageBase64.indexOf(';')) : "image/jpeg";
 
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [
           {
             role: "user",
@@ -1424,7 +1424,7 @@ Output a JSON object:
 
     try {
       const result = await withRetry(() => ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: textPrompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -1502,7 +1502,7 @@ Output a JSON object:
       - "moodboardPrompt": A highly detailed image generation prompt (in English) to create an aesthetic moodboard for this brand. It should include the color palette, textures, lifestyle elements, packaging style, and overall vibe.`;
 
       const textResult = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: textPrompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -1567,7 +1567,7 @@ Output a JSON object:
     
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
