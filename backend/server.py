@@ -60,8 +60,12 @@ def health():
 
 class MediaUploadRequest(BaseModel):
     data: str  # base64
-    type: str = "image"  # image or video
-    source: str = ""  # which tool
+    type: str = "image"
+    source: str = ""
+    id: Optional[str] = None
+    title: str = ""
+    description: str = ""
+    aspectRatio: str = "16:9"
 
 
 @app.post("/api/media/upload")
@@ -69,13 +73,16 @@ async def upload_media(req: MediaUploadRequest):
     ext = "mp4" if req.type == "video" else "jpg"
     url = save_base64_file(req.data, ext)
     doc = {
-        "id": uuid.uuid4().hex,
+        "id": req.id or uuid.uuid4().hex,
         "url": url,
         "type": req.type,
         "source": req.source,
+        "title": req.title,
+        "description": req.description,
+        "aspectRatio": req.aspectRatio,
         "createdAt": now_iso(),
     }
-    db.media.insert_one(doc)
+    db.media.update_one({"id": doc["id"]}, {"$set": doc}, upsert=True)
     return {"id": doc["id"], "url": url}
 
 
