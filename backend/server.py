@@ -273,19 +273,17 @@ async def task_status(task_id: str):
         result = resp.json()
         
         # Normalize response for frontend
-        data = result.get("data", {})
+        data = result.get("data") or {}
         success_flag = data.get("successFlag", 0)
         
         status = "processing"
         video_url = ""
         if success_flag == 1:
             status = "completed"
-            urls_str = data.get("resultUrls", "[]")
-            try:
-                urls = json.loads(urls_str) if isinstance(urls_str, str) else urls_str
-                video_url = urls[0] if urls else ""
-            except Exception:
-                video_url = ""
+            # resultUrls is inside data.response.resultUrls (as a list)
+            response_obj = data.get("response") or {}
+            urls = response_obj.get("resultUrls") or []
+            video_url = urls[0] if urls else ""
         elif success_flag in (2, 3):
             status = "failed"
         
