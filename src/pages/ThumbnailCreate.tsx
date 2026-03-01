@@ -835,6 +835,39 @@ export default function ThumbnailCreate() {
             <img src={generatedImage} className="w-full h-full object-cover" alt="Generated Thumbnail" />
           </div>
 
+          {/* Show metadata for from_story mode */}
+          {mode === 'from_story' && storyMetadata && (
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-bold text-slate-700">عنوان الفيديو (Hook)</label>
+                  <button onClick={() => copyText(storyMetadata.videoTitle)} className="text-xs text-indigo-600 flex items-center gap-1">
+                    <Copy className="w-3 h-3" /> نسخ
+                  </button>
+                </div>
+                <p className="text-sm text-slate-800 bg-yellow-50 p-2 rounded border border-yellow-100 font-medium">{storyMetadata.videoTitle}</p>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-bold text-slate-700">وصف الفيديو</label>
+                  <button onClick={() => copyText(storyMetadata.videoDescription)} className="text-xs text-indigo-600 flex items-center gap-1">
+                    <Copy className="w-3 h-3" /> نسخ
+                  </button>
+                </div>
+                <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap leading-relaxed">{storyMetadata.videoDescription}</p>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1"><Hash className="w-3 h-3" /> هاشتاقات</label>
+                  <button onClick={() => copyText(storyMetadata.hashtags)} className="text-xs text-indigo-600 flex items-center gap-1">
+                    <Copy className="w-3 h-3" /> نسخ
+                  </button>
+                </div>
+                <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100">{storyMetadata.hashtags}</p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-slate-50 p-4 rounded-xl">
             <h4 className="font-medium text-sm mb-2 text-slate-900">تفاصيل التصميم:</h4>
             <p className="text-xs text-slate-600 leading-relaxed">
