@@ -349,7 +349,7 @@ ${charContext}
     // === STEP 3: Scene description ===
     let promptText = `\nGenerate scene ${sceneIndex + 1} of ${totalScenes}. Style: ${style}.
 
-CHARACTER DNA:
+CHARACTER DNA (NEVER change these details):
 ${characterDNA}
 
 SCENE DESCRIPTION:
@@ -357,7 +357,13 @@ ${sceneDescription}
 
 RULES:
 - The characters MUST be identical copies of the reference images above. Do NOT redesign them.
-- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly.' : 'Continue from the scene images above. Same location, same lighting, same world.'}`;
+- NEVER change character clothes, hair, colors, or any detail between scenes.
+- Same outfit, same accessories, same everything - pixel perfect consistency.
+- Colors: Use bright, warm, child-friendly pastel colors (soft yellow, sky blue, light green, gentle pink).
+- Lighting: Bright and warm like children's YouTube videos.
+- Background: Cheerful, colorful, kid-friendly environment.
+- Characters speaking: Mouth should be slightly open, showing they are talking.
+- ${sceneIndex === 0 ? 'This is the ESTABLISHING SHOT. Define the environment clearly with bright kid-friendly colors.' : 'Continue from the scene images above. Same location, same lighting, same world, same character clothes.'}`;
 
     parts.push({ text: promptText });
 
