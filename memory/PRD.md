@@ -6,7 +6,7 @@
 ## التقنيات
 - Frontend: React 19 + TypeScript + Vite 6 + Tailwind CSS
 - Backend: FastAPI + MongoDB + PyMongo + ffmpeg
-- AI: Google Gemini (text/image) + kie.ai (video + optional text/image)
+- AI: Google Gemini (text/image) + kie.ai (text/image/video - unified provider option)
 
 ## ما تم تنفيذه
 - [x] تسجيل دخول
@@ -26,15 +26,17 @@
 - [x] صورة مصغرة من القصة (عنوان + وصف + هاشتاقات + صورة)
 - [x] إصلاح حذف الوسائط من المعرض
 - [x] حفظ بيانات الوسائط كاملة (عنوان، وصف)
-- [x] إخفاء أسلوب التصميم والإعدادات المتقدمة في وضع "من القصة"
 - [x] إضافة مفتاح kie.ai API في صفحة الإعدادات
-- [x] اختيار النماذج (نصوص، صور، فيديو)
+- [x] اختيار النماذج (نصوص، صور، فيديو) مع خيارات متعددة
 - [x] خيار جعل kie.ai المزود الرئيسي لكل شيء
 - [x] إعدادات المزود تحفظ في MongoDB + localStorage
+- [x] ربط التوليد الفعلي: AIService يوجه الطلبات لـ Gemini أو kie.ai
+- [x] جميع المكونات (StoryboardCreate, CharacterCreate, ThumbnailCreate, etc.) تستخدم AIService الموحد
+- [x] Backend: 5 endpoints جديدة (settings, kie text gen, kie image gen, image status)
+- [x] مفتاح kie.ai ديناميكي من الإعدادات أو .env
 
 ## المهام المستقبلية
-- [ ] ربط توليد النصوص/الصور فعلياً مع kie.ai في مكونات StoryboardCreate و CharacterCreate
-- [ ] نقل kie.ai ليكون المزود الرئيسي (استبدال Gemini بالكامل)
+- [ ] اختبار التوليد الفعلي مع مفتاح kie.ai حقيقي ونماذج مختلفة
 - [ ] إعادة تقييم أداة تحريك شخصية واحدة
 - [ ] تحسين التعامل مع سياسات حظر المحتوى
 
@@ -45,11 +47,15 @@
 │   └── server.py        # FastAPI (DB, media, kie.ai proxy, ffmpeg, settings)
 ├── src/
 │   ├── lib/
-│   │   ├── aiProvider.ts # Provider abstraction (Gemini/kie.ai routing)
+│   │   ├── aiService.ts  # Unified AI (routes Gemini↔kie.ai)
+│   │   ├── aiProvider.ts # kie.ai text/image generation
 │   │   ├── db.ts         # Data service with caching
 │   │   ├── gemini.ts     # Gemini API service
-│   │   └── kie.ts        # kie.ai service (video + text + image)
+│   │   └── kie.ts        # kie.ai video service
 │   └── pages/
-│       ├── Settings.tsx   # Settings with provider toggle + model selection
+│       ├── Settings.tsx   # Provider toggle + model selection + API keys
+│       ├── StoryboardCreate.tsx
+│       ├── CharacterCreate.tsx
+│       ├── ThumbnailCreate.tsx
 │       └── ...
 ```
