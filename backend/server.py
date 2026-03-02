@@ -767,3 +767,149 @@ async def kie_image_status(task_id: str):
             status = "failed"
 
         return {"status": status, "imageUrl": image_url, "raw": result}
+
+
+# ============ KIE.AI TEST CONNECTION ============
+
+@app.post("/api/kie/test-connection")
+async def kie_test_connection():
+    """Quick test to verify kie.ai API key is valid."""
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=400, detail="مفتاح kie.ai غير مضاف")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    # Use a minimal text generation task to test the key
+    payload = {
+        "model": "deepseek-r1",
+        "input": {
+            "messages": [{"role": "user", "content": "Hi"}],
+        },
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            resp = await client.post(f"{KIE_BASE_URL}/jobs/createTask", json=payload, headers=headers)
+            result = resp.json()
+            if resp.status_code == 200 and result.get("code") == 200:
+                return {"ok": True, "message": "المفتاح يعمل بشكل صحيح"}
+            elif resp.status_code == 401 or resp.status_code == 403:
+                raise HTTPException(status_code=401, detail="مفتاح kie.ai غير صالح")
+            else:
+                msg = result.get("msg", str(result))
+                raise HTTPException(status_code=resp.status_code, detail=f"خطأ: {msg}")
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بـ kie.ai")
+
+
+# ============ KIE.AI KLING MOTION CONTROL ============
+
+class KlingMotionRequest(BaseModel):
+    prompt: str
+    image_url: str
+    video_url: str
+    mode: str = "720p"  # "720p" (standard) or "1080p" (pro)
+    character_orientation: str = "video"
+    aspect_ratio: str = "9:16"
+    negative_prompt: str = ""
+
+
+@app.post("/api/kie/kling-motion")
+async def kie_kling_motion(req: KlingMotionRequest):
+    """Create Kling 2.6 motion control task via kie.ai."""
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح kie.ai غير مضاف")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    # Upload local images/videos to kie.ai CDN if needed
+    image_url = req.image_url
+    video_url = req.video_url
+
+    if "preview.emergentagent.com" in image_url or "localhost" in image_url:
+        async with httpx.AsyncClient(timeout=30) as dl:
+            img_resp = await dl.get(image_url)
+            if img_resp.status_code == 200:
+                fname = f"{uuid.uuid4().hex}.png"
+                image_url = await upload_image_to_kie(img_resp.content, fname)
+
+    payload = {
+        "model": "kling-2.6/motion-control",
+        "input": {
+            "prompt": req.prompt,
+            "input_urls": [image_url],
+            "video_urls": [video_url],
+            "mode": req.mode,
+            "character_orientation": req.character_orientation,
+        },
+    }
+
+    if req.negative_prompt:
+        payload["input"]["negative_prompt"] = req.negative_prompt
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(f"{KIE_BASE_URL}/jobs/createTask", json=payload, headers=headers)
+        result = resp.json()
+        if resp.status_code != 200 or result.get("code") != 200:
+            msg = result.get("msg", str(result))
+            raise HTTPException(status_code=resp.status_code, detail=msg)
+        task_id = result.get("data", {}).get("taskId", "")
+        return {"taskId": task_id}
+
+
+@app.get("/api/kie/kling-status/{task_id}")
+async def kie_kling_status(task_id: str):
+    """Check Kling motion control task status."""
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح kie.ai غير مضاف")
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(f"{KIE_BASE_URL}/jobs/recordInfo?taskId={task_id}", headers=headers)
+        result = resp.json()
+        data = result.get("data", {})
+        success = data.get("successFlag", 0)
+
+        status = "processing"
+        video_url = ""
+        if success == 1:
+            status = "completed"
+            response_obj = data.get("response", {})
+            urls = response_obj.get("resultUrls", []) or response_obj.get("videoUrls", []) or response_obj.get("works", [])
+            if urls:
+                first = urls[0]
+                video_url = first.get("url", first) if isinstance(first, dict) else first
+        elif success in (2, 3):
+            status = "failed"
+            error_msg = data.get("response", {}).get("error", "فشل التوليد")
+            return {"status": status, "videoUrl": "", "error": str(error_msg)}
+
+        return {"status": status, "videoUrl": video_url}
+
+
+@app.post("/api/kie/upload-file")
+async def kie_upload_file(file: UploadFile = File(...)):
+    """Upload a file (image/video) to kie.ai CDN and return the URL."""
+    api_key = get_kie_api_key()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح kie.ai غير مضاف")
+
+    content = await file.read()
+    filename = file.filename or f"{uuid.uuid4().hex}"
+
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        files_data = {"file": (filename, content, file.content_type or "application/octet-stream")}
+        resp = await client.post(f"{KIE_BASE_URL}/files/upload", files=files_data, headers=headers)
+        result = resp.json()
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=result.get("msg", str(result)))
+        url = result.get("data", {}).get("url", "")
+        if not url:
+            raise HTTPException(status_code=500, detail=f"لم يتم إرجاع رابط الملف: {result}")
+        return {"url": url}
