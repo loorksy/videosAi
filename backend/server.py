@@ -871,15 +871,24 @@ async def kie_upload_file(file: UploadFile = File(...)):
     content = await file.read()
     filename = file.filename or f"{uuid.uuid4().hex}"
 
+    # Determine upload path based on content type
+    content_type = file.content_type or "application/octet-stream"
+    upload_path = "storyweaver/videos" if "video" in content_type else "storyweaver/images"
+
     headers = {"Authorization": f"Bearer {api_key}"}
 
     async with httpx.AsyncClient(timeout=120) as client:
-        files_data = {"file": (filename, content, file.content_type or "application/octet-stream")}
-        resp = await client.post(f"{KIE_BASE_URL}/files/upload", files=files_data, headers=headers)
-        result = resp.json()
+        files_data = {"file": (filename, content, content_type)}
+        resp = await client.post(
+            "https://kieai.redpandaai.co/api/file-stream-upload",
+            headers=headers,
+            files=files_data,
+            data={"uploadPath": upload_path, "fileName": filename},
+        )
         if resp.status_code != 200:
-            raise HTTPException(status_code=resp.status_code, detail=result.get("msg", str(result)))
-        url = result.get("data", {}).get("url", "")
+            raise HTTPException(status_code=resp.status_code, detail=f"kie.ai upload failed: {resp.text}")
+        result = resp.json()
+        url = result.get("data", {}).get("downloadUrl", "")
         if not url:
             raise HTTPException(status_code=500, detail=f"لم يتم إرجاع رابط الملف: {result}")
         return {"url": url}
