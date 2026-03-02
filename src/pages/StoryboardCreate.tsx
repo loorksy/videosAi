@@ -373,9 +373,9 @@ export default function StoryboardCreate() {
         }
       }
       setStep('preview');
-    } catch (error) {
-      console.error(error);
-      alert('فشل توليد المشاهد');
+    } catch (error: any) {
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { console.error(error); alert('فشل توليد المشاهد'); }
     } finally {
       setIsProcessing(false);
     }
