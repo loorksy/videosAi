@@ -376,7 +376,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
           <CheckCircle className="w-4 h-4" />
           <div>
             <p className="font-bold text-sm">الاتصال ناجح!</p>
-            <p className="text-xs opacity-80">المفتاح يعمل بشكل صحيح.</p>
+            <p className="text-xs opacity-80">{successMessage}</p>
           </div>
         </div>
       )}
