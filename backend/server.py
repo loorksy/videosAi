@@ -581,7 +581,7 @@ async def save_settings(req: SettingsSaveRequest):
 class KieTextRequest(BaseModel):
     prompt: str
     system_prompt: str = ""
-    model: str = "deepseek-chat"
+    model: str = "deepseek-r1"
     response_format: Optional[str] = None  # "json" or None
 
 
