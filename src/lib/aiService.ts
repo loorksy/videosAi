@@ -67,9 +67,6 @@ ${charContext}
 {"script": "القصة الكاملة بالعربية", "scenes": [{"description": "وصف بصري بالإنجليزية مع اسم الشخصية وملابسها", "characters": ["اسم الشخصية"], "dialogue": "الحوار بـ${dialogueLang}"}]}`;
 
     const result = await kieGenerateJSON<{ script: string; scenes: any[] }>(prompt);
-    console.log('[v0] kieGenerateJSON result:', JSON.stringify(result, null, 2));
-    console.log('[v0] result.scenes:', result.scenes);
-    console.log('[v0] Is array:', Array.isArray(result.scenes));
     return {
       script: result.script || '',
       scenes: Array.isArray(result.scenes) ? result.scenes : [],
@@ -189,7 +186,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
 
     // For kie.ai, upload image and ask text model to describe
     // kie.ai text models don't support inline images, so we describe what we need
-    const prompt = `أنت خبير تحليل شخصيات رسوم متحركة. اكتب وصفاً مفصلاً بالعربية لشخصية بناءً على تصميمها:
+    const prompt = `أنت خبير تحليل شخصيات رسوم متحركة. اكتب وصفاً مفصلا�� بالعربية لشخصية بناءً على تصميمها:
 - ملامح الوجه (شكل العيون، لون الشعر، شكل الوجه)
 - الملابس بالتفصيل (الألوان، الأسلوب)
 - الإكسسوارات المميزة

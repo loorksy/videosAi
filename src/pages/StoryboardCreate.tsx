@@ -121,12 +121,7 @@ export default function StoryboardCreate() {
         visualTraits: c.visualTraits,
       })));
       
-      console.log('[v0] API Result:', JSON.stringify(result, null, 2));
-      console.log('[v0] Scenes count:', result?.scenes?.length);
-      
       if (!result || !result.scenes || !Array.isArray(result.scenes) || result.scenes.length === 0) {
-        console.error('[v0] No scenes in result:', result);
-        alert('لم يتم توليد المشاهد. الرد من API: ' + JSON.stringify(result?.scenes));
         throw new Error('لم يتم توليد المشاهد. حاول مرة أخرى.');
       }
       
