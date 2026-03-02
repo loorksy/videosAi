@@ -145,6 +145,7 @@ export default function CharacterCreate() {
 
   return (
     <div className="p-4 max-w-lg mx-auto min-h-screen bg-background">
+      {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       {/* Header */}
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
