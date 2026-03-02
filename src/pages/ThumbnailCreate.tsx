@@ -119,7 +119,7 @@ export default function ThumbnailCreate() {
       }
 
       // Use AI to analyze story and generate metadata
-      const metadata = await GeminiService.generateStoryMetadata(story);
+      const metadata = await AIService.generateStoryMetadata(story);
       setStoryMetadata(metadata);
       setTitle(metadata.videoTitle);
       setImageText(metadata.videoTitle);
