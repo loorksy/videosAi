@@ -97,7 +97,7 @@ export default function CreatureCharacterCreate() {
 
   return (
     <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
-      {/* Header */}
+      {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
           <ChevronRight className="w-5 h-5" />
