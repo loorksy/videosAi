@@ -74,6 +74,7 @@ ${charContext}
   },
 
   async generateStoryIdea(charNames: string[], genre: string, hint?: string): Promise<string> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateStoryIdea(charNames, genre, hint);
     }
