@@ -55,8 +55,8 @@ export default function CreatureCharacterCreate() {
       setGeneratedImage(image);
       setStep('review');
     } catch (error: any) {
-      console.error(error);
-      alert(`فشل التوليد: ${error.message}`);
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { alert(`فشل التوليد: ${error.message}`); }
       setStep('input');
     } finally {
       setIsProcessing(false);
