@@ -176,6 +176,7 @@ export default function StoryboardCreate() {
         videos[i] = { status: 'جاري التوليد...' };
         setSceneVideos({ ...videos });
       } catch (e: any) {
+        if (e instanceof MissingApiKeyError) { setMissingKeyError(e); setIsGeneratingVideos(false); return; }
         videos[i] = { status: `فشل: ${e.message}` };
         setSceneVideos({ ...videos });
       }
