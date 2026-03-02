@@ -433,22 +433,4 @@ Output JSON: {"title": "", "description": "", "scenes": [{"description": "", "du
     }
     return params;
   },
-
-  async generateRandomHumanIdea(): Promise<any> {
-    if (!isKieProvider()) {
-      return GeminiService.generateRandomHumanIdea();
-    }
-    return kieGenerateJSON(
-      `Generate a unique human character. Output JSON: {"gender": "", "age": "", "ethnicity": "", "hair": "", "eyeColor": "", "bodyType": "", "clothing": "", "expression": "", "style": "", "environment": "", "cameraAngle": ""}`
-    );
-  },
-
-  async generateHumanCharacter(params: any): Promise<string> {
-    if (!isKieProvider()) {
-      return GeminiService.generateHumanCharacter(params);
-    }
-    const prompt = `Hyper-realistic human portrait. Gender: ${params.gender}. Age: ${params.age}. Ethnicity: ${params.ethnicity}. Hair: ${params.hair}. Eyes: ${params.eyeColor}. Body: ${params.bodyType}. Clothing: ${params.clothing}. Expression: ${params.expression}. Camera: ${params.cameraAngle}. Environment: ${params.environment}. Style: ${params.style}. 8k, cinematic.`;
-    const url = await kieGenerateImage(prompt, '3:4');
-    return url.startsWith('http') ? await urlToBase64(url) : url;
-  },
 };
