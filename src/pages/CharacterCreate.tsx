@@ -96,7 +96,7 @@ export default function CharacterCreate() {
       // Step 1: Analyze if image provided
       if (mode === 'image' && uploadedImage) {
         setStep('analyzing');
-        finalDescription = await GeminiService.analyzeCharacter(uploadedImage);
+        finalDescription = await AIService.analyzeCharacter(uploadedImage);
         setDescription(finalDescription);
       }
       
