@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, Character, Storyboard, Scene } from '../lib/db';
 import { AIService } from '../lib/aiService';
 import { KieService } from '../lib/kie';
+import { MissingApiKeyError } from '../lib/aiProvider';
+import { ApiKeyMissing } from '../components/ApiKeyMissing';
 import { cn } from '../lib/utils';
 
 export default function StoryboardCreate() {
