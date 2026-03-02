@@ -318,8 +318,8 @@ export default function ThumbnailCreate() {
       await db.saveMediaItem(mediaItem);
       setThumbnailSaved(true);
     } catch (error: any) {
-      console.error(error);
-      alert(`فشل التوليد: ${error.message}`);
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { console.error(error); alert(`فشل التوليد: ${error.message}`); }
       setStep('input');
     } finally {
       setIsProcessing(false);
