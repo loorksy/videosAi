@@ -434,6 +434,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
   },
 
   async generateBrandIdentity(description: string): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateBrandIdentity(description);
     }
