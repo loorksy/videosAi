@@ -184,7 +184,7 @@ export default function ThumbnailCreate() {
       setAnalysisLoading(true);
       setThumbnailAnalysis(null);
       try {
-        const analysis = await GeminiService.analyzeThumbnail(base64);
+        const analysis = await AIService.analyzeThumbnail(base64);
         setThumbnailAnalysis(analysis);
       } catch (err) {
         console.error(err);
