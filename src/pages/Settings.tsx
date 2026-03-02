@@ -7,9 +7,8 @@ interface SettingsPageProps {
 }
 
 const KIE_TEXT_MODELS = [
-  { value: 'deepseek-r1', label: 'DeepSeek R1' },
-  { value: 'deepseek-v3', label: 'DeepSeek V3' },
-  { value: 'gpt-5.2-chat-latest', label: 'GPT-5.2 Chat' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
 ];
 
 const KIE_IMAGE_MODELS = [
