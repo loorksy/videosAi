@@ -423,6 +423,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
   },
 
   async generateProductShot(params: any): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateProductShot(params);
     }
