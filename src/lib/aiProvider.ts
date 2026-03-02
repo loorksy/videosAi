@@ -6,7 +6,7 @@ export type Provider = 'gemini' | 'kie';
 
 export function getProviderSettings() {
   return {
-    provider: (localStorage.getItem('AI_PROVIDER') || 'kie') as Provider,
+    provider: (localStorage.getItem('AI_PROVIDER') || 'gemini') as Provider,
     textModel: localStorage.getItem('AI_TEXT_MODEL') || 'gemini-2.5-flash',
     imageModel: localStorage.getItem('AI_IMAGE_MODEL') || 'gemini-3-pro-image-preview',
     videoModel: localStorage.getItem('AI_VIDEO_MODEL') || 'veo3_fast',
