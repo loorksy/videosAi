@@ -22,6 +22,7 @@ export default function CharacterCreate() {
     threeQuarter?: string;
   }>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
 
   const [style, setStyle] = useState('Pixar 3D');
   const [expression, setExpression] = useState('Neutral');
