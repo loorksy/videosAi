@@ -144,12 +144,21 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
         setErrorMessage(error.message || 'فشل الاتصال. تأكد من صحة المفتاح.');
       }
     } else {
-      // Test kie.ai
+      // Save key to backend first, then test
+      if (kieKey.trim()) {
+        localStorage.setItem('KIE_API_KEY', kieKey.trim());
+        try {
+          await fetch(`${API}/api/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kie_api_key: kieKey.trim() }),
+          });
+        } catch {}
+      }
       try {
-        const resp = await fetch(`${API}/api/kie/generate-text`, {
+        const resp = await fetch(`${API}/api/kie/test-connection`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: 'مرحبا', model: textModel }),
         });
         if (resp.ok) {
           setTestStatus('success');
