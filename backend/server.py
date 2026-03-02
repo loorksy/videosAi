@@ -581,7 +581,7 @@ async def save_settings(req: SettingsSaveRequest):
 class KieTextRequest(BaseModel):
     prompt: str
     system_prompt: str = ""
-    model: str = "deepseek-r1"
+    model: str = "gemini-2.5-flash"
     response_format: Optional[str] = None  # "json" or None
 
 
@@ -598,47 +598,23 @@ async def kie_generate_text(req: KieTextRequest):
         messages.append({"role": "system", "content": req.system_prompt})
     messages.append({"role": "user", "content": req.prompt})
 
-    payload = {
-        "model": req.model,
-        "input": {
-            "messages": messages,
-        },
-    }
+    payload = {"messages": messages, "stream": False}
+
+    # Use OpenAI-compatible chat completions endpoint
+    chat_url = f"https://api.kie.ai/{req.model}/v1/chat/completions"
 
     async with httpx.AsyncClient(timeout=120) as client:
-        # Create task
-        resp = await client.post(f"{KIE_BASE_URL}/jobs/createTask", json=payload, headers=headers)
+        resp = await client.post(chat_url, json=payload, headers=headers)
+        if resp.status_code != 200:
+            result = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+            raise HTTPException(status_code=resp.status_code, detail=result.get("error", {}).get("message", f"خطأ {resp.status_code}"))
+
         result = resp.json()
-        if resp.status_code != 200 or result.get("code") != 200:
-            raise HTTPException(status_code=resp.status_code, detail=result.get("msg", str(result)))
-
-        task_id = result.get("data", {}).get("taskId", "")
-        if not task_id:
-            raise HTTPException(status_code=500, detail="No taskId returned")
-
-        # Poll for completion
-        for _ in range(60):
-            await asyncio.sleep(2)
-            status_resp = await client.get(
-                f"{KIE_BASE_URL}/jobs/recordInfo?taskId={task_id}", headers=headers
-            )
-            status_data = status_resp.json()
-            data = status_data.get("data", {})
-            success = data.get("successFlag", 0)
-
-            if success == 1:
-                response_obj = data.get("response", {})
-                # For text models the content is in choices
-                choices = response_obj.get("choices", [])
-                if choices:
-                    content = choices[0].get("message", {}).get("content", "")
-                    return {"text": content, "taskId": task_id}
-                # Fallback: raw response text
-                return {"text": str(response_obj), "taskId": task_id}
-            elif success in (2, 3):
-                raise HTTPException(status_code=500, detail="Text generation failed")
-
-        raise HTTPException(status_code=504, detail="Text generation timed out")
+        choices = result.get("choices", [])
+        if choices:
+            content = choices[0].get("message", {}).get("content", "")
+            return {"text": content}
+        raise HTTPException(status_code=500, detail="لم يتم إرجاع نص")
 
 
 # ============ KIE.AI IMAGE GENERATION ============
