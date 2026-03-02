@@ -13,6 +13,36 @@ export function getProviderSettings() {
   };
 }
 
+export class MissingApiKeyError extends Error {
+  provider: Provider;
+  constructor(provider: Provider) {
+    const msg = provider === 'kie'
+      ? 'مفتاح kie.ai API غير مضاف. اذهب للإعدادات لإضافته.'
+      : 'مفتاح Gemini API غير مضاف. اذهب للإعدادات لإضافته.';
+    super(msg);
+    this.name = 'MissingApiKeyError';
+    this.provider = provider;
+  }
+}
+
+/** Check if the required API key is set. Throws MissingApiKeyError if not. */
+export function requireApiKey(): void {
+  const { provider } = getProviderSettings();
+  if (provider === 'kie') {
+    const key = localStorage.getItem('KIE_API_KEY');
+    if (!key) throw new MissingApiKeyError('kie');
+  } else {
+    const key = localStorage.getItem('GEMINI_API_KEY');
+    if (!key) throw new MissingApiKeyError('gemini');
+  }
+}
+
+/** Check if kie.ai key exists (for video/motion which always need it) */
+export function requireKieKey(): void {
+  const key = localStorage.getItem('KIE_API_KEY');
+  if (!key) throw new MissingApiKeyError('kie');
+}
+
 export function isKieProvider(): boolean {
   return getProviderSettings().provider === 'kie';
 }
