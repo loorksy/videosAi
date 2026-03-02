@@ -759,10 +759,10 @@ async def kie_test_connection():
     # Check user credits to verify key
     async with httpx.AsyncClient(timeout=15) as client:
         try:
-            resp = await client.get("https://api.kie.ai/api/v1/user/credits", headers=headers)
+            resp = await client.get("https://api.kie.ai/api/v1/chat/credit", headers=headers)
             if resp.status_code == 200:
                 data = resp.json()
-                credits = data.get("data", {}).get("credits", "غير معروف")
+                credits = data.get("data", "غير معروف")
                 return {"ok": True, "message": f"المفتاح يعمل. الرصيد: {credits} credits"}
             elif resp.status_code in (401, 403):
                 raise HTTPException(status_code=401, detail="مفتاح kie.ai غير صالح")
