@@ -348,13 +348,107 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
     return kieGenerateJSON(prompt);
   },
 
-  // ==================== PASSTHROUGH (unchanged) ====================
+  // ==================== PASSTHROUGH (always use Gemini for these) ====================
 
   testConnection: GeminiService.testConnection.bind(GeminiService),
   generateVoiceover: GeminiService.generateVoiceover.bind(GeminiService),
   generateVideoClip: GeminiService.generateVideoClip.bind(GeminiService),
-  generateProductShot: GeminiService.generateProductShot?.bind(GeminiService),
-  generateBrandIdentity: GeminiService.generateBrandIdentity?.bind(GeminiService),
-  generateVideoIdeaFromCharacters: GeminiService.generateVideoIdeaFromCharacters?.bind(GeminiService),
-  generateCharacterAnimation: GeminiService.generateCharacterAnimation?.bind(GeminiService),
+
+  async generateCharacterSheet(params: any): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateCharacterSheet(params);
+    }
+    const prompt = `Character design sheet. Character: ${params.description || params.name}. Style: ${params.style || 'Pixar'}. Views: front, side, back, 3/4 angle. Neutral background. Professional character reference sheet. 8k.`;
+    const url = await kieGenerateImage(prompt, '1:1');
+    const b64 = url.startsWith('http') ? await urlToBase64(url) : url;
+    return { front: b64, side: b64, back: b64, threeQuarter: b64 };
+  },
+
+  async regenerateCharacterView(params: any): Promise<string> {
+    if (!isKieProvider()) {
+      return GeminiService.regenerateCharacterView(params);
+    }
+    const prompt = `Character view: ${params.description}. Angle: ${params.view}. Style: ${params.style || 'Pixar'}. Neutral background. 8k.`;
+    const url = await kieGenerateImage(prompt, '1:1');
+    return url.startsWith('http') ? await urlToBase64(url) : url;
+  },
+
+  async improveAdCopy(topic: string, industry: string): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.improveAdCopy(topic, industry);
+    }
+    return kieGenerateJSON(`Improve ad copy for: "${topic}" in ${industry} industry. Output JSON: {"headline": "", "body": "", "cta": "", "tone": ""}`);
+  },
+
+  async generateAdCampaign(params: any): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateAdCampaign(params);
+    }
+    const prompt = `Create ad campaign images for: ${JSON.stringify(params)}. Professional advertising quality, eye-catching, modern design.`;
+    const url = await kieGenerateImage(prompt, '1:1');
+    const b64 = url.startsWith('http') ? await urlToBase64(url) : url;
+    return [{ image: b64, headline: params.headline || 'Ad Campaign' }];
+  },
+
+  async generateAdPoster(params: any): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateAdPoster(params);
+    }
+    const prompt = `Professional advertising poster. ${params.headline || ''}. Product: ${params.product || ''}. Style: ${params.style || 'modern'}. Cinematic 8k.`;
+    const url = await kieGenerateImage(prompt, '1:1');
+    const b64 = url.startsWith('http') ? await urlToBase64(url) : url;
+    return { image: b64 };
+  },
+
+  async generateProductShot(params: any): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateProductShot(params);
+    }
+    const prompt = `Professional product photography. Product: ${params.productDescription || ''}. Setting: ${params.setting || 'studio'}. Style: ${params.style || 'commercial'}. Lighting: professional studio. 8k.`;
+    const url = await kieGenerateImage(prompt, '1:1');
+    const b64 = url.startsWith('http') ? await urlToBase64(url) : url;
+    return { image: b64 };
+  },
+
+  async generateBrandIdentity(description: string): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateBrandIdentity(description);
+    }
+    const result = await kieGenerateJSON(`Create brand identity for: "${description}". Output JSON: {"name": "", "tagline": "", "colors": ["#hex1","#hex2","#hex3"], "typography": "", "style": ""}`);
+    return result;
+  },
+
+  async generateVideoIdeaFromCharacters(params: any): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateVideoIdeaFromCharacters(params);
+    }
+    const prompt = `Create a video idea with these characters: ${JSON.stringify(params.characters)}. Genre: ${params.genre || 'comedy'}. Duration: short video.
+Output JSON: {"title": "", "description": "", "scenes": [{"description": "", "duration": "5s"}]}`;
+    return kieGenerateJSON(prompt);
+  },
+
+  async generateCharacterAnimation(params: any): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateCharacterAnimation(params);
+    }
+    return params;
+  },
+
+  async generateRandomHumanIdea(): Promise<any> {
+    if (!isKieProvider()) {
+      return GeminiService.generateRandomHumanIdea();
+    }
+    return kieGenerateJSON(
+      `Generate a unique human character. Output JSON: {"gender": "", "age": "", "ethnicity": "", "hair": "", "eyeColor": "", "bodyType": "", "clothing": "", "expression": "", "style": "", "environment": "", "cameraAngle": ""}`
+    );
+  },
+
+  async generateHumanCharacter(params: any): Promise<string> {
+    if (!isKieProvider()) {
+      return GeminiService.generateHumanCharacter(params);
+    }
+    const prompt = `Hyper-realistic human portrait. Gender: ${params.gender}. Age: ${params.age}. Ethnicity: ${params.ethnicity}. Hair: ${params.hair}. Eyes: ${params.eyeColor}. Body: ${params.bodyType}. Clothing: ${params.clothing}. Expression: ${params.expression}. Camera: ${params.cameraAngle}. Environment: ${params.environment}. Style: ${params.style}. 8k, cinematic.`;
+    const url = await kieGenerateImage(prompt, '3:4');
+    return url.startsWith('http') ? await urlToBase64(url) : url;
+  },
 };
