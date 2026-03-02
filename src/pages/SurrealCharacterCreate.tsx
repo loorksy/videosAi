@@ -81,8 +81,8 @@ export default function SurrealCharacterCreate() {
       });
       
     } catch (error: any) {
-      console.error('Generation error:', error);
-      showToast(error.message || 'فشل التوليد', 'error');
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { showToast(error.message || 'فشل التوليد', 'error'); }
       setStep('input');
       setIsProcessing(false);
     }
