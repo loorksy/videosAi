@@ -67,14 +67,26 @@ export async function kieGenerateText(prompt: string, systemPrompt = ''): Promis
 export async function kieGenerateJSON<T>(prompt: string, systemPrompt = ''): Promise<T> {
   const fullSystem = `${systemPrompt}\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explanations.`;
   const text = await kieGenerateText(prompt, fullSystem);
+  console.log('[v0] Raw AI response:', text);
+  
   // Try to extract JSON from the response
   const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+  console.log('[v0] Cleaned response:', cleaned);
+  
   try {
-    return JSON.parse(cleaned);
-  } catch {
+    const parsed = JSON.parse(cleaned);
+    console.log('[v0] Parsed JSON:', parsed);
+    return parsed;
+  } catch (e) {
+    console.log('[v0] JSON parse error, trying to find JSON in text...');
     // Try to find JSON in the text
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      console.log('[v0] Found and parsed JSON:', parsed);
+      return parsed;
+    }
+    console.error('[v0] Failed to parse JSON:', e);
     throw new Error('فشل تحليل الرد كـ JSON');
   }
 }
