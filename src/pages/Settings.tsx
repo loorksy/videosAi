@@ -73,7 +73,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
   // When provider changes, reset models to defaults for that provider
   useEffect(() => {
     if (provider === 'kie') {
-      setTextModel('deepseek-r1');
+      setTextModel('gemini-2.5-flash');
       setImageModel('gpt-image-1');
       setVideoModel('veo3_fast');
     } else {
