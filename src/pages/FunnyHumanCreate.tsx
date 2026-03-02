@@ -36,7 +36,7 @@ export default function FunnyHumanCreate() {
     setStep('generating');
     
     try {
-      const image = await GeminiService.generateFunnyHuman({
+      const image = await AIService.generateFunnyHuman({
         baseHuman, mergedWith, crazyFeature, expression, style, environment
       });
       setGeneratedImage(image);
@@ -53,7 +53,7 @@ export default function FunnyHumanCreate() {
   const autoGenerateIdea = async () => {
     setIsAutoGenerating(true);
     try {
-      const idea = await GeminiService.generateRandomFunnyHumanIdea();
+      const idea = await AIService.generateRandomFunnyHumanIdea();
       setBaseHuman(idea.baseHuman || 'رجل أعمال');
       setMergedWith(idea.mergedWith || 'غسالة');
       setCrazyFeature(idea.crazyFeature || 'رأس عملاق');

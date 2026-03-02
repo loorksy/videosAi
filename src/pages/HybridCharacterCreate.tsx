@@ -82,7 +82,7 @@ export default function HybridCharacterCreate() {
       
       Make it visually striking, highly detailed, and unique. Provide a creative name for this hybrid entity and a short backstory/description.`;
 
-      const result = await GeminiService.generateCharacter(prompt);
+      const result = await AIService.generateCharacter(prompt);
       setGeneratedCharacter(result);
     } catch (error: any) {
       console.error(error);

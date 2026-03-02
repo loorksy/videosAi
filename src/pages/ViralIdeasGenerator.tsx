@@ -73,7 +73,7 @@ export default function ViralIdeasGenerator() {
         charactersString = selectedChars.map(c => `${c.name} (${c.description})`).join(', ');
       }
 
-      const idea = await GeminiService.generateViralShortIdea({
+      const idea = await AIService.generateViralShortIdea({
         niche,
         tone,
         topic,

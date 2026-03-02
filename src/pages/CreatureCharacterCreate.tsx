@@ -38,7 +38,7 @@ export default function CreatureCharacterCreate() {
     setStep('generating');
     
     try {
-      const image = await GeminiService.generateCreatureCharacter({
+      const image = await AIService.generateCreatureCharacter({
         baseCreature,
         hybridCreature,
         bodyType,

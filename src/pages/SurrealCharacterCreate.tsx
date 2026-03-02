@@ -56,7 +56,7 @@ export default function SurrealCharacterCreate() {
     
     try {
       console.log('Starting image generation...');
-      const images = await GeminiService.generateSurrealObject({
+      const images = await AIService.generateSurrealObject({
         objectName, emotion, style, body, limbs, hair, cameraAngle, lighting, environment, generateNormal
       });
       
@@ -88,7 +88,7 @@ export default function SurrealCharacterCreate() {
   const autoGenerateIdea = async () => {
     setIsAutoGenerating(true);
     try {
-      const idea = await GeminiService.generateRandomSurrealIdea(objectName); // Pass current objectName as hint if exists
+      const idea = await AIService.generateRandomSurrealIdea(objectName);
       setObjectName(idea.objectName || 'Unknown Object');
       setEmotion(idea.emotion || 'Creepy');
       setStyle(idea.style || 'Hyperrealistic');
