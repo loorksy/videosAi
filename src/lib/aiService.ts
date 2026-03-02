@@ -120,6 +120,7 @@ ${sceneSummary}
     aspectRatio: '16:9' | '9:16' | '1:1';
     characterDNA: string;
   }): Promise<string> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateStoryboardFrame(params);
     }
