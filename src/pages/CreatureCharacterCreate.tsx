@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, ChevronRight, Loader2, Download, Wand2, Cat, Image as ImageIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { AIService } from '../lib/aiService';
+import { MissingApiKeyError } from '../lib/aiProvider';
+import { ApiKeyMissing } from '../components/ApiKeyMissing';
 import { db, Character } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
 

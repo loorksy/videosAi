@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ChevronRight, Loader2, Download, Youtube, Image as ImageIcon, RefreshCw, Upload, X, Wand2, Type as TypeIcon, ChevronDown, ChevronUp, Check, BookOpen, Copy, Hash } from 'lucide-react';
 import { AIService } from '../lib/aiService';
+import { MissingApiKeyError } from '../lib/aiProvider';
+import { ApiKeyMissing } from '../components/ApiKeyMissing';
 import { db, Character, MediaItem, Storyboard } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
 import { cn } from '../lib/utils';
