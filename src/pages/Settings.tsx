@@ -130,15 +130,19 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
     setTestStatus('idle');
   };
 
+  const [successMessage, setSuccessMessage] = useState('');
+
   const handleTest = async () => {
     setTestStatus('testing');
     setErrorMessage('');
+    setSuccessMessage('');
 
     if (provider === 'gemini') {
       if (geminiKey.trim()) localStorage.setItem('GEMINI_API_KEY', geminiKey.trim());
       try {
         await GeminiService.testConnection();
         setTestStatus('success');
+        setSuccessMessage('المفتاح يعمل بشكل صحيح.');
       } catch (error: any) {
         setTestStatus('error');
         setErrorMessage(error.message || 'فشل الاتصال. تأكد من صحة المفتاح.');
@@ -160,11 +164,12 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
+        const data = await resp.json();
         if (resp.ok) {
           setTestStatus('success');
+          setSuccessMessage(data.message || 'المفتاح يعمل بشكل صحيح.');
         } else {
-          const err = await resp.json().catch(() => ({}));
-          throw new Error(err.detail || `خطأ ${resp.status}`);
+          throw new Error(data.detail || `خطأ ${resp.status}`);
         }
       } catch (error: any) {
         setTestStatus('error');
