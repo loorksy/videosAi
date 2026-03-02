@@ -23,6 +23,7 @@ export default function FunnyHumanCreate() {
   
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
   const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
   // Options
