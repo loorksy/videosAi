@@ -372,6 +372,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
   generateVideoClip: GeminiService.generateVideoClip.bind(GeminiService),
 
   async generateCharacterSheet(params: any): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateCharacterSheet(params);
     }
