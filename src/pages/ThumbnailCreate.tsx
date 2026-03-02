@@ -271,7 +271,7 @@ export default function ThumbnailCreate() {
         thumbBackground = 'خلفية مشرقة بألوان باستيل دافئة مناسبة للأطفال';
       }
 
-      const image = await GeminiService.generateThumbnail({
+      const image = await AIService.generateThumbnail({
         title: thumbTitle,
         style: thumbStyle,
         elements: thumbElements,
