@@ -138,8 +138,8 @@ export default function StoryboardCreate() {
       })));
       setStep('scenes');
     } catch (error: any) {
-      console.error('Failed to generate story:', error);
-      alert('فشل توليد القصة: ' + (error?.message || ''));
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { console.error('Failed to generate story:', error); alert('فشل توليد القصة: ' + (error?.message || '')); }
     } finally {
       setIsGeneratingIdea(false);
       setIsProcessing(false);
