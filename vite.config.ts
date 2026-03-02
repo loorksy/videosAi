@@ -22,6 +22,20 @@ export default defineConfig(({mode}) => {
         usePolling: false, // Disable file watching
         ignored: ['**/*'], // Ignore all files
       },
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8001',
+          changeOrigin: true,
+        },
+      },
+    },
+    preview: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8001',
+          changeOrigin: true,
+        },
+      },
     },
   };
 });
