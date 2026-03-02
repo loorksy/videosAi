@@ -1,5 +1,5 @@
 // Unified AI Service - Routes to Gemini or kie.ai based on provider settings
-import { isKieProvider, kieGenerateText, kieGenerateJSON, kieGenerateImage } from './aiProvider';
+import { isKieProvider, kieGenerateText, kieGenerateJSON, kieGenerateImage, requireApiKey } from './aiProvider';
 import { GeminiService } from './gemini';
 
 const API = window.location.origin;
