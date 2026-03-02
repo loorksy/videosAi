@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lightbulb, ChevronRight, Loader2, Copy, Check, Zap, Hash, PlayCircle, Clapperboard, Users, Film } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { GeminiService } from '../lib/gemini';
+import { AIService } from '../lib/aiService';
 import { db, Character, Storyboard, Scene } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
 
