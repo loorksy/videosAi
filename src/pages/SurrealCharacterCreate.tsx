@@ -15,6 +15,7 @@ export default function SurrealCharacterCreate() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
+  const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'trends'>('basic');
   
   // Form State
