@@ -179,6 +179,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
   },
 
   async analyzeCharacter(imageBase64: string): Promise<string> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.analyzeCharacter(imageBase64);
     }
