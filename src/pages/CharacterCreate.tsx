@@ -121,9 +121,8 @@ export default function CharacterCreate() {
       setGeneratedImages({ front, left, right, threeQuarter });
       setStep('review');
     } catch (error: any) {
-      console.error(error);
-      const msg = error.message || 'حدث خطأ غير معروف';
-      alert(`فشل التوليد: ${msg}. \nتأكد من صحة مفتاح API وصلاحياته في الإعدادات.`);
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { console.error(error); alert(`فشل التوليد: ${error.message || 'خطأ غير معروف'}`); }
       setStep('input');
     } finally {
       setIsProcessing(false);
