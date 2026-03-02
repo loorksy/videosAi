@@ -127,7 +127,7 @@ export default function StoryboardCreate() {
       
       setScript(result.script || '');
       setIdea((result.script || '').slice(0, 100) + '...');
-      setScenes(result.scenes.map(s => ({
+      const generatedScenes = result.scenes.map(s => ({
         id: uuidv4(),
         description: s.description || '',
         dialogue: s.dialogue || '',
@@ -135,8 +135,117 @@ export default function StoryboardCreate() {
           const found = selectedChars.find(c => c.name.includes(name) || name.includes(c.name));
           return found ? found.id : '';
         }).filter(Boolean),
-      })));
-      setStep('scenes');
+      }));
+      setScenes(generatedScenes);
+      
+      // Automatically generate frame images after story generation
+      setProcessingStatus('جاري رسم المشاهد تلقائياً...');
+      setStep('frames');
+      
+      // Build character DNA string
+      const characterDNA = selectedChars.map(c => 
+        `${c.name}: ${c.visualTraits || c.description}`
+      ).join('\n');
+
+      // Helper: Convert image URL or base64 to base64 data
+      const toBase64 = async (img: string): Promise<string> => {
+        if (!img) return '';
+        if (img.length > 200) return img;
+        try {
+          const resp = await fetch(img.startsWith('/') ? `${window.location.origin}${img}` : img);
+          const blob = await resp.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch { return ''; }
+      };
+
+      // Collect ALL character reference images
+      const allCharImages: string[] = [];
+      for (const char of selectedChars) {
+        const imgs = char.images as Record<string, string | undefined>;
+        const firstImg = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 0);
+        if (firstImg) {
+          const b64 = await toBase64(firstImg);
+          if (b64) allCharImages.push(b64);
+        }
+      }
+
+      let firstSceneImage: string | undefined;
+      let previousSceneImage: string | undefined;
+      const newScenes = [...generatedScenes];
+
+      for (let i = 0; i < newScenes.length; i++) {
+        setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i === 0 ? ' (المشهد المرجعي الأساسي)' : ''}`);
+        
+        const scene = newScenes[i];
+        const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
+        let sceneCharImages: string[];
+        if (sceneChars.length > 0) {
+          sceneCharImages = [];
+          for (const c of sceneChars) {
+            const imgs = c.images as Record<string, string | undefined>;
+            const firstImg = Object.values(imgs).find(v => v && typeof v === 'string' && v.length > 0);
+            if (firstImg) {
+              const b64 = await toBase64(firstImg);
+              if (b64) sceneCharImages.push(b64);
+            }
+          }
+        } else {
+          sceneCharImages = allCharImages;
+        }
+
+        try {
+          const frameImage = await AIService.generateStoryboardFrame({
+            sceneDescription: scene.description,
+            characterImages: sceneCharImages,
+            firstSceneImage,
+            previousSceneImage,
+            sceneIndex: i,
+            totalScenes: newScenes.length,
+            style,
+            aspectRatio,
+            characterDNA,
+          });
+          
+          newScenes[i].frameImage = frameImage;
+          if (i === 0) firstSceneImage = frameImage;
+          previousSceneImage = frameImage;
+          setScenes([...newScenes]);
+          
+          if (i < newScenes.length - 1) {
+            setProcessingStatus(`تم رسم المشهد ${i + 1}. انتظر قليلاً قبل المشهد التالي...`);
+            await new Promise(r => setTimeout(r, 3000));
+          }
+        } catch (sceneError: any) {
+          console.error(`Scene ${i + 1} failed:`, sceneError);
+          setProcessingStatus(`فشل المشهد ${i + 1}، إعادة المحاولة بعد 10 ثوانٍ...`);
+          await new Promise(r => setTimeout(r, 10000));
+          try {
+            const retryImage = await AIService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: sceneCharImages,
+              firstSceneImage,
+              previousSceneImage,
+              sceneIndex: i,
+              totalScenes: newScenes.length,
+              style,
+              aspectRatio,
+              characterDNA,
+            });
+            newScenes[i].frameImage = retryImage;
+            if (i === 0) firstSceneImage = retryImage;
+            previousSceneImage = retryImage;
+            setScenes([...newScenes]);
+          } catch {
+            newScenes[i].frameImage = undefined;
+            setScenes([...newScenes]);
+          }
+        }
+      }
+      setStep('preview');
     } catch (error: any) {
       if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
       else { console.error('Failed to generate story:', error); alert('فشل توليد القصة: ' + (error?.message || '')); }
