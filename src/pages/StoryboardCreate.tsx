@@ -37,6 +37,7 @@ export default function StoryboardCreate() {
   const [isGeneratingVideos, setIsGeneratingVideos] = useState(false);
   const [dialogueLanguage, setDialogueLanguage] = useState('العربية');
   const [draftId] = useState(uuidv4());
+  const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
 
   const dialogueLanguages = [
     'العربية', 'الإنجليزية', 'الفرنسية', 'الإسبانية', 'التركية', 'الهندية', 'اليابانية', 'الكورية',
