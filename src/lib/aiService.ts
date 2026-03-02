@@ -318,6 +318,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
   // ==================== IDEA GENERATORS ====================
 
   async generateRandomSurrealIdea(hint?: string): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateRandomSurrealIdea(hint);
     }
