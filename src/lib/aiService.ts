@@ -67,6 +67,9 @@ ${charContext}
 {"script": "القصة الكاملة بالعربية", "scenes": [{"description": "وصف بصري بالإنجليزية مع اسم الشخصية وملابسها", "characters": ["اسم الشخصية"], "dialogue": "الحوار بـ${dialogueLang}"}]}`;
 
     const result = await kieGenerateJSON<{ script: string; scenes: any[] }>(prompt);
+    console.log('[v0] kieGenerateJSON result:', JSON.stringify(result, null, 2));
+    console.log('[v0] result.scenes:', result.scenes);
+    console.log('[v0] Is array:', Array.isArray(result.scenes));
     return {
       script: result.script || '',
       scenes: Array.isArray(result.scenes) ? result.scenes : [],
