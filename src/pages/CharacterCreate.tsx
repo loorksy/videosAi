@@ -109,10 +109,10 @@ export default function CharacterCreate() {
       
       // Parallel generation for speed
       const [front, left, right, threeQuarter] = await Promise.all([
-        GeminiService.generateCharacterAngle(styledDescription, 'front'),
-        GeminiService.generateCharacterAngle(styledDescription, 'left side'),
-        GeminiService.generateCharacterAngle(styledDescription, 'right side'),
-        GeminiService.generateCharacterAngle(styledDescription, '3/4 view')
+        AIService.generateCharacterAngle(styledDescription, 'front'),
+        AIService.generateCharacterAngle(styledDescription, 'left side'),
+        AIService.generateCharacterAngle(styledDescription, 'right side'),
+        AIService.generateCharacterAngle(styledDescription, '3/4 view')
       ]);
 
       setGeneratedImages({ front, left, right, threeQuarter });
