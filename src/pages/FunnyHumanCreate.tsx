@@ -45,8 +45,8 @@ export default function FunnyHumanCreate() {
       setGeneratedImage(image);
       setStep('review');
     } catch (error: any) {
-      console.error(error);
-      alert(`فشل التوليد: ${error.message}`);
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { alert(`فشل التوليد: ${error.message}`); }
       setStep('input');
     } finally {
       setIsProcessing(false);
@@ -64,7 +64,8 @@ export default function FunnyHumanCreate() {
       setStyle(idea.style || 'واقعي');
       setEnvironment(idea.environment || 'الشارع');
     } catch (error: any) {
-      alert(error.message);
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { alert(error.message); }
     } finally {
       setIsAutoGenerating(false);
     }
