@@ -24,6 +24,7 @@ const KIE_VIDEO_MODELS = [
   { value: 'sora2', label: 'Sora 2' },
   { value: 'wan2.5-t2v-preview', label: 'Wan 2.5' },
   { value: 'kling2.6', label: 'Kling 2.6' },
+  { value: 'kling-2.6/motion-control', label: 'Kling 2.6 Motion Control' },
   { value: 'runway', label: 'Runway' },
 ];
 
