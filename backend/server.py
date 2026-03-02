@@ -756,25 +756,19 @@ async def kie_test_connection():
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
-    # Use a minimal text generation task to test the key
-    payload = {
-        "model": "deepseek-r1",
-        "input": {
-            "messages": [{"role": "user", "content": "Hi"}],
-        },
-    }
-
+    # Check user credits to verify key
     async with httpx.AsyncClient(timeout=15) as client:
         try:
-            resp = await client.post(f"{KIE_BASE_URL}/jobs/createTask", json=payload, headers=headers)
-            result = resp.json()
-            if resp.status_code == 200 and result.get("code") == 200:
-                return {"ok": True, "message": "المفتاح يعمل بشكل صحيح"}
-            elif resp.status_code == 401 or resp.status_code == 403:
+            resp = await client.get("https://api.kie.ai/api/v1/user/credits", headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                credits = data.get("data", {}).get("credits", "غير معروف")
+                return {"ok": True, "message": f"المفتاح يعمل. الرصيد: {credits} credits"}
+            elif resp.status_code in (401, 403):
                 raise HTTPException(status_code=401, detail="مفتاح kie.ai غير صالح")
             else:
-                msg = result.get("msg", str(result))
-                raise HTTPException(status_code=resp.status_code, detail=f"خطأ: {msg}")
+                result = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+                raise HTTPException(status_code=resp.status_code, detail=result.get("msg", f"خطأ {resp.status_code}"))
         except httpx.TimeoutException:
             raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بـ kie.ai")
 
