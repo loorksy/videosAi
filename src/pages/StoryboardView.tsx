@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle } from 'lucide-react';
 import { db, Storyboard, Scene } from '../lib/db';
-import { GeminiService } from '../lib/gemini';
+import { AIService } from '../lib/aiService';
 import { KieService } from '../lib/kie';
 
 // Scene status type

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, ChevronRight, Loader2, Image as ImageIcon, Sparkles, Palette, Download, Check } from 'lucide-react';
-import { GeminiService } from '../lib/gemini';
+import { AIService } from '../lib/aiService';
 import { db, MediaItem } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
 

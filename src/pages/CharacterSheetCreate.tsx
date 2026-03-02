@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Sparkles, Check, ChevronRight, Loader2, User, Download, RefreshCw, X, Camera, Image } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { GeminiService } from '../lib/gemini';
+import { AIService } from '../lib/aiService';
 import { db, Character } from '../lib/db';
 import { useToast } from '../components/Toast';
 

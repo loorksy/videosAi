@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { db, Character, MediaItem } from '../lib/db';
 import { KlingService } from '../lib/kling';
-import { GeminiService } from '../lib/gemini';
+import { AIService } from '../lib/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MODES = [

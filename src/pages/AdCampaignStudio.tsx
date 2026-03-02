@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Megaphone, ChevronRight, Loader2, Save, Image as ImageIcon, Download, Palette, Edit3, Type, DollarSign, Phone, Upload, Layout, Sparkles, Briefcase, User } from 'lucide-react';
-import { GeminiService } from '../lib/gemini';
+import { AIService } from '../lib/aiService';
 import { CustomSelect } from '../components/CustomSelect';
 import { db, Character } from '../lib/db';
 
