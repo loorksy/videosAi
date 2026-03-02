@@ -841,7 +841,7 @@ async def kie_kling_status(task_id: str):
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(f"{KIE_BASE_URL}/jobs/recordInfo?taskId={task_id}", headers=headers)
         result = resp.json()
-        data = result.get("data", {})
+        data = result.get("data") or {}
         success = data.get("successFlag", 0)
 
         status = "processing"
