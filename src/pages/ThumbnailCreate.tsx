@@ -85,6 +85,7 @@ export default function ThumbnailCreate() {
     hashtags: string;
   } | null>(null);
   const [isAnalyzingStory, setIsAnalyzingStory] = useState(false);
+  const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseThumbInputRef = useRef<HTMLInputElement>(null);
