@@ -112,7 +112,7 @@ export default function StoryboardCreate() {
       
       const enhancedIdea = `${idea || 'أنشئ قصة ممتعة للأطفال'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}. لغة الحوار: ${dialogueLanguage}.`;
       
-      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
+      const result = await AIService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
         name: c.name,
         description: c.description,
         visualTraits: c.visualTraits,
@@ -222,7 +222,7 @@ export default function StoryboardCreate() {
       // Enhance idea with all context
       const enhancedIdea = `${idea || 'أنشئ قصة مناسبة للشخصيات'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}.`;
       
-      const result = await GeminiService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
+      const result = await AIService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
         name: c.name,
         description: c.description,
         visualTraits: c.visualTraits,
