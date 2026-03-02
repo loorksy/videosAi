@@ -165,6 +165,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
   },
 
   async generateCharacterAngle(description: string, angle: string): Promise<string> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateCharacterAngle(description, angle as any);
     }
