@@ -103,7 +103,8 @@ export default function SurrealCharacterCreate() {
       setEnvironment(idea.environment || 'Dark void');
       setActiveTab('advanced'); // Switch to advanced to show the filled fields
     } catch (error: any) {
-      showToast(error.message || 'فشل توليد الفكرة', 'error');
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { showToast(error.message || 'فشل توليد الفكرة', 'error'); }
     } finally {
       setIsAutoGenerating(false);
     }
