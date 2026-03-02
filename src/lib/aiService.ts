@@ -350,6 +350,7 @@ Output JSON with English values: {"objectName": "", "emotion": "", "style": "", 
   },
 
   async generateViralShortIdea(params: any): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateViralShortIdea(params);
     }
