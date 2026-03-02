@@ -198,6 +198,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
   },
 
   async generateSurrealObject(params: any): Promise<{ surreal: string; normal?: string }> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateSurrealObject(params);
     }
