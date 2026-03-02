@@ -87,6 +87,7 @@ ${hint ? `ملاحظة: ${hint}` : ''}
   },
 
   async generateStoryMetadata(story: any): Promise<{ videoTitle: string; videoDescription: string; hashtags: string }> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateStoryMetadata(story);
     }
