@@ -64,7 +64,7 @@ export default function ProductStudio() {
     }
     setIsGeneratingProduct(true);
     try {
-      const result = await GeminiService.generateProductShot({
+      const result = await AIService.generateProductShot({
         product: productName,
         background,
         lighting,
@@ -98,7 +98,7 @@ export default function ProductStudio() {
     }
     setIsGeneratingBrand(true);
     try {
-      const result = await GeminiService.generateBrandIdentity(brandDescription);
+      const result = await AIService.generateBrandIdentity(brandDescription);
       setBrandResult(result);
 
       // Auto-save moodboard to media gallery

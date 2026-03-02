@@ -274,7 +274,7 @@ export default function AdCampaignStudio() {
 
     setIsImprovingText(true);
     try {
-      const result = await GeminiService.improveAdCopy(postTopic, brandProfile.industry);
+      const result = await AIService.improveAdCopy(postTopic, brandProfile.industry);
       setBrandProfile(prev => ({
         ...prev,
         largeText: result.largeText,
@@ -372,10 +372,10 @@ export default function AdCampaignStudio() {
       };
 
       if (isMultiPost) {
-        const results = await GeminiService.generateAdCampaign(adParams);
+        const results = await AIService.generateAdCampaign(adParams);
         setGeneratedImages(results);
       } else {
-        const result = await GeminiService.generateAdPoster(adParams);
+        const result = await AIService.generateAdPoster(adParams);
         setGeneratedImages([result]);
       }
     } catch (error: any) {

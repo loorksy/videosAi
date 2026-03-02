@@ -72,7 +72,7 @@ export default function CharacterSheetCreate() {
       console.log('Starting character sheet generation...');
       
       // Generate all 3 views
-      const images = await GeminiService.generateCharacterSheet({
+      const images = await AIService.generateCharacterSheet({
         referenceImage: uploadedImage,
         characterType,
         characterName,
@@ -100,7 +100,7 @@ export default function CharacterSheetCreate() {
     
     setIsProcessing(true);
     try {
-      const newImage = await GeminiService.regenerateCharacterView({
+      const newImage = await AIService.regenerateCharacterView({
         referenceImage: uploadedImage,
         existingImages: generatedImages!,
         viewToRegenerate: view,

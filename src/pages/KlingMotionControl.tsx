@@ -261,7 +261,7 @@ export default function KlingMotionControl() {
     if (!selectedCharacter) return;
     setIsGeneratingIdea(true);
     try {
-      const idea = await GeminiService.generateVideoIdeaFromCharacters({
+      const idea = await AIService.generateVideoIdeaFromCharacters({
         characters: [{
           name: selectedCharacter.name,
           description: selectedCharacter.description || selectedCharacter.name,
