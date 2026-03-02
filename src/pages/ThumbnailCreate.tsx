@@ -338,6 +338,7 @@ export default function ThumbnailCreate() {
 
   return (
     <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+      {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       {/* Hidden File Input */}
       <input 
         type="file" 
