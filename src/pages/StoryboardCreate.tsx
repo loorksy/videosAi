@@ -679,7 +679,7 @@ export default function StoryboardCreate() {
                   }
                 }
                 try {
-                  const img = await GeminiService.generateStoryboardFrame({
+                  const img = await AIService.generateStoryboardFrame({
                     sceneDescription: scene.description, characterImages: charImgs,
                     firstSceneImage: firstImg, previousSceneImage: prevImg,
                     sceneIndex: idx, totalScenes: scenes.length,
