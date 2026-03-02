@@ -127,7 +127,8 @@ export default function ThumbnailCreate() {
       setTitle(metadata.videoTitle);
       setImageText(metadata.videoTitle);
     } catch (e: any) {
-      console.error('Failed to analyze story:', e);
+      if (e instanceof MissingApiKeyError) { setMissingKeyError(e); }
+      else { console.error('Failed to analyze story:', e); }
     } finally {
       setIsAnalyzingStory(false);
     }
