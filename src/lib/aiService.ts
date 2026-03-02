@@ -393,6 +393,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
   },
 
   async improveAdCopy(topic: string, industry: string): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.improveAdCopy(topic, industry);
     }
