@@ -342,6 +342,7 @@ Output JSON with English values: {"objectName": "", "emotion": "", "style": "", 
   },
 
   async generateRandomHumanIdea(): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateRandomHumanIdea();
     }
