@@ -67,17 +67,9 @@ ${charContext}
 {"script": "القصة الكاملة بالعربية", "scenes": [{"description": "وصف بصري بالإنجليزية مع اسم الشخصية وملابسها", "characters": ["اسم الشخصية"], "dialogue": "الحوار بـ${dialogueLang}"}]}`;
 
     const result = await kieGenerateJSON<{ script: string; scenes: any[] }>(prompt);
-    console.log('[v0] generateScriptAndScenes result:', result);
-    console.log('[v0] scenes count:', result.scenes?.length);
-    
-    const scenes = Array.isArray(result.scenes) ? result.scenes : [];
-    if (scenes.length === 0) {
-      console.warn('[v0] No scenes returned from API!');
-    }
-    
     return {
       script: result.script || '',
-      scenes: scenes,
+      scenes: Array.isArray(result.scenes) ? result.scenes : [],
     };
   },
 
