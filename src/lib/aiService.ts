@@ -275,6 +275,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
   },
 
   async generateThumbnail(params: any): Promise<string> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateThumbnail(params);
     }
