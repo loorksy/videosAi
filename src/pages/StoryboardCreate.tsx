@@ -347,7 +347,7 @@ export default function StoryboardCreate() {
           setProcessingStatus(`فشل المشهد ${i + 1}، إعادة المحاولة بعد 10 ثوانٍ...`);
           await new Promise(r => setTimeout(r, 10000));
           try {
-            const retryImage = await GeminiService.generateStoryboardFrame({
+            const retryImage = await AIService.generateStoryboardFrame({
               sceneDescription: scene.description,
               characterImages: sceneCharImages,
               firstSceneImage,
