@@ -412,6 +412,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
   },
 
   async generateAdPoster(params: any): Promise<any> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateAdPoster(params);
     }
