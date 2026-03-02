@@ -239,6 +239,7 @@ RULES: Character must match reference images exactly. Kid-friendly bright pastel
   },
 
   async generateHumanCharacter(params: any): Promise<string> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateHumanCharacter(params);
     }
