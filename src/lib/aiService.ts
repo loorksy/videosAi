@@ -35,6 +35,7 @@ export const AIService = {
     idea: string,
     characters: { name: string; description: string; visualTraits?: string }[]
   ): Promise<{ script: string; scenes: { description: string; characters: string[]; dialogue: string }[] }> {
+    requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateScriptAndScenes(idea, characters);
     }
