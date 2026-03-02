@@ -160,20 +160,23 @@ export const db = {
 
   async saveStoryboard(storyboard: Storyboard) {
     cache.storyboards = undefined; // invalidate
-    return api('/api/storyboards/save', {
-      method: 'POST',
+    return api("/api/storyboards/save", {
+      method: "POST",
       body: JSON.stringify({
         id: storyboard.id,
-        title: storyboard.title || '',
-        script: storyboard.script || '',
-        aspectRatio: storyboard.aspectRatio || '16:9',
-        scenes: storyboard.scenes?.map(s => ({
-          description: s.description || '',
+        title: storyboard.title || "",
+        script: storyboard.script || "",
+        characters: storyboard.characters || [],
+        aspectRatio: storyboard.aspectRatio || "16:9",
+        scenes: (storyboard.scenes || []).map(s => ({
+          id: s.id,
+          description: s.description || "",
           characterIds: s.characterIds || [],
-          dialogue: s.dialogue || '',
-          frameImage: s.frameImage || '',
-          videoUrl: s.videoClip || '',
-        })) || [],
+          dialogue: s.dialogue || "",
+          frameImage: s.frameImage || "",
+          videoUrl: s.videoClip || "",
+          audioClip: s.audioClip || "",
+        })),
       }),
     });
   },

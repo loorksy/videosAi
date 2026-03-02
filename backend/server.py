@@ -37,7 +37,7 @@ client = MongoClient(MONGO_URL)
 db = client[DB_NAME]
 
 # Upload directory
-UPLOAD_DIR = "/app/backend/uploads"
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
