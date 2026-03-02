@@ -236,7 +236,7 @@ export default function StoryboardView() {
         }
       }
 
-      const imageUrl = await GeminiService.generateStoryboardFrame(
+      const imageUrl = await AIService.generateStoryboardFrame(
         scene.description,
         referenceImages,
         storyboard.aspectRatio || '16:9'
@@ -270,7 +270,7 @@ export default function StoryboardView() {
       const voices = ['Zephyr', 'Kore', 'Puck', 'Charon', 'Fenrir'];
       const voiceName = voices[sceneIndex % voices.length];
       
-      const audioUrl = await GeminiService.generateVoiceover(scene.dialogue, voiceName);
+      const audioUrl = await AIService.generateVoiceover(scene.dialogue, voiceName);
       
       const newScenes = [...storyboard.scenes];
       newScenes[sceneIndex].audioClip = audioUrl;
@@ -360,7 +360,7 @@ export default function StoryboardView() {
           }
 
           const imageUrl = await generateWithRetry(
-            () => GeminiService.generateStoryboardFrame(
+            () => AIService.generateStoryboardFrame(
               scene.description,
               referenceImages,
               currentStoryboard.aspectRatio || '16:9'
@@ -388,7 +388,7 @@ export default function StoryboardView() {
           const voiceName = voices[i % voices.length];
           
           const audioUrl = await generateWithRetry(
-            () => GeminiService.generateVoiceover(scene.dialogue!, voiceName),
+            () => AIService.generateVoiceover(scene.dialogue!, voiceName),
             i + 1000 // Use different index range for audio
           );
 
@@ -412,7 +412,7 @@ export default function StoryboardView() {
           if (startFrame && endFrame) {
             const motionPrompt = cameraMotion !== 'Static' ? cameraMotion : undefined;
             const videoUrl = await generateWithRetry(
-              () => GeminiService.generateVideoClip(startFrame, endFrame, currentStoryboard.aspectRatio || '16:9', motionPrompt),
+              () => AIService.generateVideoClip(startFrame, endFrame, currentStoryboard.aspectRatio || '16:9', motionPrompt),
               i + 2000 // Use different index range for video
             );
 
