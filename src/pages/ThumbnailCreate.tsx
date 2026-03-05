@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ChevronRight, Loader2, Download, Youtube, Image as ImageIcon, RefreshCw, Upload, X, Wand2, Type as TypeIcon, ChevronDown, ChevronUp, Check, BookOpen, Copy, Hash } from 'lucide-react';
+import { Sparkles, ChevronRight, Loader2, Download, Save, Youtube, Image as ImageIcon, RefreshCw, Upload, X, Wand2, Type as TypeIcon, ChevronDown, ChevronUp, Check, BookOpen, Copy, Hash } from 'lucide-react';
 import { AIService } from '../lib/aiService';
-import { MissingApiKeyError } from '../lib/aiProvider';
 import { ApiKeyMissing } from '../components/ApiKeyMissing';
 import { db, Character, MediaItem, Storyboard } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
+import { ColorPicker } from '../components/ColorPicker';
+import { MissingApiKeyError } from '../lib/aiProvider';
 import { cn } from '../lib/utils';
 import {
   facialExpressions,
@@ -40,7 +41,7 @@ export default function ThumbnailCreate() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
   const [mode, setMode] = useState<'create' | 'enhance' | 'from_story'>('create');
-  
+
   // Form State
   const [title, setTitle] = useState('');
   const [elements, setElements] = useState('');
@@ -50,7 +51,7 @@ export default function ThumbnailCreate() {
   const [baseThumbnail, setBaseThumbnail] = useState<string | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [thumbnailAnalysis, setThumbnailAnalysis] = useState<ThumbnailAnalysis | null>(null);
-  
+
   // New state variables for advanced options
   const [facialExpression, setFacialExpression] = useState('');
   const [eyeExpression, setEyeExpression] = useState('');
@@ -66,11 +67,11 @@ export default function ThumbnailCreate() {
 
   // Accordion state
   const [openSection, setOpenSection] = useState<'video' | 'character' | 'design'>('video');
-  
+
   // Multi-select state
   const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
-  
+
   const [characters, setCharacters] = useState<Character[]>([]);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,10 +92,56 @@ export default function ThumbnailCreate() {
   const baseThumbInputRef = useRef<HTMLInputElement>(null);
   const [uploadType, setUploadType] = useState<'character' | 'element'>('character');
 
+  const saveIdentity = () => {
+    const profile = {
+      style,
+      background,
+      facialExpression,
+      eyeExpression,
+      headShape,
+      bodyShape,
+      eyeColor,
+      emotion,
+      bodyPose,
+      channelNiche,
+      videoType,
+      brandColor,
+      aspectRatio,
+    };
+    const profiles = JSON.parse(localStorage.getItem('thumbnail_identities') || '[]');
+    const name = prompt('أدخل اسماً لحفظ هذه ההوية البصرية (مثال: ستايل القيمنق):');
+    if (!name) return;
+
+    profiles.push({ name, ...profile });
+    localStorage.setItem('thumbnail_identities', JSON.stringify(profiles));
+    setSavedIdentities(profiles);
+    alert('تم حفظ الهوية البصرية بنجاح!');
+  };
+
+  const [savedIdentities, setSavedIdentities] = useState<any[]>([]);
+
   useEffect(() => {
     loadCharacters();
     loadStoryboards();
+    const identities = JSON.parse(localStorage.getItem('thumbnail_identities') || '[]');
+    setSavedIdentities(identities);
   }, []);
+
+  const loadIdentity = (identity: any) => {
+    setStyle(identity.style || allStyles[0]);
+    setBackground(identity.background || '');
+    setFacialExpression(identity.facialExpression || '');
+    setEyeExpression(identity.eyeExpression || '');
+    setHeadShape(identity.headShape || '');
+    setBodyShape(identity.bodyShape || '');
+    setEyeColor(identity.eyeColor || '');
+    setEmotion(identity.emotion || '');
+    setBodyPose(identity.bodyPose || '');
+    setChannelNiche(identity.channelNiche || channelNiches[0]);
+    setVideoType(identity.videoType || videoTypes[0]);
+    setBrandColor(identity.brandColor || brandColors[0]);
+    setAspectRatio(identity.aspectRatio || aspectRatios[0]);
+  };
 
   async function loadCharacters() {
     const chars = await db.getAllCharacters();
@@ -139,7 +186,7 @@ export default function ThumbnailCreate() {
   };
 
   const toggleCharacterSelection = (id: string) => {
-    setSelectedCharIds(prev => 
+    setSelectedCharIds(prev =>
       prev.includes(id) ? prev.filter(charId => charId !== id) : [...prev, id]
     );
   };
@@ -159,7 +206,7 @@ export default function ThumbnailCreate() {
       setUploadedImages(prev => [...prev, newImage]);
     };
     reader.readAsDataURL(file);
-    
+
     // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -183,7 +230,7 @@ export default function ThumbnailCreate() {
     reader.onloadend = async () => {
       const base64 = reader.result as string;
       setBaseThumbnail(base64);
-      
+
       // Trigger analysis
       setAnalysisLoading(true);
       setThumbnailAnalysis(null);
@@ -197,7 +244,7 @@ export default function ThumbnailCreate() {
       }
     };
     reader.readAsDataURL(file);
-    
+
     if (baseThumbInputRef.current) {
       baseThumbInputRef.current.value = '';
     }
@@ -215,7 +262,7 @@ export default function ThumbnailCreate() {
 
     setIsProcessing(true);
     setStep('generating');
-    
+
     try {
       // Helper to convert URL to base64
       const toBase64 = async (img: string): Promise<string> => {
@@ -234,7 +281,7 @@ export default function ThumbnailCreate() {
 
       // Gather all reference images
       const referenceImages: { name: string; dataUrl: string }[] = [];
-      
+
       // 1. Add selected DB characters (convert URLs to base64)
       for (const id of selectedCharIds) {
         const char = characters.find(c => c.id === id);
@@ -259,7 +306,7 @@ export default function ThumbnailCreate() {
         .filter(img => img.type === 'element')
         .map(img => img.name)
         .join('، ');
-        
+
       const finalElementsText = [elements, uploadedElementNames].filter(Boolean).join('، ');
 
       // For from_story mode, use story context as the prompt
@@ -296,7 +343,7 @@ export default function ThumbnailCreate() {
         brandColors: brandColor,
         aspectRatio
       });
-      
+
       setGeneratedImage(image);
       setStep('review');
 
@@ -340,19 +387,19 @@ export default function ThumbnailCreate() {
     <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
       {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       {/* Hidden File Input */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileUpload} 
-        accept="image/*" 
-        className="hidden" 
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept="image/*"
+        className="hidden"
       />
-      <input 
-        type="file" 
-        ref={baseThumbInputRef} 
-        onChange={handleBaseThumbUpload} 
-        accept="image/*" 
-        className="hidden" 
+      <input
+        type="file"
+        ref={baseThumbInputRef}
+        onChange={handleBaseThumbUpload}
+        accept="image/*"
+        className="hidden"
       />
 
       {/* Header */}
@@ -368,33 +415,33 @@ export default function ThumbnailCreate() {
 
       {step === 'input' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-          
+
           {/* Mode Toggle */}
           <div className="flex bg-slate-100 p-1.5 rounded-xl">
-            <button 
-              onClick={() => setMode('create')} 
+            <button
+              onClick={() => setMode('create')}
               className={cn(
-                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1",
                 mode === 'create' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
               )}
             >
               <Sparkles className="w-3 h-3" />
               من الصفر
             </button>
-            <button 
-              onClick={() => setMode('from_story' as any)} 
+            <button
+              onClick={() => setMode('from_story' as any)}
               className={cn(
-                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1",
                 mode === 'from_story' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
               )}
             >
               <BookOpen className="w-3 h-3" />
               من القصة
             </button>
-            <button 
-              onClick={() => setMode('enhance')} 
+            <button
+              onClick={() => setMode('enhance')}
               className={cn(
-                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1",
                 mode === 'enhance' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
               )}
             >
@@ -404,11 +451,11 @@ export default function ThumbnailCreate() {
           </div>
 
           <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-sm text-red-800 leading-relaxed">
-            {mode === 'create' 
+            {mode === 'create'
               ? "صمم صورة مصغرة جذابة (Clickbait) لفيديو اليوتيوب الخاص بك."
               : mode === 'from_story'
-              ? "اختر قصة وسيقوم الذكاء الاصطناعي بتحليلها وإنشاء صورة مصغرة + عنوان + وصف + هاشتاقات تلقائياً."
-              : "ارفع صورة مصغرة جاهزة وسيقوم الذكاء الاصطناعي بتحسينها."}
+                ? "اختر قصة وسيقوم الذكاء الاصطناعي بتحليلها وإنشاء صورة مصغرة + عنوان + وصف + هاشتاقات تلقائياً."
+                : "ارفع صورة مصغرة جاهزة وسيقوم الذكاء الاصطناعي بتحسينها."}
           </div>
 
           <div className="space-y-6">
@@ -495,7 +542,7 @@ export default function ThumbnailCreate() {
                     <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-indigo-500 shadow-md group">
                       <img src={baseThumbnail} alt="Base Thumbnail" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button 
+                        <button
                           onClick={() => baseThumbInputRef.current?.click()}
                           className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold text-sm shadow-lg hover:bg-slate-50"
                         >
@@ -503,7 +550,7 @@ export default function ThumbnailCreate() {
                         </button>
                       </div>
                     </div>
-                    
+
                     {/* Analysis Section */}
                     <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm animate-in fade-in slide-in-from-top-2">
                       <h4 className="font-bold text-indigo-900 mb-3 flex items-center gap-2 text-sm">
@@ -521,7 +568,7 @@ export default function ThumbnailCreate() {
                             <span className="font-bold block mb-1 text-indigo-900">التقييم:</span>
                             {thumbnailAnalysis.critique}
                           </div>
-                          
+
                           <div className="text-xs text-slate-600 space-y-2 p-2 bg-slate-50 rounded-md border border-slate-100">
                             <p><span className="font-bold text-slate-800">عناصر مقترحة:</span> {thumbnailAnalysis.suggestedElements}</p>
                             <p><span className="font-bold text-slate-800">نص مقترح:</span> {thumbnailAnalysis.suggestedText}</p>
@@ -544,7 +591,7 @@ export default function ThumbnailCreate() {
                     </div>
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => baseThumbInputRef.current?.click()}
                     className="w-full aspect-video rounded-xl border-2 border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-indigo-400 transition-all flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-indigo-600"
                   >
@@ -564,11 +611,11 @@ export default function ThumbnailCreate() {
                   الشخصيات (يمكنك اختيار أكثر من واحدة)
                 </label>
               </div>
-              
+
               <div className="flex gap-3 overflow-x-auto pb-3 snap-x scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent items-start">
                 {/* Upload Button */}
                 <div className="flex flex-col items-center gap-2 flex-shrink-0 w-20 snap-center">
-                  <button 
+                  <button
                     onClick={() => triggerUpload('character')}
                     className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-indigo-400 transition-all flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-indigo-600 group"
                   >
@@ -582,7 +629,7 @@ export default function ThumbnailCreate() {
                   <div key={img.id} className="flex flex-col items-center gap-2 flex-shrink-0 w-20 snap-center">
                     <div className="relative w-20 h-20 rounded-xl border-2 border-indigo-500 shadow-md group">
                       <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover rounded-lg" />
-                      <button 
+                      <button
                         onClick={() => removeUploadedImage(img.id)}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
                       >
@@ -594,11 +641,11 @@ export default function ThumbnailCreate() {
                         </svg>
                       </div>
                     </div>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={img.name}
                       onChange={(e) => {
-                        setUploadedImages(prev => prev.map(p => p.id === img.id ? {...p, name: e.target.value} : p));
+                        setUploadedImages(prev => prev.map(p => p.id === img.id ? { ...p, name: e.target.value } : p));
                       }}
                       className="text-[10px] text-center border border-slate-200 rounded px-1 py-1 w-full focus:ring-1 focus:ring-indigo-500 outline-none"
                       placeholder="اسم الشخصية"
@@ -615,8 +662,8 @@ export default function ThumbnailCreate() {
                         onClick={() => toggleCharacterSelection(char.id)}
                         className={cn(
                           "w-20 h-20 rounded-xl border-2 overflow-hidden transition-all relative group",
-                          isSelected 
-                            ? "border-indigo-500 shadow-md ring-2 ring-indigo-500/20 ring-offset-1" 
+                          isSelected
+                            ? "border-indigo-500 shadow-md ring-2 ring-indigo-500/20 ring-offset-1"
                             : "border-slate-200 hover:border-indigo-300 hover:shadow-sm opacity-80 hover:opacity-100"
                         )}
                       >
@@ -650,24 +697,24 @@ export default function ThumbnailCreate() {
               <p className="text-xs text-slate-500 mb-3">
                 {mode === 'enhance' ? 'سيتم استبدال النص القديم في الصورة بهذا النص.' : 'سيتم كتابة هذا النص بخط يوتيوب عريض ومجسم.'}
               </p>
-              <input 
-                type="text" 
-                value={imageText} 
-                onChange={(e) => setImageText(e.target.value)} 
-                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500" 
-                placeholder="مثال: لن تصدق ما حدث! 😱" 
+              <input
+                type="text"
+                value={imageText}
+                onChange={(e) => setImageText(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="مثال: لن تصدق ما حدث! 😱"
               />
             </div>
 
             {mode === 'create' && (
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">فكرة الفيديو / العنوان</label>
-                <input 
-                  type="text" 
-                  value={title} 
-                  onChange={(e) => setTitle(e.target.value)} 
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500" 
-                  placeholder="مثال: كيف ربحت مليون دولار في يومين..." 
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="مثال: كيف ربحت مليون دولار في يومين..."
                 />
               </div>
             )}
@@ -675,25 +722,25 @@ export default function ThumbnailCreate() {
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div className="flex justify-between items-center mb-3">
                 <label className="text-sm font-bold text-slate-700">عناصر إضافية في الصورة</label>
-                <button 
+                <button
                   onClick={() => triggerUpload('element')}
                   className="text-xs bg-white border border-slate-200 px-2 py-1 rounded-md shadow-sm hover:bg-slate-50 flex items-center gap-1 text-slate-600"
                 >
                   <Upload className="w-3 h-3" /> رفع عنصر
                 </button>
               </div>
-              
+
               {/* Uploaded Elements */}
               {uploadedImages.filter(img => img.type === 'element').length > 0 && (
                 <div className="flex gap-2 flex-wrap mb-3">
                   {uploadedImages.filter(img => img.type === 'element').map(img => (
                     <div key={img.id} className="relative flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-1 pr-2 shadow-sm">
                       <img src={img.dataUrl} alt={img.name} className="w-8 h-8 object-cover rounded-md" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={img.name}
                         onChange={(e) => {
-                          setUploadedImages(prev => prev.map(p => p.id === img.id ? {...p, name: e.target.value} : p));
+                          setUploadedImages(prev => prev.map(p => p.id === img.id ? { ...p, name: e.target.value } : p));
                         }}
                         className="text-xs outline-none w-20 bg-transparent"
                         placeholder="اسم العنصر"
@@ -706,118 +753,144 @@ export default function ThumbnailCreate() {
                 </div>
               )}
 
-              <input 
-                type="text" 
-                value={elements} 
-                onChange={(e) => setElements(e.target.value)} 
-                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500" 
-                placeholder="مثال: حقائب أموال تتطاير، سهم أحمر صاعد..." 
+              <input
+                type="text"
+                value={elements}
+                onChange={(e) => setElements(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="مثال: حقائب أموال تتطاير، سهم أحمر صاعد..."
               />
             </div>
 
             {mode !== 'from_story' && (
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">أسلوب التصميم (ستايل القناة)</label>
-              <CustomSelect 
-                value={style} 
-                onChange={setStyle} 
-                options={allStyles} 
-                className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" 
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">أسلوب التصميم (ستايل القناة)</label>
+                <CustomSelect
+                  value={style}
+                  onChange={setStyle}
+                  options={allStyles}
+                  className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500"
+                />
+              </div>
             )}
 
             {mode === 'create' && (
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">الخلفية</label>
-                <input 
+                <input
                   type="text"
-                  value={background} 
-                  onChange={(e) => setBackground(e.target.value)} 
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500" 
+                  value={background}
+                  onChange={(e) => setBackground(e.target.value)}
+                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="مثال: غرفة مظلمة مع إضاءة نيون ��رقاء..."
                 />
               </div>
             )}
 
             {mode !== 'from_story' && (
-            <div className="space-y-3 mt-6">
-              <h3 className="font-bold text-slate-800 border-b pb-2">إعدادات متقدمة (اختياري)</h3>
-              
-              {/* Video & Channel Settings */}
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setOpenSection(openSection === 'video' ? '' as any : 'video')}
-                  className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors"
-                >
-                  <span className="font-bold text-sm text-slate-700">إعدادات القناة والفيديو</span>
-                  {openSection === 'video' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openSection === 'video' && (
-                  <div className="p-4 bg-white space-y-4">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">نيش القناة (Niche)</label>
-                      <CustomSelect value={channelNiche} onChange={setChannelNiche} options={channelNiches} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">نوع الفيديو</label>
-                      <CustomSelect value={videoType} onChange={setVideoType} options={videoTypes} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">ألوان الهوية البصرية (Brand Colors)</label>
-                      <CustomSelect value={brandColor} onChange={setBrandColor} options={brandColors} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">أبعاد الصورة</label>
-                      <CustomSelect value={aspectRatio} onChange={setAspectRatio} options={aspectRatios} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
+              <div className="space-y-3 mt-6">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <h3 className="font-bold text-slate-800">إعدادات متقدمة والهوية البصرية</h3>
+                  <div className="flex gap-2">
+                    {savedIdentities.length > 0 && (
+                      <select
+                        className="text-xs border-slate-200 rounded-md bg-white text-slate-700 px-2 py-1 outline-none focus:border-red-500"
+                        onChange={(e) => {
+                          const id = savedIdentities.find(s => s.name === e.target.value);
+                          if (id) loadIdentity(id);
+                          e.target.value = '';
+                        }}
+                      >
+                        <option value="">تحميل هوية محفوظة...</option>
+                        {savedIdentities.map((id: any, i: number) => (
+                          <option key={i} value={id.name}>{id.name}</option>
+                        ))}
+                      </select>
+                    )}
+                    <button
+                      onClick={saveIdentity}
+                      className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1 rounded-md font-medium flex items-center gap-1 transition-colors"
+                    >
+                      <Save className="w-3 h-3" />
+                      حفظ الهوية
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Character Settings */}
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setOpenSection(openSection === 'character' ? '' as any : 'character')}
-                  className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors"
-                >
-                  <span className="font-bold text-sm text-slate-700">إعدادات الشخصية (إذا وجدت)</span>
-                  {openSection === 'character' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openSection === 'character' && (
-                  <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">تعابير الوجه</label>
-                      <CustomSelect value={facialExpression} onChange={setFacialExpression} options={['', ...facialExpressions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                {/* Video & Channel Settings */}
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setOpenSection(openSection === 'video' ? '' as any : 'video')}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                  >
+                    <span className="font-bold text-sm text-slate-700">إعدادات القناة والفيديو</span>
+                    {openSection === 'video' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {openSection === 'video' && (
+                    <div className="p-4 bg-white space-y-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">نيش القناة (Niche)</label>
+                        <CustomSelect value={channelNiche} onChange={setChannelNiche} options={channelNiches} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">نوع الفيديو</label>
+                        <CustomSelect value={videoType} onChange={setVideoType} options={videoTypes} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">ألوان الهوية البصرية (Brand Colors)</label>
+                        <ColorPicker color={brandColor} onChange={setBrandColor} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">أبعاد الصورة</label>
+                        <CustomSelect value={aspectRatio} onChange={setAspectRatio} options={aspectRatios} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">المشاعر</label>
-                      <CustomSelect value={emotion} onChange={setEmotion} options={['', ...emotions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                  )}
+                </div>
+
+                {/* Character Settings */}
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setOpenSection(openSection === 'character' ? '' as any : 'character')}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                  >
+                    <span className="font-bold text-sm text-slate-700">إعدادات الشخصية (إذا وجدت)</span>
+                    {openSection === 'character' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {openSection === 'character' && (
+                    <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">تعابير الوجه</label>
+                        <CustomSelect value={facialExpression} onChange={setFacialExpression} options={['', ...facialExpressions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">المشاعر</label>
+                        <CustomSelect value={emotion} onChange={setEmotion} options={['', ...emotions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">تعابير العيون</label>
+                        <CustomSelect value={eyeExpression} onChange={setEyeExpression} options={['', ...eyeExpressions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">لون العيون</label>
+                        <CustomSelect value={eyeColor} onChange={setEyeColor} options={['', ...eyeColors]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">شكل الرأس</label>
+                        <CustomSelect value={headShape} onChange={setHeadShape} options={['', ...headShapes]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">شكل الجسم</label>
+                        <CustomSelect value={bodyShape} onChange={setBodyShape} options={['', ...bodyShapes]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-bold text-slate-700 mb-1">وضع الجسم (Pose)</label>
+                        <CustomSelect value={bodyPose} onChange={setBodyPose} options={['', ...bodyPoses]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">تعابير العيون</label>
-                      <CustomSelect value={eyeExpression} onChange={setEyeExpression} options={['', ...eyeExpressions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">لون العيون</label>
-                      <CustomSelect value={eyeColor} onChange={setEyeColor} options={['', ...eyeColors]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">شكل الرأس</label>
-                      <CustomSelect value={headShape} onChange={setHeadShape} options={['', ...headShapes]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">شكل الجسم</label>
-                      <CustomSelect value={bodyShape} onChange={setBodyShape} options={['', ...bodyShapes]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-slate-700 mb-1">وضع الجسم (Pose)</label>
-                      <CustomSelect value={bodyPose} onChange={setBodyPose} options={['', ...bodyPoses]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
             )}
           </div>
 
@@ -893,8 +966,8 @@ export default function ThumbnailCreate() {
           <div className="bg-slate-50 p-4 rounded-xl">
             <h4 className="font-medium text-sm mb-2 text-slate-900">تفاصيل التصميم:</h4>
             <p className="text-xs text-slate-600 leading-relaxed">
-              الأسلوب: {style.split(' (')[0]}<br/>
-              العناصر: {elements || 'بدون'}<br/>
+              الأسلوب: {style.split(' (')[0]}<br />
+              العناصر: {elements || 'بدون'}<br />
               الخلفية: {background}
             </p>
           </div>

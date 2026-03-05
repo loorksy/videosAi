@@ -60,7 +60,7 @@ export interface MediaItem {
   title: string;
   description?: string;
   data: string;
-  source: 'animation' | 'product' | 'thumbnail' | 'brand' | 'storyboard';
+  source: 'animation' | 'product' | 'thumbnail' | 'brand' | 'storyboard' | 'sticker' | 'wallpaper';
   characterName?: string;
   aspectRatio?: string;
   createdAt: number;

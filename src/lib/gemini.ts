@@ -3,7 +3,7 @@ import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
 const getAI = () => {
   const storedKey = localStorage.getItem('GEMINI_API_KEY');
   let apiKey = storedKey || process.env.GEMINI_API_KEY;
-  
+
   // Filter out the placeholder from .env.example
   if (apiKey === "MY_GEMINI_API_KEY") {
     apiKey = undefined;
@@ -12,9 +12,15 @@ const getAI = () => {
   if (!apiKey) {
     throw new Error("مفتاح Gemini API مفقود. الرجاء إدخاله في صفحة الإعدادات.");
   }
-  
-  const ai = new GoogleGenAI({ apiKey });
-  
+
+  // Route requests through our backend proxy to bypass VPN requirements
+  const baseUrl = `${window.location.origin}/api/gemini-proxy`;
+
+  const ai = new GoogleGenAI({
+    apiKey,
+    baseUrl
+  });
+
   // Wrap generateContent with automatic retry on network/rate limit errors
   const originalGenerateContent = ai.models.generateContent.bind(ai.models);
   ai.models.generateContent = async (...args: any[]) => {
@@ -35,7 +41,7 @@ const getAI = () => {
     }
     throw lastError;
   };
-  
+
   return ai;
 };
 
@@ -87,20 +93,20 @@ const handleCommonErrors = (error: any, defaultMessage: string) => {
 const extractImage = (result: any) => {
   const candidate = result.candidates?.[0];
   if (!candidate) {
-     // Check prompt feedback if available
-     if (result.promptFeedback) {
-        throw new Error(`Blocked by prompt feedback: ${JSON.stringify(result.promptFeedback)}`);
-     }
-     throw new Error("No candidates returned from Gemini");
+    // Check prompt feedback if available
+    if (result.promptFeedback) {
+      throw new Error(`Blocked by prompt feedback: ${JSON.stringify(result.promptFeedback)}`);
+    }
+    throw new Error("No candidates returned from Gemini");
   }
-  
+
   const part = candidate.content?.parts?.find((p: any) => p.inlineData);
   if (part && part.inlineData && part.inlineData.data) {
     const dataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
     console.log(`Image extracted successfully. Size: ${Math.round(dataUrl.length / 1024)}KB`);
     return dataUrl;
   }
-  
+
   // Check for text refusal/error
   const textPart = candidate.content?.parts?.find((p: any) => p.text);
   if (textPart?.text) {
@@ -108,9 +114,9 @@ const extractImage = (result: any) => {
     // We treat it as an error since we expected an image.
     throw new Error(`Model returned text instead of image: "${textPart.text.slice(0, 200)}..."`);
   }
-  
+
   if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-      throw new Error(`Generation stopped with reason: ${candidate.finishReason}`);
+    throw new Error(`Generation stopped with reason: ${candidate.finishReason}`);
   }
 
   throw new Error(`No image generated. Model response: ${JSON.stringify(candidate)}`);
@@ -120,17 +126,19 @@ export const GeminiService = {
   // Generate story metadata (title, description, hashtags) for thumbnail
   async generateStoryMetadata(story: any): Promise<{ videoTitle: string; videoDescription: string; hashtags: string }> {
     const ai = getAI();
-    const sceneSummary = (story.scenes || []).map((s: any, i: number) => 
+    const sceneSummary = (story.scenes || []).map((s: any, i: number) =>
       `مشهد ${i + 1}: ${s.description || ''}. الحوار: ${s.dialogue || 'بدون'}`
     ).join('\n');
-    
+
     const dialogueLang = (story.scenes || []).find((s: any) => s.dialogue)?.dialogue || '';
     const isArabic = /[\u0600-\u06FF]/.test(dialogueLang);
     const lang = isArabic ? 'العربية' : 'الإنجليزية';
-    
+
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [{ role: 'user', parts: [{ text: `أنت خبير يوتيوب محترف متخصص في محتوى الأطفال.
+      contents: [{
+        role: 'user', parts: [{
+          text: `أنت خبير يوتيوب محترف متخصص في محتوى الأطفال.
 
 حلل هذه القصة وأنشئ بيانات الفيديو بلغة ${lang}:
 
@@ -144,7 +152,8 @@ ${sceneSummary}
 2. "videoDescription": وصف مفصل للفيديو (3-5 أسطر) يتضمن ملخص القصة + دعوة للاشتراك
 3. "hashtags": 15-20 هاشتاق مناسب مفصول بمسافات (مثل #أطفال #قصص_أطفال)
 
-أخرج JSON فقط.` }] }],
+أخرج JSON فقط.` }]
+      }],
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -167,9 +176,12 @@ ${sceneSummary}
     const ai = getAI();
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [{ role: 'user', parts: [{ text: `أنت كاتب سيناريو محترف. اكتب فكرة قصة قصيرة (3-4 جمل) من نوع "${genre}" تتضمن الشخصيات التالية: ${charNames.join(' و ')}.
+      contents: [{
+        role: 'user', parts: [{
+          text: `أنت كاتب سيناريو محترف. اكتب فكرة قصة قصيرة (3-4 جمل) من نوع "${genre}" تتضمن الشخصيات التالية: ${charNames.join(' و ')}.
 ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
-اكتب الفكرة بالعربية فقط. لا تكتب أي شيء آخر غير الفكرة.` }] }],
+اكتب الفكرة بالعربية فقط. لا تكتب أي شيء آخر غير الفكرة.` }]
+      }],
     });
     return result.text?.trim() || '';
   },
@@ -265,15 +277,15 @@ ${hint ? `ملاحظة المستخدم: ${hint}` : ''}
   },
 
   // 3. Generate Script & Scenes (Thinking Mode)
-  async generateScriptAndScenes(idea: string, characters: {name: string, description: string, visualTraits?: string}[]): Promise<{script: string, scenes: {description: string, characters: string[], dialogue: string}[]}> {
+  async generateScriptAndScenes(idea: string, characters: { name: string, description: string, visualTraits?: string }[]): Promise<{ script: string, scenes: { description: string, characters: string[], dialogue: string }[] }> {
     try {
       const ai = getAI();
       const charContext = characters.map(c => `- ${c.name}: ${c.description}${c.visualTraits ? `. المظهر الثابت (لا يتغير أبداً): ${c.visualTraits}` : ''}`).join("\n");
-      
+
       // Extract dialogue language from the idea string
       const langMatch = idea.match(/لغة الحوار: (.+?)\./);
       const dialogueLang = langMatch ? langMatch[1] : 'العربية';
-      
+
       const prompt = `أنت مخرج أفلام أطفال ومصور سينمائي محترف. أنشئ سيناريو كامل ومفصل بناءً على هذه الفكرة: "${idea}".
 
 ⚠️ يجب أن يكون عدد المشاهد بالضبط: ${idea.match(/عدد المشاهد: (\d+)/)?.[1] || '5'} مشهد. لا أقل ولا أكثر!
@@ -365,9 +377,9 @@ ${charContext}
   }): Promise<string> {
     const ai = getAI();
     const { sceneDescription, characterImages, firstSceneImage, previousSceneImage, sceneIndex, totalScenes, style, aspectRatio, characterDNA } = params;
-    
+
     const parts: any[] = [];
-    
+
     // === STEP 1: Character reference images FIRST (highest priority) ===
     if (characterImages.length > 0) {
       parts.push({ text: `REFERENCE CHARACTER IMAGES - The characters in this scene MUST look EXACTLY like these. Copy their face, body, fur, clothing, colors PIXEL BY PIXEL. DO NOT redesign:` });
@@ -430,7 +442,7 @@ DIRECTOR'S RULES:
       const ai = getAI();
       const startBase64 = startFrame.includes(',') ? startFrame.split(',')[1] : startFrame;
       const startMime = "image/png"; // Simplified
-      
+
       const endBase64 = endFrame.includes(',') ? endFrame.split(',')[1] : endFrame;
       const endMime = "image/png";
 
@@ -455,7 +467,7 @@ DIRECTOR'S RULES:
       // Poll for completion
       while (!operation.done) {
         await new Promise(resolve => setTimeout(resolve, 5000));
-        operation = await ai.operations.getVideosOperation({operation: operation});
+        operation = await ai.operations.getVideosOperation({ operation: operation });
       }
 
       const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -466,11 +478,11 @@ DIRECTOR'S RULES:
       const apiKey = storedKey || process.env.GEMINI_API_KEY!;
 
       const response = await fetch(videoUri, {
-          headers: {
-              'x-goog-api-key': apiKey
-          }
+        headers: {
+          'x-goog-api-key': apiKey
+        }
       });
-      
+
       const blob = await response.blob();
       // Convert to Base64 Data URL for persistence
       return new Promise((resolve, reject) => {
@@ -511,7 +523,7 @@ DIRECTOR'S RULES:
 
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!base64Audio) throw new Error("No audio generated");
-      
+
       return `data:audio/wav;base64,${base64Audio}`;
     } catch (error: any) {
       console.error("TTS Error:", error);
@@ -536,7 +548,7 @@ DIRECTOR'S RULES:
     generateNormal?: boolean;
   }): Promise<{ surreal: string; normal?: string }> {
     const ai = getAI();
-    
+
     const surrealPrompt = `A highly detailed, hyper-realistic shot of an anthropomorphic ${params.objectName} character. 
     CRITICAL INSTRUCTION: The character's face MUST be made ENTIRELY out of the natural material, color, and texture of a ${params.objectName}. DO NOT paste a realistic human face or human skin onto it. The facial features (eyes, nose, mouth) should look like they organically grew, morphed, or were carved directly from the ${params.objectName}'s surface.
     Expression: ${params.emotion}. 
@@ -560,7 +572,7 @@ DIRECTOR'S RULES:
         const result = await ai.models.generateContent({
           model: "gemini-3-pro-image-preview",
           contents: [{ role: "user", parts: [{ text: promptText }] }],
-          config: { 
+          config: {
             imageConfig: { aspectRatio: "3:4" },
           }
         });
@@ -645,7 +657,7 @@ DIRECTOR'S RULES:
   // 7.7 Generate Hybrid Character
   async generateCharacter(prompt: string): Promise<any> {
     const ai = getAI();
-    
+
     try {
       // 1. Generate the character profile and name using text model
       const textResult = await ai.models.generateContent({
@@ -669,13 +681,13 @@ DIRECTOR'S RULES:
 
       // 2. Generate the front view image using image model
       const imagePrompt = `${prompt}\n\nGenerate a character design sheet showing the front view. Neutral background. High quality, 8k resolution, masterpiece. Aspect ratio MUST be 1:1.`;
-      
+
       const imageResult = await ai.models.generateContent({
         model: "gemini-3-pro-image-preview",
         contents: [{ role: "user", parts: [{ text: imagePrompt }] }],
         config: { imageConfig: { aspectRatio: "1:1" } }
       });
-      
+
       const frontImage = extractImage(imageResult);
 
       return {
@@ -698,68 +710,6 @@ DIRECTOR'S RULES:
     }
   },
 
-  // 7.6 Generate Viral Short Idea
-  async generateViralShortIdea(params: { niche: string; tone: string; topic: string; characters?: string; sceneCount?: number }): Promise<any> {
-    const ai = getAI();
-    const prompt = `You are an expert YouTube Shorts and TikTok viral content strategist.
-    Create a highly engaging, viral short video script (15-60 seconds) in Arabic.
-    Niche: ${params.niche}
-    Tone: ${params.tone}
-    Specific Topic: ${params.topic || 'Surprise me with a trending topic in this niche'}
-    ${params.characters ? `Characters to include: ${params.characters}` : ''}
-    ${params.sceneCount ? `Number of scenes: Exactly ${params.sceneCount} scenes.` : ''}
-    
-    Output MUST be a valid JSON object with the following structure:
-    {
-      "title": "Catchy Video Title in Arabic",
-      "hook": "The first 3 seconds hook to grab attention immediately (Arabic)",
-      "visualConcept": "Brief description of what the viewer sees (Arabic)",
-      "script": [
-        {"time": "0:00-0:03", "visual": "...", "audio": "..."}
-      ],
-      "cta": "Call to action at the end (Arabic)",
-      "tags": ["tag1", "tag2", "tag3"]
-    }`;
-
-    try {
-      const result = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              hook: { type: Type.STRING },
-              visualConcept: { type: Type.STRING },
-              script: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    time: { type: Type.STRING },
-                    visual: { type: Type.STRING },
-                    audio: { type: Type.STRING }
-                  }
-                }
-              },
-              cta: { type: Type.STRING },
-              tags: { type: Type.ARRAY, items: { type: Type.STRING } }
-            }
-          }
-        }
-      });
-      const text = result.text || "{}";
-      const jsonString = text.replace(/```json\n?|\n?```/g, "").trim();
-      return JSON.parse(jsonString);
-    } catch (error: any) {
-      if (isRateLimitError(error)) handleCommonErrors(error, "");
-      if (isPermissionError(error)) throw new Error("فشل توليد الفكرة (403). تأكد من صلاحيات المفتاح.");
-      handleCommonErrors(error, "فشل توليد الفكرة.");
-      throw error;
-    }
-  },
 
   // 8. Auto-Generate Surreal Idea
   async generateRandomSurrealIdea(userPrompt?: string): Promise<any> {
@@ -1023,7 +973,7 @@ DIRECTOR'S RULES:
     aspectRatio?: string;
   }): Promise<string> {
     const ai = getAI();
-    
+
     // Parse aspect ratio
     let parsedAspectRatio: "16:9" | "9:16" | "1:1" | "3:4" | "4:3" | "any" = "16:9";
     if (params.aspectRatio) {
@@ -1079,12 +1029,13 @@ DIRECTOR'S RULES:
     }
 
     const parts: any[] = [{ text: prompt }];
-    
+
     // Add base thumbnail if enhancing
     if (params.baseThumbnail) {
       parts.push({ text: "\n--- Base Thumbnail to Enhance/Remix ---" });
       const base64Data = params.baseThumbnail.includes(',') ? params.baseThumbnail.split(',')[1] : params.baseThumbnail;
-      parts.push({ inlineData: { mimeType: "image/png", data: base64Data } });
+      const mimeType = params.baseThumbnail.includes(',') ? params.baseThumbnail.substring(params.baseThumbnail.indexOf(':') + 1, params.baseThumbnail.indexOf(';')) : "image/jpeg";
+      parts.push({ inlineData: { mimeType, data: base64Data } });
     }
 
     // Add character reference images
@@ -1461,6 +1412,74 @@ Output a JSON object:
     }
   },
 
+  async generateViralShortIdea(params: any): Promise<any> {
+    const ai = getAI();
+    const prompt = `أنت صانع محتوى محترف وخبير في الفيديوهات القصيرة (YouTube Shorts/TikTok/Reels).
+    قم بإنشاء سيناريو كامل لفيديو قصير سريع الانتشار (Viral).
+    
+    المجال (Niche): ${params.niche}
+    الأسلوب (Tone): ${params.tone}
+    الموضوع (Topic): ${params.topic || 'اختر موضوعاً من أقوى التريندات الحالية في هذا المجال'}
+    ${params.characters ? `الشخصيات المتاحة للاستخدام: ${params.characters}` : ''}
+    عدد المشاهد التقريبي: ${params.sceneCount || 5}
+    
+    شروط هامة جداً:
+    - مدة الفيديو بين 30 إلى 60 ثانية.
+    - "الخطاف" (Hook) في أول 3 ثوانٍ يجب أن يكون قوياً جداً ومثيراً للفضول لمنع المشاهد من التمرير (Scroll).
+    - الفكرة البصرية (Visual Concept): وصف سريع لشكل الفيديو العام.
+    - السكريبت: مقسم إلى مشاهد، كل مشهد يحتوي على وصف بصري والنص الصوتي (Audio/Voiceover).
+    - النهاية (CTA): دعوة صريحة ومقنعة للاشتراك أو التفاعل.
+    
+    مهم: يجب إرجاع الرد ككائن JSON فقط بالهيكلية التالية بدون أي نصوص إضافية:
+    {
+      "title": "عنوان جذاب جداً",
+      "hook": "جملة أول 3 ثوانٍ المثيرة",
+      "visualConcept": "وصف الفكرة البصرية",
+      "script": [
+        {"time": "0:00-0:03", "visual": "وصف المشهد 1", "audio": "التعليق الصوتي للمشهد 1"}
+      ],
+      "cta": "دعوة للإجراء",
+      "tags": ["هاشتاجات_تريند", "كلمات_مفتاحية"]
+    }`;
+
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              hook: { type: Type.STRING },
+              visualConcept: { type: Type.STRING },
+              script: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    time: { type: Type.STRING },
+                    visual: { type: Type.STRING },
+                    audio: { type: Type.STRING }
+                  }
+                }
+              },
+              cta: { type: Type.STRING },
+              tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }
+          }
+        }
+      });
+      const text = result.text || "{}";
+      const jsonString = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+      return JSON.parse(jsonString);
+    } catch (error: any) {
+      if (isRateLimitError(error)) handleCommonErrors(error, "");
+      throw new Error("فشل في توليد الفكرة الفيروسية.");
+    }
+  },
+
   // 16. Generate Product Shot
   async generateProductShot(params: { product: string; background: string; lighting: string; style: string }): Promise<string> {
     const ai = getAI();
@@ -1492,7 +1511,7 @@ Output a JSON object:
   // 17. Generate Brand Identity
   async generateBrandIdentity(description: string): Promise<{ names: string[], slogan: string, colors: string[], typography: string, moodboardImage: string }> {
     const ai = getAI();
-    
+
     try {
       // 1. Generate Brand Strategy
       const textPrompt = `You are an expert Brand Strategist and Art Director.
@@ -1531,13 +1550,13 @@ Output a JSON object:
       const imagePrompt = `A professional brand identity moodboard. ${brandData.moodboardPrompt}. 
       Layout: A beautiful collage of textures, color swatches, lifestyle photography, and abstract shapes representing the brand. 
       Style: Minimalist, highly aesthetic, Pinterest style, 8k resolution, photorealistic.`;
-      
+
       const imageResult = await ai.models.generateContent({
         model: "gemini-3-pro-image-preview",
         contents: [{ role: "user", parts: [{ text: imagePrompt }] }],
         config: { imageConfig: { aspectRatio: "16:9" } }
       });
-      
+
       const moodboardImage = extractImage(imageResult);
 
       return {
@@ -1556,6 +1575,115 @@ Output a JSON object:
     }
   },
 
+  async generateWallpaper(params: { topic: string; style: string; colorPalette: string; aspectRatio: string, referenceImages?: string[] }): Promise<string> {
+    const ai = getAI();
+    let prompt = `Beautiful wallpaper design. Topic: ${params.topic}. 
+    Art Style: ${params.style}. 
+    Color Palette/Mood: ${params.colorPalette}.`;
+
+    if (params.referenceImages && params.referenceImages.length > 0) {
+      prompt += `\n    Use the provided reference images as inspiration for the composition, colors, and overall feel.`;
+    }
+
+    prompt += `
+    
+    CRITICAL INSTRUCTIONS: 
+    - Masterpiece quality, extremely high detail.
+    - Visually stunning and aesthetically pleasing as a phone/desktop background.
+    - 8k resolution.`;
+
+    const parts: any[] = [{ text: prompt }];
+
+    if (params.referenceImages && params.referenceImages.length > 0) {
+      for (const reqImage of params.referenceImages) {
+        if (!reqImage) continue;
+        const matches = reqImage.match(/^data:(image\/[a-z]+);base64,(.+)$/i);
+        if (matches && matches.length === 3) {
+          parts.push({
+            inlineData: {
+              data: matches[2],
+              mimeType: matches[1]
+            }
+          });
+        }
+      }
+    }
+
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-3-pro-image-preview",
+        contents: [{ role: "user", parts: parts }],
+        config: { imageConfig: { aspectRatio: params.aspectRatio || "9:16" } }
+      });
+      return extractImage(result);
+    } catch (error: any) {
+      if (isRateLimitError(error)) handleCommonErrors(error, "");
+      if (isPermissionError(error)) throw new Error("فشل توليد الخلفية (403). تأكد من صلاحيات مفتاح API.");
+      handleCommonErrors(error, "فشل توليد الخلفية.");
+      throw error;
+    }
+  },
+
+  async generateWallpaperIdea(topic: string): Promise<string> {
+    const ai = getAI();
+    const prompt = `أنت مخرج إبداعي محترف. قم بتحسين هذه الفكرة البسيطة لخلفية (Wallpaper) لتصبح وصفاً احترافياً، غنياً بالتفاصيل، سينمائياً، ومثالياً كـ Prompt لمولد صور بالذكاء الاصطناعي.
+الشرط الوحيد: أعد فقط النص المحسن باللغة العربية كفقرة واحدة إبداعية، دون أي مقدمات أو شروحات إضافية.
+الفكرة الأصلية: "${topic}"`;
+
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: { temperature: 0.8 }
+      });
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    } catch (error: any) {
+      handleCommonErrors(error, "فشل تحسين الفكرة.");
+      throw error;
+    }
+  },
+
+  async generateSticker(params: { topic: string; style: string; emotion: string; purpose?: string; brandName?: string; primaryColor?: string; secondaryColor?: string; industry?: string; referenceImage?: string }): Promise<string> {
+    const ai = getAI();
+    let prompt = `Create a chat sticker/emoji. Topic/Phrase: ${params.topic}. 
+    Art Style: ${params.style}. 
+    Emotion/Expression: ${params.emotion}.`;
+
+    if (params.purpose === 'شركات / بزنس') {
+      prompt += `\nThis is a corporate/business sticker for brand: "${params.brandName || 'N/A'}" in the industry: "${params.industry || 'General'}". Primary Color: ${params.primaryColor || 'N/A'}, Secondary Color: ${params.secondaryColor || 'N/A'}. Include professional, clean branding elements while keeping it fun. Make sure the visual identity is cohesive and matches the brand's industry visually.`;
+    }
+
+    prompt += `\n\nCRITICAL INSTRUCTIONS: 
+    - Pure white background (so it can be easily keyed out for stickers).
+    - Clear, bold, expressive subject.
+    - Thick outlines if appropriate for the style.
+    - 1:1 Aspect Ratio.`;
+
+    const parts: any[] = [{ text: prompt }];
+
+    if (params.referenceImage) {
+      prompt += `\n- Follow the visual style/subject of the provided reference image.`;
+      const base64Data = params.referenceImage.includes(',') ? params.referenceImage.split(',')[1] : params.referenceImage;
+      const mimeType = params.referenceImage.includes(',') ? params.referenceImage.substring(params.referenceImage.indexOf(':') + 1, params.referenceImage.indexOf(';')) : "image/png";
+      parts.push({ inlineData: { mimeType, data: base64Data } });
+      parts[0] = { text: prompt };
+    }
+
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-3-pro-image-preview",
+        contents: [{ role: "user", parts }],
+        config: { imageConfig: { aspectRatio: "1:1" } }
+      });
+      return extractImage(result);
+    } catch (error: any) {
+      if (isRateLimitError(error)) handleCommonErrors(error, "");
+      if (isPermissionError(error)) throw new Error("فشل توليد الملصق (403). تأكد من صلاحيات مفتاح API.");
+      handleCommonErrors(error, "فشل توليد الملصق.");
+      throw error;
+    }
+  },
+
   // 18. Improve Ad Copy
   async improveAdCopy(topic: string, industry: string): Promise<{ largeText: string, smallText: string }> {
     const ai = getAI();
@@ -1568,7 +1696,7 @@ Output a JSON object:
     2. نص فرعي أو وصف مشوق وقصير (smallText)
     
     يجب أن يكون الرد بصيغة JSON فقط يحتوي على المفتاحين largeText و smallText.`;
-    
+
     try {
       const result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -1584,7 +1712,7 @@ Output a JSON object:
           }
         }
       });
-      
+
       const text = result.text || "{}";
       const jsonString = text.replace(/```json/gi, "").replace(/```/g, "").trim();
       return JSON.parse(jsonString);
@@ -1594,13 +1722,84 @@ Output a JSON object:
     }
   },
 
+  // 19. Generate Ad Campaign (Multiple Images)
+  async generateAdCampaign(params: any): Promise<string[]> {
+    const ai = getAI();
+    let basePrompt = `You are an award-winning Art Director and Master Graphic Designer creating a highly creative social media advertising campaign.
+    
+    Topic: "${params.topic}".
+    Brand Name: "${params.brandName}".`;
+
+    if (params.industry) basePrompt += `\nIndustry/Niche: "${params.industry}". Use clever visual metaphors.`;
+
+    basePrompt += `\n
+    Design Requirements:
+    - Visual Style: ${params.visualStyle}.
+    - Color Palette: Primary (${params.primaryColor}), Secondary (${params.secondaryColor}).
+    - Quality: 8k resolution, hyper-realistic.`;
+
+    const partsParams = [];
+    if (params.logoBase64) {
+      const base64Data = params.logoBase64.includes(',') ? params.logoBase64.split(',')[1] : params.logoBase64;
+      const mimeType = params.logoBase64.includes(',') ? params.logoBase64.substring(params.logoBase64.indexOf(':') + 1, params.logoBase64.indexOf(';')) : "image/png";
+      partsParams.push({ inlineData: { mimeType, data: base64Data } });
+    }
+    if (params.extraImageBase64) {
+      const base64Data = params.extraImageBase64.includes(',') ? params.extraImageBase64.split(',')[1] : params.extraImageBase64;
+      const mimeType = params.extraImageBase64.includes(',') ? params.extraImageBase64.substring(params.extraImageBase64.indexOf(':') + 1, params.extraImageBase64.indexOf(';')) : "image/png";
+      partsParams.push({ inlineData: { mimeType, data: base64Data } });
+    }
+    if (params.characterImageBase64) {
+      const base64Data = params.characterImageBase64.includes(',') ? params.characterImageBase64.split(',')[1] : params.characterImageBase64;
+      const mimeType = params.characterImageBase64.includes(',') ? params.characterImageBase64.substring(params.characterImageBase64.indexOf(':') + 1, params.characterImageBase64.indexOf(';')) : "image/png";
+      partsParams.push({ inlineData: { mimeType, data: base64Data } });
+    }
+
+    const variations = [
+      "Variation 1: Focus strongly on the product/main subject with dramatic studio lighting.",
+      "Variation 2: Create a surreal, abstract, or highly conceptual composition representing the core idea.",
+      "Variation 3: A lifestyle or dynamic action sequence feeling with vibrant colors.",
+      "Variation 4: A minimalist, clean, negative-space heavy design emphasizing typography space."
+    ];
+
+    const results: string[] = [];
+
+    // Run sequentially to avoid overwhelming the rate limits as much
+    for (const variation of variations) {
+      const prompt = `${basePrompt}\n\nSpecific Instruction for this image: ${variation}`;
+      const parts: any[] = [{ text: prompt }, ...partsParams];
+
+      try {
+        const result = await ai.models.generateContent({
+          model: "gemini-3-pro-image-preview",
+          contents: [{ role: "user", parts }],
+          config: {
+            imageConfig: {
+              aspectRatio: params.aspectRatio || "3:4",
+              imageSize: params.imageSize || "1K"
+            }
+          }
+        });
+        results.push(extractImage(result));
+      } catch (error: any) {
+        console.error("Ad Campaign variation failed to generate:", error);
+      }
+    }
+
+    if (results.length === 0) {
+      throw new Error("فشل توليد الحملة الإعلانية.");
+    }
+
+    return results;
+  },
+
   // 19. Generate Ad Poster
-  async generateAdPoster(params: { 
-    topic: string; 
-    brandName: string; 
+  async generateAdPoster(params: {
+    topic: string;
+    brandName: string;
     industry?: string;
-    primaryColor: string; 
-    secondaryColor: string; 
+    primaryColor: string;
+    secondaryColor: string;
     visualStyle: string;
     largeText?: string;
     smallText?: string;
@@ -1617,40 +1816,40 @@ Output a JSON object:
     characterImageBase64?: string;
   }): Promise<string> {
     const ai = getAI();
-    let prompt = `You are an award-winning Art Director and Master Graphic Designer creating a mind-blowing, highly creative social media advertising poster.
-    
-    Topic/Subject of the ad: "${params.topic}".
+    let prompt = `You are an award - winning Art Director and Master Graphic Designer creating a mind - blowing, highly creative social media advertising poster.
+
+        Topic / Subject of the ad: "${params.topic}".
     Brand Name: "${params.brandName}".`;
-    
-    if (params.industry) prompt += `\nIndustry/Niche: "${params.industry}". Think outside the box. Use clever visual metaphors, surrealism, or hyper-realistic 3D elements relevant to this industry (e.g., if it's dental, maybe a tooth shining like a diamond or a tooth acting as a washing machine; if it's internet, a turtle on a rocket skateboard).`;
-    
+
+    if (params.industry) prompt += `\nIndustry / Niche: "${params.industry}".Think outside the box.Use clever visual metaphors, surrealism, or hyper - realistic 3D elements relevant to this industry(e.g., if it's dental, maybe a tooth shining like a diamond or a tooth acting as a washing machine; if it's internet, a turtle on a rocket skateboard).`;
+
     prompt += `\n
     Design Requirements:
     - Visual Style: ${params.visualStyle}.
-    - Color Palette: Dominant primary color (${params.primaryColor}) and accent secondary color (${params.secondaryColor}). Use dramatic, studio-quality lighting (volumetric lighting, rim lights) to make the colors pop.
-    - Concept: Create a striking, out-of-the-box visual metaphor or a highly engaging composition (like top-tier Behance or Pinterest ad designs).
-    - Composition: Perfect social media post layout with clear visual hierarchy. Leave strategic negative space for text.
-    - Quality: 8k resolution, hyper-realistic textures, flawless photo manipulation or top-tier 3D rendering, masterpiece, trending on ArtStation and Behance.`;
+- Color Palette: Dominant primary color(${params.primaryColor}) and accent secondary color(${params.secondaryColor}).Use dramatic, studio - quality lighting(volumetric lighting, rim lights) to make the colors pop.
+    - Concept: Create a striking, out - of - the - box visual metaphor or a highly engaging composition(like top - tier Behance or Pinterest ad designs).
+    - Composition: Perfect social media post layout with clear visual hierarchy.Leave strategic negative space for text.
+    - Quality: 8k resolution, hyper - realistic textures, flawless photo manipulation or top - tier 3D rendering, masterpiece, trending on ArtStation and Behance.`;
 
     if (params.largeText || params.smallText || params.phoneNumber || params.logoBase64) {
-      prompt += `\n\nText and Logo Elements to include (render them clearly if possible, or leave space for them):`;
-      if (params.language) prompt += `\n- Language for text: ${params.language}`;
-      if (params.fontType) prompt += `\n- Typography/Font Style: ${params.fontType}`;
-      if (params.textColor) prompt += `\n- Text Color: ${params.textColor}`;
-      if (params.textStyle) prompt += `\n- Text Effect/Material: ${params.textStyle}`;
-      if (params.elementsPosition) prompt += `\n- Preferred Position for these elements: ${params.elementsPosition}`;
-      if (params.largeText) prompt += `\n- Main Headline: "${params.largeText}"`;
-      if (params.smallText) prompt += `\n- Subtext/Description: "${params.smallText}"`;
-      if (params.phoneNumber) prompt += `\n- Contact/Phone: "${params.phoneNumber}"`;
+      prompt += `\n\nText and Logo Elements to include(render them clearly if possible, or leave space for them): `;
+      if (params.language) prompt += `\n - Language for text: ${params.language} `;
+      if (params.fontType) prompt += `\n - Typography / Font Style: ${params.fontType} `;
+      if (params.textColor) prompt += `\n - Text Color: ${params.textColor} `;
+      if (params.textStyle) prompt += `\n - Text Effect / Material: ${params.textStyle} `;
+      if (params.elementsPosition) prompt += `\n - Preferred Position for these elements: ${params.elementsPosition} `;
+      if (params.largeText) prompt += `\n - Main Headline: "${params.largeText}"`;
+      if (params.smallText) prompt += `\n - Subtext / Description: "${params.smallText}"`;
+      if (params.phoneNumber) prompt += `\n - Contact / Phone: "${params.phoneNumber}"`;
     } else {
       prompt += `\n\nDo not include actual readable text, just the visual composition and elements, leaving negative space for text.`;
     }
 
     if (params.logoBase64) {
-      prompt += `\n\nIncorporate the provided logo image naturally into the design, preferably at the specified position (${params.elementsPosition || 'a suitable corner'}).`;
+      prompt += `\n\nIncorporate the provided logo image naturally into the design, preferably at the specified position(${params.elementsPosition || 'a suitable corner'}).`;
     }
     if (params.extraImageBase64) {
-      prompt += `\n\nIncorporate the provided extra image (e.g., product, tool, or specific element) naturally into the scene.`;
+      prompt += `\n\nIncorporate the provided extra image(e.g., product, tool, or specific element) naturally into the scene.`;
     }
     if (params.characterImageBase64) {
       prompt += `\n\nIncorporate the provided character image naturally into the scene as the main actor, mascot, or presenter for the ad.`;
@@ -1678,11 +1877,11 @@ Output a JSON object:
       const result = await ai.models.generateContent({
         model: "gemini-3-pro-image-preview",
         contents: [{ role: "user", parts }],
-        config: { 
-          imageConfig: { 
+        config: {
+          imageConfig: {
             aspectRatio: params.aspectRatio || "3:4",
             imageSize: params.imageSize || "2K"
-          } 
+          }
         }
       });
       return extractImage(result);
@@ -1712,7 +1911,7 @@ Output a JSON object:
     };
 
     const typeDesc = typeDescriptions[characterType] || 'a character';
-    
+
     // Extract base64 from data URL
     const base64Match = referenceImage.match(/^data:image\/\w+;base64,(.+)$/);
     const imageData = base64Match ? base64Match[1] : referenceImage;
@@ -1727,18 +1926,18 @@ Output a JSON object:
     // Generate Front View
     onProgress?.(10);
     console.log('Generating front view...');
-    
-    const frontPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY full-body front view.
+
+    const frontPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY full - body front view.
     
 IMPORTANT REQUIREMENTS:
-- EXACT same face/features as the reference image - preserve all facial details precisely
-- Full body visible from head to toe
-- Front-facing pose, looking at camera
-- Same clothing style and colors if visible in reference
-- Clean white background
-- Professional photography style lighting
-- High resolution, 4K quality
-- Natural proportions and realistic body
+- EXACT same face / features as the reference image - preserve all facial details precisely
+  - Full body visible from head to toe
+    - Front - facing pose, looking at camera
+      - Same clothing style and colors if visible in reference
+        - Clean white background
+          - Professional photography style lighting
+            - High resolution, 4K quality
+              - Natural proportions and realistic body
 
 The character should be instantly recognizable as the same ${typeDesc} from the reference.`;
 
@@ -1763,27 +1962,27 @@ The character should be instantly recognizable as the same ${typeDesc} from the 
       console.log('Front view generated successfully');
     } catch (error: any) {
       console.error('Front view error:', error);
-      throw new Error(`فشل توليد الصورة الأمامية: ${error.message}`);
+      throw new Error(`فشل توليد الصورة الأمامية: ${error.message} `);
     }
 
     onProgress?.(40);
 
     // Generate Back View
     console.log('Generating back view...');
-    
-    const backPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY full-body BACK view.
+
+    const backPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY full - body BACK view.
     
 IMPORTANT REQUIREMENTS:
 - Same character as the reference - same body type, hair style, clothing
-- Full body visible from head to toe
-- Character facing AWAY from camera (back view)
-- Same clothing from the back perspective
-- Clean white background
-- Professional photography style lighting
-- High resolution, 4K quality
-- Natural proportions
+  - Full body visible from head to toe
+    - Character facing AWAY from camera(back view)
+      - Same clothing from the back perspective
+        - Clean white background
+          - Professional photography style lighting
+            - High resolution, 4K quality
+              - Natural proportions
 
-Show the back of the character with consistent details (hair, clothing, body shape).`;
+Show the back of the character with consistent details(hair, clothing, body shape).`;
 
     try {
       const backResult = await ai.models.generateContent({
@@ -1807,25 +2006,25 @@ Show the back of the character with consistent details (hair, clothing, body sha
       console.log('Back view generated successfully');
     } catch (error: any) {
       console.error('Back view error:', error);
-      throw new Error(`فشل توليد الصورة الخلفية: ${error.message}`);
+      throw new Error(`فشل توليد الصورة الخلفية: ${error.message} `);
     }
 
     onProgress?.(70);
 
     // Generate Closeup View
     console.log('Generating closeup view...');
-    
+
     const closeupPrompt = `Based on the reference image of ${typeDesc} named "${characterName}", generate a HIGH QUALITY closeup portrait.
     
 IMPORTANT REQUIREMENTS:
-- EXACT same face/features as the reference image - this is critical
-- Close-up of face and upper shoulders only
-- Slightly tilted or angled pose for visual interest (like looking up or 3/4 view)
-- Same facial features, eyes, nose, mouth - perfectly preserved
-- Clean white background
-- Soft professional lighting
-- High resolution, 4K quality
-- Show personality in the expression
+- EXACT same face / features as the reference image - this is critical
+  - Close - up of face and upper shoulders only
+    - Slightly tilted or angled pose for visual interest(like looking up or 3 / 4 view)
+      - Same facial features, eyes, nose, mouth - perfectly preserved
+        - Clean white background
+          - Soft professional lighting
+            - High resolution, 4K quality
+              - Show personality in the expression
 
 The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone, hair.`;
 
@@ -1851,7 +2050,7 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
       console.log('Closeup view generated successfully');
     } catch (error: any) {
       console.error('Closeup view error:', error);
-      throw new Error(`فشل توليد صورة الوجه: ${error.message}`);
+      throw new Error(`فشل توليد صورة الوجه: ${error.message} `);
     }
 
     onProgress?.(100);
@@ -1871,21 +2070,21 @@ The face must be IDENTICAL to the reference - same eyes, nose, mouth, skin tone,
 
     const typeDescriptions: Record<string, string> = {
       human: 'a human person/child',
-      animal: 'an animal/creature', 
+      animal: 'an animal/creature',
       object: 'an object/item',
       fantasy: 'a fantasy/fictional character'
     };
 
     const typeDesc = typeDescriptions[characterType] || 'a character';
-    
+
     const base64Match = referenceImage.match(/^data:image\/\w+;base64,(.+)$/);
     const imageData = base64Match ? base64Match[1] : referenceImage;
     const mimeType = referenceImage.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg';
 
     const prompts: Record<string, string> = {
-      front: `Regenerate a HIGH QUALITY full-body front view of ${typeDesc} "${characterName}". Full body, front-facing, white background, same features as reference.`,
-      back: `Regenerate a HIGH QUALITY full-body back view of ${typeDesc} "${characterName}". Full body from behind, white background, same clothing and body as reference.`,
-      closeup: `Regenerate a HIGH QUALITY closeup portrait of ${typeDesc} "${characterName}". Face and shoulders, slightly angled pose, white background, EXACT same facial features.`
+      front: `Regenerate a HIGH QUALITY full - body front view of ${typeDesc} "${characterName}".Full body, front - facing, white background, same features as reference.`,
+      back: `Regenerate a HIGH QUALITY full - body back view of ${typeDesc} "${characterName}".Full body from behind, white background, same clothing and body as reference.`,
+      closeup: `Regenerate a HIGH QUALITY closeup portrait of ${typeDesc} "${characterName}".Face and shoulders, slightly angled pose, white background, EXACT same facial features.`
     };
 
     try {

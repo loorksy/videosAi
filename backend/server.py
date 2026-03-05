@@ -892,3 +892,77 @@ async def kie_upload_file(file: UploadFile = File(...)):
         if not url:
             raise HTTPException(status_code=500, detail=f"لم يتم إرجاع رابط الملف: {result}")
         return {"url": url}
+
+# ============ GEMINI PROXY SYSTEM ============
+from fastapi import Request
+from starlette.responses import StreamingResponse
+
+# Route to proxy all Gemini generative language API requests
+@app.api_route("/api/gemini-proxy/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def gemini_proxy(path: str, request: Request):
+    api_key = request.headers.get("x-goog-api-key")
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key is missing")
+
+    target_url = f"https://generativelanguage.googleapis.com/{path}"
+    
+    # Forward headers
+    headers = {
+        "x-goog-api-key": api_key,
+        "x-goog-api-client": request.headers.get("x-goog-api-client", ""),
+    }
+    
+    # Only set Content-Type if it exists in the original request to avoid issues with empty bodies
+    content_type = request.headers.get("content-type")
+    if content_type:
+        headers["Content-Type"] = content_type
+
+    try:
+        body = await request.body()
+        
+        # Determine if streaming is requested
+        is_stream = "stream" in path or request.headers.get("accept") == "text/event-stream"
+        
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            if is_stream:
+                # Handle streaming response
+                req = client.build_request(
+                    method=request.method,
+                    url=target_url,
+                    headers=headers,
+                    content=body,
+                    params=request.query_params
+                )
+                
+                # Send the request and stream the response back
+                response = await client.send(req, stream=True)
+                
+                async def stream_generator():
+                    async for chunk in response.aiter_bytes():
+                        yield chunk
+                
+                return StreamingResponse(
+                    stream_generator(),
+                    status_code=response.status_code,
+                    media_type=response.headers.get("content-type", "text/event-stream")
+                )
+            else:
+                # Handle standard request
+                response = await client.request(
+                    method=request.method,
+                    url=target_url,
+                    headers=headers,
+                    content=body,
+                    params=request.query_params
+                )
+                
+                from fastapi.responses import Response
+                return Response(
+                    content=response.content,
+                    status_code=response.status_code,
+                    media_type=response.headers.get("content-type")
+                )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Proxy error: {str(e)}")

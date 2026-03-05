@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Clapperboard, Film, Plus, Sparkles, ArrowRight, Ghost, Smile, Youtube, Cat, Lightbulb, Dna, Package, Megaphone, Video, UserSquare2 } from 'lucide-react';
+import { Users, Clapperboard, Film, Plus, Sparkles, ArrowRight, Ghost, Smile, Youtube, Cat, Lightbulb, Dna, Package, Megaphone, Video, UserSquare2, Sticker, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function ToolCard({ to, icon: Icon, label, description, color }: { to: string; icon: any; label: string; description: string; color: string }) {
@@ -17,8 +17,8 @@ function ToolCard({ to, icon: Icon, label, description, color }: { to: string; i
   };
 
   return (
-    <Link 
-      to={to} 
+    <Link
+      to={to}
       className="group flex items-center gap-3 bg-card p-3.5 rounded-2xl border border-border/60 hover:border-primary/30 hover:shadow-md transition-all duration-200"
     >
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${colorMap[color] || colorMap.primary} transition-transform duration-200 group-hover:scale-105`}>
@@ -35,8 +35,8 @@ function ToolCard({ to, icon: Icon, label, description, color }: { to: string; i
 
 function QuickAction({ to, icon: Icon, label, gradient }: { to: string; icon: any; label: string; gradient: string }) {
   return (
-    <Link 
-      to={to} 
+    <Link
+      to={to}
       className={`${gradient} text-white p-3 rounded-xl font-semibold text-xs flex flex-col items-center justify-center gap-1.5 text-center shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]`}
     >
       <Icon className="w-5 h-5" />
@@ -52,9 +52,9 @@ export default function Home() {
       <div className="bg-[#0c0e12] text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c0e12]/40 via-transparent to-[#0c0e12]"></div>
-        
+
         <div className="relative max-w-lg mx-auto p-6 pt-14 pb-20">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -66,7 +66,7 @@ export default function Home() {
             </span>
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-balance">
               {'اصنع قصصك'}
-              <br/>
+              <br />
               <span className="text-primary">بالذكاء الاصطناعي</span>
             </h1>
             <p className="text-white/50 text-sm max-w-xs leading-relaxed">
@@ -74,21 +74,21 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
             className="mt-8 flex gap-3"
           >
-            <Link 
-              to="/storyboards/new" 
+            <Link
+              to="/storyboards/new"
               className="flex-1 bg-primary text-primary-foreground py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 transition-all active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               <span>قصة جديدة</span>
             </Link>
-            <Link 
-              to="/thumbnails/new" 
+            <Link
+              to="/thumbnails/new"
               className="flex-1 bg-white/10 backdrop-blur-sm border border-white/10 text-white py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/15 transition-all active:scale-[0.98]"
             >
               <Youtube className="w-4 h-4 text-red-400" />
@@ -100,9 +100,9 @@ export default function Home() {
 
       {/* Content */}
       <div className="max-w-lg mx-auto px-4 -mt-10 relative z-10 space-y-6">
-        
+
         {/* Quick Actions Grid */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -123,6 +123,8 @@ export default function Home() {
             <ToolCard to="/product-studio" icon={Package} label="استوديو المنتجات والهوية" description="تصوير منتجات وبناء هوية بصرية" color="sky" />
             <ToolCard to="/ad-campaign-studio" icon={Megaphone} label="استوديو الإعلانات" description="تصميم بوستات إعلانية احترافية" color="primary" />
             <ToolCard to="/kling-motion" icon={Video} label="Motion Control (Kling AI)" description="انقل حركة فيديو حقيقي الى شخصيتك" color="pink" />
+            <ToolCard to="/whatsapp-stickers" icon={Sticker} label="استديو الملصقات" description="صمم ملصقات واتساب مفرغة واحترافية" color="emerald" />
+            <ToolCard to="/wallpapers" icon={ImageIcon} label="صانع الخلفيات (Wallpapers)" description="توليد خلفيات جوال وحاسبات مذهلة 8k" color="amber" />
           </div>
         </div>
 

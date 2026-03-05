@@ -49,22 +49,47 @@ export const AIService = {
     const sceneCountMatch = idea.match(/عدد المشاهد: (\d+)/);
     const sceneCount = sceneCountMatch ? sceneCountMatch[1] : '5';
 
-    const prompt = `أنت مخرج أفلام أطفال محترف. أنشئ سيناريو كامل بناءً على: "${idea}".
+    const prompt = `أنت مخرج أفلام أطفال ومصور سينمائي محترف. أنشئ سيناريو كامل ومفصل بناءً على هذه الفكرة: "${idea}".
 
-عدد المشاهد بالضبط: ${sceneCount} مشهد.
+⚠️ يجب أن يكون عدد المشاهد بالضبط: ${sceneCount} مشهد. لا أقل ولا أكثر!
 
-الشخصيات:
+الشخصيات المتاحة:
 ${charContext}
 
-قواعد:
-- ثبات الشخصية: نفس الملابس والمظهر في كل مشهد
-- ألوان زاهية مناسبة للأطفال
-- كل مشهد 8 ثوانٍ، متصل بالذي قبله
-- لغة الحوار: ${dialogueLang}
-- حوار كامل لكل مشهد مع اسم الشخصية
+⛔ قاعدة ثبات الشخصية (الأهم):
+- ملابس الشخصية وتفاصيلها لا تتغير أبداً بين المشاهد
+- نفس الشعر، نفس لون العيون، نفس الملابس بالضبط في كل مشهد
+- في وصف المشهد الإنجليزي: استخدم اسم الشخصية ثم اذكر ملابسها بالضبط بين قوسين
+- مثال: "Hero (wearing the same black ninja outfit and glasses as in Scene 1)"
 
-أخرج JSON فقط:
-{"script": "القصة الكاملة بالعربية", "scenes": [{"description": "وصف بصري بالإنجليزية مع اسم الشخصية وملابسها", "characters": ["اسم الشخصية"], "dialogue": "الحوار بـ${dialogueLang}"}]}`;
+🎨 قاعدة الألوان والبيئة (محتوى أطفال):
+- الألوان يجب أن تكون زاهية ومريحة للعين مثل فيديوهات الأطفال على يوتيوب
+- خلفيات بألوان باستيل دافئة (أصفر فاتح، أزرق سماوي، أخضر فاتح، وردي هادئ)
+- إضاءة مشرقة ودافئة في كل المشاهد
+- البيئة مرحة ومبهجة مناسبة للأطفال
+
+⚡ قاعدة الاستمرارية: كل مشهد مدته 8 ثوانٍ. المشاهد لقطات متتالية متصلة.
+- المشهد الثاني يبدأ من حيث انتهى الأول بالضبط
+
+🗣️ قاعدة الحوار:
+- لغة الحوار: ${dialogueLang}
+- كل مشهد يجب أن يحتوي على حوار كامل ومفصل بـ${dialogueLang}
+- إذا كان أكثر من شخصية في المشهد، اكتب حوار لكل شخصية
+- اكتب اسم الشخصية قبل حوارها مثل: "أحمد: مرحباً!"
+- الحوار يبدأ من بداية المشهد وينتهي في نهايته
+- الحوار يكون طويل ومفصل وليس جملة واحدة
+
+أخرج JSON فقط بدون أي نص إضافي:
+{
+  "script": "القصة الكاملة المفصلة بالعربية (ليس ملخص! بل كل تفاصيل القصة والأحداث)",
+  "scenes": [
+    {
+      "description": "وصف بصري سينمائي مفصل بالإنجليزية يتضمن: اسم الشخصية + (ملابسها الثابتة)، نوع اللقطة، ألوان زاهية، الفم مفتوح يتكلم",
+      "characters": ["اسم الشخصية 1", "اسم الشخصية 2"],
+      "dialogue": "الحوار الكامل مع ذكر اسم كل شخصية قبل كلامها"
+    }
+  ]
+}`;
 
     const result = await kieGenerateJSON<{ script: string; scenes: any[] }>(prompt);
     return {
@@ -400,7 +425,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
     return kieGenerateJSON(`Improve ad copy for: "${topic}" in ${industry} industry. Output JSON: {"headline": "", "body": "", "cta": "", "tone": ""}`);
   },
 
-  async generateAdCampaign(params: any): Promise<any> {
+  async generateAdCampaign(params: any): Promise<string[]> {
     requireApiKey();
     if (!isKieProvider()) {
       return GeminiService.generateAdCampaign(params);
@@ -408,7 +433,7 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
     const prompt = `Create ad campaign images for: ${JSON.stringify(params)}. Professional advertising quality, eye-catching, modern design.`;
     const url = await kieGenerateImage(prompt, '1:1');
     const b64 = url.startsWith('http') ? await urlToBase64(url) : url;
-    return [{ image: b64, headline: params.headline || 'Ad Campaign' }];
+    return [b64, b64, b64, b64]; // Return 4 identical images to fulfill type for fallback
   },
 
   async generateAdPoster(params: any): Promise<any> {
@@ -440,6 +465,69 @@ Output JSON: {"title": "عنوان", "hook": "hook 3 ثوان", "visualConcept":
     }
     const result = await kieGenerateJSON(`Create brand identity for: "${description}". Output JSON: {"name": "", "tagline": "", "colors": ["#hex1","#hex2","#hex3"], "typography": "", "style": ""}`);
     return result;
+  },
+
+  async generateWallpaper(params: any): Promise<string> {
+    requireApiKey();
+    if (!isKieProvider()) {
+      return GeminiService.generateWallpaper(params);
+    }
+    const ratio = params.aspectRatio || '9:16';
+    let prompt = `Beautiful wallpaper. Topic: ${params.topic}. Style: ${params.style}. Colors: ${params.colorPalette}. Masterpiece, 8k resolution, highly detailed.`;
+
+    let imageUrls: string[] = [];
+    if (params.referenceImages && params.referenceImages.length > 0) {
+      prompt += ` Use the provided reference images as inspiration.`;
+      for (const ref of params.referenceImages) {
+        try {
+          const url = await uploadBase64ToKie(ref);
+          imageUrls.push(url);
+        } catch (e) {
+          console.warn("Failed to upload reference image for wallpaper", e);
+        }
+      }
+    }
+
+    const url = await kieGenerateImage(prompt, ratio as any, imageUrls);
+    return url.startsWith('http') ? await urlToBase64(url) : url;
+  },
+
+  async generateWallpaperIdea(topic: string): Promise<string> {
+    requireApiKey();
+    if (!isKieProvider()) {
+      return GeminiService.generateWallpaperIdea(topic);
+    }
+    const prompt = `You are a creative director. Enhance this wallpaper idea into a highly detailed, professional prompt in Arabic. Return JSON with a single key "idea" containing the enhanced Arabic text. Idea to enhance: "${topic}"`;
+    const result: any = await kieGenerateJSON(prompt);
+    return result.idea || result;
+  },
+
+  async generateSticker(params: any): Promise<string> {
+    requireApiKey();
+    if (!isKieProvider()) {
+      return GeminiService.generateSticker(params);
+    }
+
+    const { topic, style, emotion, purpose, primaryColor, secondaryColor, industry, brandName, referenceImage } = params;
+    let prompt = `Sticker design, white background. Topic: ${topic}. Style: ${style}. Emotion: ${emotion}. Clear subject, suitable for WhatsApp sticker.`;
+
+    if (purpose === 'شركات / بزنس') {
+      prompt += ` This is a corporate/business sticker for brand: "${brandName || 'N/A'}" working in the industry: "${industry || 'General'}". Primary Color: ${primaryColor || 'N/A'}, Secondary Color: ${secondaryColor || 'N/A'}. Include professional, cohesive branding elements reflecting this business's visual identity.`;
+    }
+
+    let imageUrls: string[] = [];
+    if (referenceImage) {
+      prompt += ` Use the provided reference image as inspiration.`;
+      try {
+        const url = await uploadBase64ToKie(referenceImage);
+        imageUrls.push(url);
+      } catch (e) {
+        console.warn("Failed to upload reference image for sticker", e);
+      }
+    }
+
+    const url = await kieGenerateImage(prompt, '1:1', imageUrls);
+    return url.startsWith('http') ? await urlToBase64(url) : url;
   },
 
   async generateVideoIdeaFromCharacters(params: any): Promise<any> {

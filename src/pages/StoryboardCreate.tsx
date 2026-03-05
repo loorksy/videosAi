@@ -11,12 +11,12 @@ import { cn } from '../lib/utils';
 
 export default function StoryboardCreate() {
   const navigate = useNavigate();
-  
+
   // Check for draft but always start at 'chars' step
   const saved = sessionStorage.getItem('storyboard_draft');
   const draft = saved ? JSON.parse(saved) : null;
   const hasDraft = draft && draft.scenes && draft.scenes.length > 0;
-  
+
   const [step, setStep] = useState<'chars' | 'script' | 'scenes' | 'frames' | 'preview'>('chars');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
@@ -99,7 +99,7 @@ export default function StoryboardCreate() {
   }, []);
 
   const toggleChar = (id: string) => {
-    setSelectedCharIds(prev => 
+    setSelectedCharIds(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   };
@@ -112,19 +112,19 @@ export default function StoryboardCreate() {
     try {
       const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
       const genre = contentType === 'مخصص' ? customContentType : contentType;
-      
+
       const enhancedIdea = `${idea || 'أنشئ قصة ممتعة للأطفال'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}. لغة الحوار: ${dialogueLanguage}.`;
-      
+
       const result = await AIService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
         name: c.name,
         description: c.description,
         visualTraits: c.visualTraits,
       })));
-      
+
       if (!result || !result.scenes || !Array.isArray(result.scenes) || result.scenes.length === 0) {
         throw new Error('لم يتم توليد المشاهد. حاول مرة أخرى.');
       }
-      
+
       setScript(result.script || '');
       setIdea((result.script || '').slice(0, 100) + '...');
       const generatedScenes = result.scenes.map(s => ({
@@ -136,18 +136,23 @@ export default function StoryboardCreate() {
           return found ? found.id : '';
         }).filter(Boolean),
       }));
-      
+
       setScenes(generatedScenes);
-      
+
       // Automatically start generating frames after script is ready
       setProcessingStatus('جاري البدء برسم المشاهد...');
       setStep('frames');
-      
+
       // Generate frames automatically
-      const newScenes = [...generatedScenes];
-      
+      const newScenes: Scene[] = [...generatedScenes].map(s => ({
+        ...s,
+        frameImage: undefined,
+        videoClip: undefined,
+        audioClip: undefined
+      }));
+
       // Build character DNA string
-      const characterDNA = selectedChars.map(c => 
+      const characterDNA = selectedChars.map(c =>
         `${c.name}: ${c.visualTraits || c.description}`
       ).join('\n');
 
@@ -182,7 +187,7 @@ export default function StoryboardCreate() {
 
       for (let i = 0; i < newScenes.length; i++) {
         setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i === 0 ? ' (المشهد المرجعي الأساسي)' : ''}`);
-        
+
         const scene = newScenes[i];
         const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
         let sceneCharImages: string[];
@@ -212,12 +217,12 @@ export default function StoryboardCreate() {
             aspectRatio,
             characterDNA,
           });
-          
+
           newScenes[i] = { ...newScenes[i], frameImage };
           if (i === 0) firstSceneImage = frameImage;
           previousSceneImage = frameImage;
           setScenes([...newScenes]);
-          
+
           if (i < newScenes.length - 1) {
             setProcessingStatus(`تم رسم المشهد ${i + 1}. انتظر قليلاً قبل المشهد التالي...`);
             await new Promise(r => setTimeout(r, 3000));
@@ -248,7 +253,7 @@ export default function StoryboardCreate() {
           }
         }
       }
-      
+
       setStep('preview');
     } catch (error: any) {
       if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
@@ -263,14 +268,14 @@ export default function StoryboardCreate() {
   const generateVideos = async () => {
     setIsGeneratingVideos(true);
     const videos: Record<number, { status: string; url?: string }> = {};
-    
+
     // Step 1: Start video tasks using consecutive scene pairs
     const tasks: { idx: number; taskId: string }[] = [];
     for (let i = 0; i < scenes.length - 1; i++) {
       if (!scenes[i].frameImage || !scenes[i + 1].frameImage) continue;
       videos[i] = { status: 'جاري الرفع...' };
       setSceneVideos({ ...videos });
-      
+
       try {
         // Build prompt with dialogue and lip movement
         let prompt = scenes[i].description;
@@ -278,7 +283,7 @@ export default function StoryboardCreate() {
           prompt += `. الشخصية تتحدث بوضوح وتحريك الشفاه طوال المشهد: "${scenes[i].dialogue}"`;
         }
         prompt += `. الانتقال من هذا المشهد إلى المشهد التالي بسلاسة.`;
-        
+
         const result = await KieService.generateImageToVideo(
           scenes[i].frameImage!,
           prompt,
@@ -301,7 +306,7 @@ export default function StoryboardCreate() {
     while (pending.size > 0 && pollCount < 120) {
       await new Promise(r => setTimeout(r, 5000));
       pollCount++;
-      
+
       for (const task of tasks) {
         if (!pending.has(task.idx)) continue;
         try {
@@ -314,6 +319,22 @@ export default function StoryboardCreate() {
             // Save video URL to the scene
             scenes[task.idx].videoClip = result.videoUrl;
             setScenes([...scenes]);
+
+            // Auto-save to gallery
+            try {
+              await db.saveMediaItem({
+                id: uuidv4(),
+                type: 'video',
+                source: 'storyboard',
+                title: idea.substring(0, 30) || 'مقطع قصة',
+                description: scenes[task.idx].description,
+                data: result.videoUrl,
+                aspectRatio: aspectRatio,
+                createdAt: Date.now()
+              });
+            } catch (err) {
+              console.error("Failed to save storyboard video to gallery", err);
+            }
           } else if (result.status === 'failed') {
             videos[task.idx] = { status: 'فشل التوليد' };
             pending.delete(task.idx);
@@ -331,34 +352,39 @@ export default function StoryboardCreate() {
     if (selectedCharIds.length === 0) return;
     setIsProcessing(true);
     setProcessingStatus('جاري كتابة السيناريو وتقسيم المشاهد...');
-    
+
     try {
       const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
       const genre = contentType === 'مخصص' ? customContentType : contentType;
-      
+
       // Enhance idea with all context
       const enhancedIdea = `${idea || 'أنشئ قصة مناسبة للشخصيات'}. نوع المحتوى: ${genre}. عدد المشاهد: ${sceneCount}. Visual Style: ${style}. Format: ${aspectRatio}.`;
-      
+
       const result = await AIService.generateScriptAndScenes(enhancedIdea, selectedChars.map(c => ({
         name: c.name,
         description: c.description,
         visualTraits: c.visualTraits,
       })));
-      
+
+      if (!result || !result.scenes || !Array.isArray(result.scenes) || result.scenes.length === 0) {
+        throw new Error('فشل الذكاء الاصطناعي في تقسيم المشاهد (0 مشاهد). حاول تغيير الفكرة أو المحاولة مرة أخرى.');
+      }
+
       setScript(result.script);
       setScenes(result.scenes.map(s => ({
         id: uuidv4(),
         description: s.description,
         dialogue: s.dialogue || '',
-        characterIds: s.characters.map(name => {
-            const found = selectedChars.find(c => c.name.includes(name) || name.includes(c.name));
-            return found ? found.id : '';
+        characterIds: (s.characters || []).map((name: string) => {
+          const found = selectedChars.find(c => c.name.includes(name) || name.includes(c.name));
+          return found ? found.id : '';
         }).filter(Boolean),
       })));
       setStep('scenes');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('فشل توليد السيناريو');
+      if (error instanceof MissingApiKeyError) { setMissingKeyError(error); }
+      else { alert('فشل توليد السيناريو: ' + (error?.message || '')); }
     } finally {
       setIsProcessing(false);
     }
@@ -367,12 +393,12 @@ export default function StoryboardCreate() {
   const generateFrames = async () => {
     setIsProcessing(true);
     setStep('frames');
-    
+
     const newScenes = [...scenes];
     const selectedChars = characters.filter(c => selectedCharIds.includes(c.id));
-    
+
     // Build character DNA string
-    const characterDNA = selectedChars.map(c => 
+    const characterDNA = selectedChars.map(c =>
       `${c.name}: ${c.visualTraits || c.description}`
     ).join('\n');
 
@@ -411,9 +437,9 @@ export default function StoryboardCreate() {
 
       for (let i = 0; i < newScenes.length; i++) {
         setProcessingStatus(`جاري رسم المشهد ${i + 1} من ${newScenes.length}...${i === 0 ? ' (المشهد المرجعي الأساسي)' : ''}`);
-        
+
         const scene = newScenes[i];
-        
+
         // Get character images for this scene
         const sceneChars = selectedChars.filter(c => scene.characterIds.includes(c.id));
         let sceneCharImages: string[];
@@ -443,16 +469,32 @@ export default function StoryboardCreate() {
             aspectRatio,
             characterDNA,
           });
-          
+
           newScenes[i].frameImage = frameImage;
-          
+
+          // Auto-save to gallery
+          try {
+            await db.saveMediaItem({
+              id: uuidv4(),
+              type: 'image',
+              source: 'storyboard',
+              title: idea.substring(0, 30) || 'صورة قصة',
+              description: scene.description,
+              data: frameImage,
+              aspectRatio: aspectRatio,
+              createdAt: Date.now()
+            });
+          } catch (err) {
+            console.error("Failed to save storyboard image to gallery", err);
+          }
+
           // Save first scene image as permanent reference
           if (i === 0) firstSceneImage = frameImage;
           // Update previous scene image
           previousSceneImage = frameImage;
-          
+
           setScenes([...newScenes]);
-          
+
           // Rate limit delay between scenes (avoid API throttling)
           if (i < newScenes.length - 1) {
             setProcessingStatus(`تم رسم المشهد ${i + 1}. انتظر قليلاً قبل المشهد التالي...`);
@@ -564,7 +606,7 @@ export default function StoryboardCreate() {
                   </div>
                 </button>
               ))}
-              <button 
+              <button
                 onClick={() => navigate('/characters/new')}
                 className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50"
               >
@@ -573,7 +615,7 @@ export default function StoryboardCreate() {
               </button>
             </div>
           </div>
-          
+
           <button
             onClick={() => setStep('script')}
             disabled={selectedCharIds.length === 0}
@@ -666,8 +708,8 @@ export default function StoryboardCreate() {
                   onClick={() => setStyle(s.value)}
                   className={cn(
                     "whitespace-nowrap py-2 px-3 text-xs font-medium rounded-lg border transition-all",
-                    style === s.value 
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
+                    style === s.value
+                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm"
                       : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
                   )}
                 >
@@ -687,8 +729,8 @@ export default function StoryboardCreate() {
                   onClick={() => setAspectRatio(r.id as any)}
                   className={cn(
                     "py-3 px-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all",
-                    aspectRatio === r.id 
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
+                    aspectRatio === r.id
+                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm"
                       : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
                   )}
                 >
@@ -783,7 +825,7 @@ export default function StoryboardCreate() {
             {scenes.map((scene, idx) => {
               const firstImg = scenes[0]?.frameImage;
               const prevImg = idx > 0 ? scenes[idx - 1]?.frameImage : undefined;
-              
+
               const regenerateScene = async () => {
                 setIsProcessing(true);
                 setProcessingStatus(`إعادة توليد المشهد ${idx + 1}...`);

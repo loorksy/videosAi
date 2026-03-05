@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, AlertCircle, CheckCircle, XCircle, Loader2, LogOut, Zap, Brain, ImageIcon, Video } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle, XCircle, Loader2, LogOut, Zap, Brain, ImageIcon, Video, Sparkles, Globe } from 'lucide-react';
 import { GeminiService } from '../lib/gemini';
 
 interface SettingsPageProps {
@@ -64,7 +64,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
         setImageModel(data.image_model || 'gemini-3-pro-image-preview');
         setVideoModel(data.video_model || 'veo3_fast');
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // Load kie key from localStorage
     const storedKie = localStorage.getItem('KIE_API_KEY');
@@ -157,7 +157,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ kie_api_key: kieKey.trim() }),
           });
-        } catch {}
+        } catch { }
       }
       try {
         const resp = await fetch(`${API}/api/kie/test-connection`, {
@@ -195,40 +195,74 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
       </header>
 
       {/* Provider Toggle */}
-      <div className="bg-card p-5 rounded-2xl border border-border/60 space-y-4">
-        <h2 className="text-sm font-bold text-card-foreground flex items-center gap-2">
+      <div className="space-y-3">
+        <h2 className="text-sm font-bold text-card-foreground flex items-center gap-2 pl-1">
           <Zap className="w-4 h-4 text-amber-500" />
-          المزود الرئيسي
+          اختر المزود الرئيسي للذكاء الاصطناعي
         </h2>
-        <div className="grid grid-cols-2 gap-2">
+
+        <div className="grid grid-cols-1 gap-3">
+          {/* Gemini Option */}
           <button
             data-testid="provider-gemini"
             onClick={() => setProvider('gemini')}
-            className={`py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-              provider === 'gemini'
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
-                : 'border-border bg-secondary/50 text-muted-foreground hover:border-indigo-200'
-            }`}
+            className={`relative p-5 rounded-2xl border-2 text-right transition-all flex flex-col items-start gap-2 shadow-sm ${provider === 'gemini'
+                ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
+                : 'border-border bg-card hover:border-indigo-200 hover:shadow-md'
+              }`}
           >
-            Google Gemini
+            {provider === 'gemini' && (
+              <div className="absolute top-5 left-5 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center shadow-md shadow-indigo-500/30">
+                <CheckCircle className="w-3 h-3 text-white" />
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className={`font-bold flex items-center gap-2 ${provider === 'gemini' ? 'text-indigo-700 dark:text-indigo-300' : 'text-card-foreground'}`}>
+                  Google Gemini
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400 rounded-full">
+                    موصى به
+                  </span>
+                </h3>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              استخدام <strong>عائلة Gemini</strong> لتوليد أسرع للنصوص والصور. توليد الفيديو سيتم عبر <strong>kie.ai</strong> بشكل منفصل. مثالي للسرعة وتوفير التكلفة.
+            </p>
           </button>
+
+          {/* kie.ai Option */}
           <button
             data-testid="provider-kie"
             onClick={() => setProvider('kie')}
-            className={`py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-              provider === 'kie'
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                : 'border-border bg-secondary/50 text-muted-foreground hover:border-emerald-200'
-            }`}
+            className={`relative p-5 rounded-2xl border-2 text-right transition-all flex flex-col items-start gap-2 shadow-sm ${provider === 'kie'
+                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
+                : 'border-border bg-card hover:border-emerald-200 hover:shadow-md'
+              }`}
           >
-            kie.ai (الكل في واحد)
+            {provider === 'kie' && (
+              <div className="absolute top-5 left-5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-md shadow-emerald-500/30">
+                <CheckCircle className="w-3 h-3 text-white" />
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Globe className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className={`font-bold ${provider === 'kie' ? 'text-emerald-700 dark:text-emerald-300' : 'text-card-foreground'}`}>
+                  kie.ai (الكل في واحد)
+                </h3>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              توجيه <strong>جميع الطلبات</strong> (نصوص، صور، فيديو) عبر خوادم kie.ai باستخدام مفتاح API واحد. يفتح الوصول إلى نماذج مميزة مثل Flux للصور ونماذج لغوية أخرى.
+            </p>
           </button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {provider === 'kie'
-            ? 'kie.ai سيكون المزود الرئيسي لكل شيء: النصوص والصور والفيديو.'
-            : 'Gemini للنصوص والصور، kie.ai للفيديو.'}
-        </p>
       </div>
 
       {/* API Keys */}

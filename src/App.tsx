@@ -17,6 +17,8 @@ import HybridCharacterCreate from './pages/HybridCharacterCreate';
 import ViralIdeasGenerator from './pages/ViralIdeasGenerator';
 import ThumbnailCreate from './pages/ThumbnailCreate';
 import ProductStudio from './pages/ProductStudio';
+import WallpapersGenerator from './pages/WallpapersGenerator';
+import WhatsAppStickers from './pages/WhatsAppStickers';
 import AdCampaignStudio from './pages/AdCampaignStudio';
 import KlingMotionControl from './pages/KlingMotionControl';
 import StoryboardList from './pages/StoryboardList';
@@ -29,17 +31,17 @@ import { Home as HomeIcon } from 'lucide-react';
 function NavItem({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
   const location = useLocation();
   const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
-  
+
   return (
-    <Link 
-      to={to} 
+    <Link
+      to={to}
       className={cn(
         "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-all duration-200 relative",
         isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
       )}
     >
       {isActive && (
-        <motion.div 
+        <motion.div
           layoutId="nav-indicator"
           className="absolute -top-px w-10 h-[3px] bg-primary rounded-b-full"
         />
@@ -67,6 +69,8 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
             <Route path="/viral-ideas" element={<ViralIdeasGenerator />} />
             <Route path="/character-animation" element={<Navigate to="/" replace />} />
             <Route path="/product-studio" element={<ProductStudio />} />
+            <Route path="/wallpapers" element={<WallpapersGenerator />} />
+            <Route path="/whatsapp-stickers" element={<WhatsAppStickers />} />
             <Route path="/ad-campaign-studio" element={<AdCampaignStudio />} />
             <Route path="/kling-motion" element={<KlingMotionControl />} />
             <Route path="/thumbnails/new" element={<ThumbnailCreate />} />
@@ -77,7 +81,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
             <Route path="/settings" element={<SettingsPage onLogout={onLogout} />} />
           </Routes>
         </main>
-        
+
         {/* Mobile Bottom Navigation */}
         <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-[0_-2px_24px_rgba(0,0,0,0.06)] z-50">
           <div className="grid grid-cols-5 h-full max-w-lg mx-auto">

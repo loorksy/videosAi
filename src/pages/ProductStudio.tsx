@@ -57,15 +57,71 @@ export default function ProductStudio() {
     'عصري وشبابي (Modern/Pop)'
   ];
 
+  // --- Category Tree Data ---
+  const categoryTree = {
+    'إلكترونيات': ['هواتف ذكية', 'حواسيب', 'ساعات ذكية', 'سماعات'],
+    'أزياء': ['ملابس رجالية', 'ملابس نسائية', 'أحذية', 'حقائب', 'إكسسوارات'],
+    'عطور وتجميل': ['عطور فاخرة', 'عناية بالبشرة', 'مكياج', 'عناية بالشعر'],
+    'أثاث وديكور': ['غرف معيشة', 'ديكور مكتبي', 'إضاءات ومصابيح'],
+    'أطعمة ومشروبات': ['قهوة مختصة', 'حلويات', 'مخبوزات', 'مشروبات صحية']
+  };
+
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string>('إلكترونيات');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('هواتف ذكية');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryText, setCustomCategoryText] = useState('');
+
+  // --- Visual Identity Logic ---
+  const [savedIdentities, setSavedIdentities] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const ids = JSON.parse(localStorage.getItem('product_identities') || '[]');
+    setSavedIdentities(ids);
+  }, []);
+
+  const saveIdentity = () => {
+    const profile = {
+      background,
+      lighting,
+      style,
+      mainCategory: selectedMainCategory,
+      subCategory: selectedSubCategory
+    };
+    const profiles = JSON.parse(localStorage.getItem('product_identities') || '[]');
+    const name = prompt('أدخل اسماً لحفظ هذه الهوية البصرية (مثال: ستايل العطور):');
+    if (!name) return;
+
+    profiles.push({ name, ...profile });
+    localStorage.setItem('product_identities', JSON.stringify(profiles));
+    setSavedIdentities(profiles);
+    alert('تم حفظ الهوية البصرية بنجاح!');
+  };
+
+  const loadIdentity = (identity: any) => {
+    setBackground(identity.background || backgrounds[0]);
+    setLighting(identity.lighting || lightings[0]);
+    setStyle(identity.style || styles[0]);
+    if (identity.mainCategory) setSelectedMainCategory(identity.mainCategory);
+    if (identity.subCategory) setSelectedSubCategory(identity.subCategory);
+  };
+
   const generateProduct = async () => {
-    if (!productName.trim()) {
+    if (!productName.trim() && !isCustomCategory) {
       alert("يرجى كتابة اسم/وصف المنتج.");
       return;
     }
     setIsGeneratingProduct(true);
     try {
+      let finalProductDesc = productName;
+
+      if (isCustomCategory || selectedSubCategory === 'تخصيص') {
+        finalProductDesc = `التصنيف: ${customCategoryText} - الوصف: ${productName}`;
+      } else {
+        finalProductDesc = `التصنيف: ${selectedMainCategory} (${selectedSubCategory}) - الوصف: ${productName}`;
+      }
+
       const result = await AIService.generateProductShot({
-        product: productName,
+        product: finalProductDesc,
         background,
         lighting,
         style
@@ -76,7 +132,7 @@ export default function ProductStudio() {
       const mediaItem: MediaItem = {
         id: `product-${Date.now()}`,
         type: 'image',
-        title: `منتج: ${productName}`,
+        title: `منتج: ${productName || customCategoryText || selectedSubCategory}`,
         description: `${background} - ${lighting} - ${style}`,
         data: result,
         source: 'product',
@@ -148,17 +204,15 @@ export default function ProductStudio() {
       <div className="flex bg-card rounded-xl p-1 border border-border/60 mb-6">
         <button
           onClick={() => setActiveTab('product')}
-          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
-            activeTab === 'product' ? 'bg-sky-50 text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
+          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'product' ? 'bg-sky-50 text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
         >
           تصوير المنتجات
         </button>
         <button
           onClick={() => setActiveTab('brand')}
-          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
-            activeTab === 'brand' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
+          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'brand' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
         >
           بناء الهوية البصرية
         </button>
@@ -168,13 +222,94 @@ export default function ProductStudio() {
       {activeTab === 'product' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+
+            {/* Visual Identity Save/Load */}
+            <div className="flex justify-between items-center border-b pb-3 mb-2">
+              <h3 className="font-bold text-slate-800">إعدادات الهوية والتصنيف</h3>
+              <div className="flex gap-2">
+                {savedIdentities.length > 0 && (
+                  <select
+                    className="text-xs border-slate-200 rounded-md bg-white text-slate-700 px-2 py-1 outline-none focus:border-sky-500"
+                    onChange={(e) => {
+                      const id = savedIdentities.find(s => s.name === e.target.value);
+                      if (id) loadIdentity(id);
+                      e.target.value = '';
+                    }}
+                  >
+                    <option value="">تحميل هوية محفوظة...</option>
+                    {savedIdentities.map((id: any, i: number) => (
+                      <option key={i} value={id.name}>{id.name}</option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  onClick={saveIdentity}
+                  className="text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 px-3 py-1 rounded-md font-medium flex items-center gap-1 transition-colors"
+                >
+                  <Palette className="w-3 h-3" />
+                  حفظ الهوية
+                </button>
+              </div>
+            </div>
+
+            {/* Product Category */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">التصنيف الرئيسي</label>
+                <select
+                  value={selectedMainCategory}
+                  onChange={(e) => {
+                    setSelectedMainCategory(e.target.value);
+                    const subCats = categoryTree[e.target.value as keyof typeof categoryTree] || [];
+                    setSelectedSubCategory(subCats[0] || '');
+                    setIsCustomCategory(e.target.value === 'أخرى (Custom)');
+                  }}
+                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                >
+                  {Object.keys(categoryTree).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="أخرى (Custom)">أخرى (Custom)</option>
+                </select>
+              </div>
+
+              {!isCustomCategory ? (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">التصنيف الفرعي</label>
+                  <select
+                    value={selectedSubCategory}
+                    onChange={(e) => setSelectedSubCategory(e.target.value)}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                  >
+                    {(categoryTree[selectedMainCategory as keyof typeof categoryTree] || []).map((sub: string) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                    <option value="تخصيص">تخصيص مانيوال...</option>
+                  </select>
+                </div>
+              ) : null}
+            </div>
+
+            {(isCustomCategory || selectedSubCategory === 'تخصيص') && (
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">اكتب التصنيف بوضوح</label>
+                <input
+                  type="text"
+                  value={customCategoryText}
+                  onChange={(e) => setCustomCategoryText(e.target.value)}
+                  placeholder="مثال: أدوات زراعية، معدات رياضية نادرة..."
+                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                />
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">وصف المنتج</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">وصف المنتج الدقيق</label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                placeholder="مثال: زجاجة عطر فاخرة، كوب قهوة سيراميك..."
+                placeholder="مثال: زجاجة عطر فاخرة، كوب قهوة سيراميك أسود..."
                 className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
               />
             </div>
@@ -184,14 +319,16 @@ export default function ProductStudio() {
               <CustomSelect value={background} onChange={setBackground} options={backgrounds} className="p-3 rounded-xl focus:ring-sky-500" />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الإضاءة</label>
-              <CustomSelect value={lighting} onChange={setLighting} options={lightings} className="p-3 rounded-xl focus:ring-sky-500" />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">الإضاءة</label>
+                <CustomSelect value={lighting} onChange={setLighting} options={lightings} className="p-3 rounded-xl focus:ring-sky-500" />
+              </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الأسلوب (Style)</label>
-              <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3 rounded-xl focus:ring-sky-500" />
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">الأسلوب (Style)</label>
+                <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3 rounded-xl focus:ring-sky-500" />
+              </div>
             </div>
           </div>
 
@@ -284,7 +421,7 @@ export default function ProductStudio() {
                     </span>
                   ))}
                 </div>
-                
+
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">الشعار اللفظي (Slogan)</h3>
                 <p className="text-slate-800 font-medium text-lg italic">"{brandResult.slogan}"</p>
               </div>
@@ -295,8 +432,8 @@ export default function ProductStudio() {
                 <div className="flex gap-2 mb-5">
                   {brandResult.colors.map((color, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div 
-                        className="w-full aspect-square rounded-xl shadow-inner border border-slate-200" 
+                      <div
+                        className="w-full aspect-square rounded-xl shadow-inner border border-slate-200"
                         style={{ backgroundColor: color }}
                       />
                       <span className="text-[10px] font-mono text-slate-500">{color}</span>
