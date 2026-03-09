@@ -11,7 +11,7 @@ import { CustomSelect } from '../components/CustomSelect';
 export default function CreatureCharacterCreate() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
-  
+
   // Form State
   const [baseCreature, setBaseCreature] = useState('قط (Cat)');
   const [hybridCreature, setHybridCreature] = useState('');
@@ -21,7 +21,7 @@ export default function CreatureCharacterCreate() {
   const [expression, setExpression] = useState('نظرة جادة (Serious)');
   const [style, setStyle] = useState('3D Pixar/Disney Style');
   const [background, setBackground] = useState('خلفية بيضاء نقية (Pure White)');
-  
+
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
@@ -39,7 +39,7 @@ export default function CreatureCharacterCreate() {
     if (!baseCreature) return;
     setIsProcessing(true);
     setStep('generating');
-    
+
     try {
       const image = await AIService.generateCreatureCharacter({
         baseCreature,
@@ -51,7 +51,7 @@ export default function CreatureCharacterCreate() {
         style,
         background
       });
-      
+
       setGeneratedImage(image);
       setStep('review');
     } catch (error: any) {
@@ -65,8 +65,8 @@ export default function CreatureCharacterCreate() {
 
   const saveCharacter = async () => {
     if (!generatedImage) return;
-    
-    const charName = hybridCreature 
+
+    const charName = hybridCreature
       ? `${baseCreature.split(' ')[0]} مدمج مع ${hybridCreature.split(' ')[0]}`
       : `${baseCreature.split(' ')[0]} ${outfit.split(' ')[0]}`;
 
@@ -96,7 +96,7 @@ export default function CreatureCharacterCreate() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-background pb-32">
       {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -116,42 +116,42 @@ export default function CreatureCharacterCreate() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">المخلوق الأساسي</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">المخلوق الأساسي</label>
               <CustomSelect value={baseCreature} onChange={setBaseCreature} options={creatures} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">دمج مع مخلوق آخر (اختياري)</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">دمج مع مخلوق آخر (اختياري)</label>
               <CustomSelect value={hybridCreature} onChange={setHybridCreature} options={['', ...creatures]} placeholder="بدون دمج" className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">شكل الجسم</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">شكل الجسم</label>
               <CustomSelect value={bodyType} onChange={setBodyType} options={bodyTypes} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الملابس / الزي</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">الملابس / الزي</label>
               <CustomSelect value={outfit} onChange={setOutfit} options={outfits} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الإكسسوارات</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">الإكسسوارات</label>
               <CustomSelect value={accessories} onChange={setAccessories} options={accessoriesList} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">تعابير الوجه</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">تعابير الوجه</label>
               <CustomSelect value={expression} onChange={setExpression} options={expressions} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الأسلوب الفني</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">الأسلوب الفني</label>
               <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الخلفية</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">الخلفية</label>
               <CustomSelect value={background} onChange={setBackground} options={backgrounds} className="p-3 rounded-xl focus:ring-emerald-500" />
             </div>
           </div>
@@ -174,23 +174,23 @@ export default function CreatureCharacterCreate() {
           </div>
           <div>
             <h3 className="text-xl font-bold text-slate-900">جاري تخليق المخلوق...</h3>
-            <p className="text-slate-500 mt-2">نجمع الجينات ونخيط الملابس السحرية 🧬✨</p>
+            <p className="text-muted-foreground mt-2">نجمع الجينات ونخيط الملابس السحرية 🧬✨</p>
           </div>
         </div>
       )}
 
       {step === 'review' && generatedImage && (
         <div className="space-y-6 animate-in fade-in zoom-in-95">
-          <div className="aspect-square rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 relative group">
+          <div className="aspect-square rounded-2xl overflow-hidden shadow-xl border border-white/10 bg-black/40 border border-white/10 backdrop-blur-md relative group">
             <img src={generatedImage} className="w-full h-full object-cover" alt="Generated Creature" />
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-xl">
+          <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl">
             <h4 className="font-medium text-sm mb-2 text-slate-900">تفاصيل المخلوق:</h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              الأساس: {baseCreature}<br/>
-              {hybridCreature && <>مدمج مع: {hybridCreature}<br/></>}
-              الزي: {outfit}<br/>
+            <p className="text-xs text-muted-foreground/80 leading-relaxed">
+              الأساس: {baseCreature}<br />
+              {hybridCreature && <>مدمج مع: {hybridCreature}<br /></>}
+              الزي: {outfit}<br />
               الأسلوب: {style}
             </p>
           </div>
@@ -205,7 +205,7 @@ export default function CreatureCharacterCreate() {
             </button>
             <button
               onClick={downloadImage}
-              className="w-full py-4 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-black/20 text-white/90 border border-white/10 rounded-xl font-bold shadow-sm hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 flex items-center justify-center gap-2"
             >
               <Download className="w-5 h-5" />
               <span>تنزيل الصورة</span>
@@ -215,7 +215,7 @@ export default function CreatureCharacterCreate() {
                 setGeneratedImage(null);
                 setStep('input');
               }}
-              className="w-full py-3 text-slate-500 font-medium text-sm hover:text-slate-700"
+              className="w-full py-3 text-muted-foreground font-medium text-sm hover:text-white/90"
             >
               تعديل المواصفات وإعادة التوليد
             </button>

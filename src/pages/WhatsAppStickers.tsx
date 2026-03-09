@@ -113,7 +113,7 @@ export default function WhatsAppStickers() {
     };
 
     return (
-        <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+        <div className="p-4 max-w-4xl mx-auto min-h-screen bg-transparent pb-32">
             <div className="flex items-center mb-6 pt-2">
                 <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
                     <ChevronRight className="w-5 h-5" />
@@ -134,25 +134,25 @@ export default function WhatsAppStickers() {
                     </p>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div className="bg-black/20 p-4 rounded-2xl shadow-sm border border-white/5 space-y-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">فكرة الملصق أو العبارة</label>
+                        <label className="block text-sm font-bold text-white/90 mb-2">فكرة الملصق أو العبارة</label>
                         <input
                             type="text"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="مثال: قطة تشرب قهوة ومصدومة، كلمة 'الراتب طار'..."
-                            className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full p-3 border border-white/10 rounded-xl text-sm bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 focus:ring-2 focus:ring-emerald-500 outline-none"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-slate-700 mb-1">الهدف من الملصق</label>
+                            <label className="block text-sm font-bold text-white/90 mb-1">الهدف من الملصق</label>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={() => setPurpose('شخصي / ترفيهي')}
-                                    className={`py-3 px-4 rounded-xl border-2 text-sm font-bold flex flex-col items-center gap-2 transition-all ${purpose === 'شخصي / ترفيهي' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-emerald-200'
+                                    className={`py-3 px-4 rounded-xl border-2 text-sm font-bold flex flex-col items-center gap-2 transition-all ${purpose === 'شخصي / ترفيهي' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-white/5 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 text-muted-foreground hover:border-emerald-200'
                                         }`}
                                 >
                                     <User className="w-5 h-5" />
@@ -160,7 +160,7 @@ export default function WhatsAppStickers() {
                                 </button>
                                 <button
                                     onClick={() => setPurpose('شركات / بزنس')}
-                                    className={`py-3 px-4 rounded-xl border-2 text-sm font-bold flex flex-col items-center gap-2 transition-all ${purpose === 'شركات / بزنس' ? 'border-primary bg-primary/10 text-primary' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-primary/30'
+                                    className={`py-3 px-4 rounded-xl border-2 text-sm font-bold flex flex-col items-center gap-2 transition-all ${purpose === 'شركات / بزنس' ? 'border-primary bg-primary/10 text-primary' : 'border-white/5 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 text-muted-foreground hover:border-primary/30'
                                         }`}
                                 >
                                     <Briefcase className="w-5 h-5" />
@@ -172,50 +172,50 @@ export default function WhatsAppStickers() {
                         {purpose === 'شركات / بزنس' && (
                             <>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">اسم الشركة / العلامة</label>
+                                    <label className="block text-sm font-bold text-white/90 mb-2">اسم الشركة / العلامة</label>
                                     <input
                                         type="text"
                                         value={brandName}
                                         onChange={(e) => setBrandName(e.target.value)}
                                         placeholder="مثال: متجر الأمل..."
-                                        className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-primary outline-none"
+                                        className="w-full p-3 border border-white/10 rounded-xl text-sm bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 focus:ring-2 focus:ring-primary outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">اللون الأساسي للعلامة</label>
+                                    <label className="block text-sm font-bold text-white/90 mb-2">اللون الأساسي للعلامة</label>
                                     <ColorPicker color={primaryColor} onChange={setPrimaryColor} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">اللون الثانوي</label>
+                                    <label className="block text-sm font-bold text-white/90 mb-2">اللون الثانوي</label>
                                     <ColorPicker color={secondaryColor} onChange={setSecondaryColor} />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">المجال / الصناعة</label>
+                                    <label className="block text-sm font-bold text-white/90 mb-2">المجال / الصناعة</label>
                                     <input
                                         type="text"
                                         value={industry}
                                         onChange={(e) => setIndustry(e.target.value)}
                                         placeholder="مثال: مطعم، عيادة أسنان، عقارات..."
-                                        className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-primary outline-none"
+                                        className="w-full p-3 border border-white/10 rounded-xl text-sm bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 focus:ring-2 focus:ring-primary outline-none"
                                     />
-                                    <p className="text-xs text-slate-500 mt-1">سيساعد ذلك الذكاء الاصطناعي في توجيه الهوية البصرية للملصق لتناسب مجالك.</p>
+                                    <p className="text-xs text-muted-foreground mt-1">سيساعد ذلك الذكاء الاصطناعي في توجيه الهوية البصرية للملصق لتناسب مجالك.</p>
                                 </div>
                             </>
                         )}
 
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">الأسلوب الفني</label>
+                            <label className="block text-sm font-bold text-white/90 mb-1">الأسلوب الفني</label>
                             <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3 rounded-xl focus:ring-emerald-500" />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">المزاج (Emotion)</label>
+                            <label className="block text-sm font-bold text-white/90 mb-1">المزاج (Emotion)</label>
                             <CustomSelect value={emotion} onChange={setEmotion} options={emotions} className="p-3 rounded-xl focus:ring-emerald-500" />
                         </div>
 
                         <div className="md:col-span-2 mt-2">
-                            <label className="block text-sm font-bold text-slate-700 mb-2">صورة مرجعية (اختياري)</label>
+                            <label className="block text-sm font-bold text-white/90 mb-2">صورة مرجعية (اختياري)</label>
                             {referenceImage ? (
-                                <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-slate-200 group">
+                                <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-white/10 group">
                                     <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <button onClick={() => setReferenceImage(null)} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
@@ -224,7 +224,7 @@ export default function WhatsAppStickers() {
                                     </div>
                                 </div>
                             ) : (
-                                <label className="w-full py-4 px-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 cursor-pointer flex items-center justify-center gap-2 transition-all group">
+                                <label className="w-full py-4 px-4 border-2 border-dashed border-white/10 rounded-xl bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 text-muted-foreground hover:border-emerald-300 hover:bg-emerald-50 cursor-pointer flex items-center justify-center gap-2 transition-all group">
                                     <ImagePlus className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
                                     <span className="text-sm font-medium group-hover:text-emerald-600 transition-colors">رفع صورة كمرجع للتصميم</span>
                                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -254,9 +254,9 @@ export default function WhatsAppStickers() {
                 </button>
 
                 {generatedSticker && (
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-in zoom-in-95">
+                    <div className="bg-black/20 p-4 rounded-2xl shadow-sm border border-white/5 animate-in zoom-in-95">
                         <div className="flex items-center justify-between mb-3">
-                            <h2 className="font-bold text-slate-800">الملصق الجاهز</h2>
+                            <h2 className="font-bold text-white">الملصق الجاهز</h2>
                             {saved && (
                                 <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                                     <Check className="w-3 h-3" />
@@ -281,7 +281,7 @@ export default function WhatsAppStickers() {
                             <Download className="w-5 h-5" />
                             <span>تحميل الصورة (PNG)</span>
                         </button>
-                        <p className="text-xs text-center text-slate-500 mt-2">ملاحظة: يمكنك استخدام تطبيقات مثل Sticker Maker لتحويلها لملصق واتساب حقيقي.</p>
+                        <p className="text-xs text-center text-muted-foreground mt-2">ملاحظة: يمكنك استخدام تطبيقات مثل Sticker Maker لتحويلها لملصق واتساب حقيقي.</p>
                     </div>
                 )}
             </div>

@@ -16,31 +16,20 @@ export function getProviderSettings() {
 export class MissingApiKeyError extends Error {
   provider: Provider;
   constructor(provider: Provider) {
-    const msg = provider === 'kie'
-      ? 'مفتاح kie.ai API غير مضاف. اذهب للإعدادات لإضافته.'
-      : 'مفتاح Gemini API غير مضاف. اذهب للإعدادات لإضافته.';
-    super(msg);
+    super('API key configuration is missing');
     this.name = 'MissingApiKeyError';
     this.provider = provider;
   }
 }
 
-/** Check if the required API key is set. Throws MissingApiKeyError if not. */
+/** In SaaS mode, keys تُدار من الخادم، فلا نتحقق من localStorage هنا */
 export function requireApiKey(): void {
-  const { provider } = getProviderSettings();
-  if (provider === 'kie') {
-    const key = localStorage.getItem('KIE_API_KEY');
-    if (!key) throw new MissingApiKeyError('kie');
-  } else {
-    const key = localStorage.getItem('GEMINI_API_KEY');
-    if (!key) throw new MissingApiKeyError('gemini');
-  }
+  return;
 }
 
-/** Check if kie.ai key exists (for video/motion which always need it) */
+/** kie.ai مفاتيح تُدار مركزياً عبر الخادم */
 export function requireKieKey(): void {
-  const key = localStorage.getItem('KIE_API_KEY');
-  if (!key) throw new MissingApiKeyError('kie');
+  return;
 }
 
 export function isKieProvider(): boolean {

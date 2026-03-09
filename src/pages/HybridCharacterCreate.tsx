@@ -116,7 +116,7 @@ export default function HybridCharacterCreate() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-background pb-32">
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
           <ChevronRight className="w-5 h-5" />
@@ -177,9 +177,9 @@ export default function HybridCharacterCreate() {
         <div className="space-y-6 animate-in fade-in zoom-in-95">
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200">
             <div className="aspect-square bg-slate-100 relative">
-              <img 
-                src={generatedCharacter.front} 
-                alt="Front View" 
+              <img
+                src={generatedCharacter.front}
+                alt="Front View"
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
@@ -187,7 +187,7 @@ export default function HybridCharacterCreate() {
                 النتيجة النهائية
               </div>
             </div>
-            
+
             <div className="p-5">
               <h2 className="text-xl font-bold text-slate-900 mb-2">{generatedCharacter.name}</h2>
               <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">

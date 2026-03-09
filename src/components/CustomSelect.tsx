@@ -64,11 +64,11 @@ export function CustomSelect({ value, onChange, options, placeholder, className 
       className={mergedClasses}
     >
       {options.map((o) => (
-        <option key={o} value={o}>
+        <option key={o} value={o} className="bg-[#090A0F] text-white">
           {o}
         </option>
       ))}
-      <option value="___custom___">✏️ إضافة خيار مخصص...</option>
+      <option value="___custom___" className="bg-[#090A0F] text-white">✏️ إضافة خيار مخصص...</option>
     </select>
   );
 }

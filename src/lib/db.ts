@@ -67,9 +67,16 @@ export interface MediaItem {
 }
 
 async function api(path: string, options?: RequestInit) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
   const resp = await fetch(`${API}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader,
+      ...options?.headers,
+    },
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));

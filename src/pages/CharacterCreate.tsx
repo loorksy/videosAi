@@ -31,7 +31,7 @@ export default function CharacterCreate() {
   const [clothingColor, setClothingColor] = useState('Default');
   const [backgroundColor, setBackgroundColor] = useState('White');
   const [accessories, setAccessories] = useState('');
-  
+
   const styles = [
     { value: 'Pixar 3D', label: 'بيكسار 3D' },
     { value: 'Anime', label: 'أنمي' },
@@ -92,7 +92,7 @@ export default function CharacterCreate() {
   const startGeneration = async () => {
     if (!name) return;
     setIsProcessing(true);
-    
+
     try {
       let finalDescription = description;
 
@@ -102,14 +102,14 @@ export default function CharacterCreate() {
         finalDescription = await AIService.analyzeCharacter(uploadedImage);
         setDescription(finalDescription);
       }
-      
+
       // Append style and customization to description
       const styledDescription = `${finalDescription}. Art Style: ${style}. Expression: ${expression}. Clothing Style: ${clothing}. Eye Color: ${eyeColor}. Clothing Color: ${clothingColor}. Accessories: ${accessories || 'None'}. Background Color: ${backgroundColor}.`;
 
       // Step 2: Generate Angles
       setStep('generating');
 
-      
+
       // Parallel generation for speed
       const [front, left, right, threeQuarter] = await Promise.all([
         AIService.generateCharacterAngle(styledDescription, 'front'),
@@ -138,13 +138,13 @@ export default function CharacterCreate() {
       images: generatedImages,
       createdAt: Date.now()
     };
-    
+
     await db.saveCharacter(character);
     navigate('/characters');
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-background">
       {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       {/* Header */}
       <div className="flex items-center mb-6 pt-2">
@@ -169,12 +169,12 @@ export default function CharacterCreate() {
           </div>
 
           {/* Mode Toggle */}
-          <div className="flex p-1 bg-slate-100 rounded-xl">
+          <div className="flex p-1 bg-black/40 border border-white/10 backdrop-blur-md rounded-xl">
             <button
               onClick={() => setMode('text')}
               className={cn(
                 "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
-                mode === 'text' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500"
+                mode === 'text' ? "bg-black/20 shadow-sm text-primary/90" : "text-muted-foreground"
               )}
             >
               وصف نصي
@@ -183,7 +183,7 @@ export default function CharacterCreate() {
               onClick={() => setMode('image')}
               className={cn(
                 "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
-                mode === 'image' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500"
+                mode === 'image' ? "bg-black/20 shadow-sm text-primary/90" : "text-muted-foreground"
               )}
             >
               رفع صورة
@@ -192,7 +192,7 @@ export default function CharacterCreate() {
 
           {/* Style Selector */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">نمط الرسم</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">نمط الرسم</label>
             <div className="grid grid-cols-3 gap-2">
               {styles.map((s) => (
                 <button
@@ -200,9 +200,9 @@ export default function CharacterCreate() {
                   onClick={() => setStyle(s.value)}
                   className={cn(
                     "py-2 px-1 text-xs font-medium rounded-lg border transition-all",
-                    style === s.value 
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
-                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
+                    style === s.value
+                      ? "bg-primary/10 border-primary text-primary/80 shadow-sm"
+                      : "bg-black/20 border-white/10 text-muted-foreground/80 hover:border-indigo-200"
                   )}
                 >
                   {s.label}
@@ -214,89 +214,89 @@ export default function CharacterCreate() {
           {/* Customization Selectors */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">تعبير الوجه</label>
-              <select 
-                value={expression} 
+              <label className="block text-sm font-medium text-white/90 mb-2">تعبير الوجه</label>
+              <select
+                value={expression}
                 onChange={(e) => setExpression(e.target.value)}
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-2 border border-white/10 rounded-lg text-sm bg-black/20 outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                {expressions.map(exp => <option key={exp.value} value={exp.value}>{exp.label}</option>)}
+                {expressions.map(exp => <option key={exp.value} value={exp.value} className="bg-[#090A0F] text-white">{exp.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">نمط الملابس</label>
-              <select 
-                value={clothing} 
+              <label className="block text-sm font-medium text-white/90 mb-2">نمط الملابس</label>
+              <select
+                value={clothing}
                 onChange={(e) => setClothing(e.target.value)}
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-2 border border-white/10 rounded-lg text-sm bg-black/20 outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                {clothingStyles.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {clothingStyles.map(c => <option key={c.value} value={c.value} className="bg-[#090A0F] text-white">{c.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">لون العينين</label>
-              <select 
-                value={eyeColor} 
+              <label className="block text-sm font-medium text-white/90 mb-2">لون العينين</label>
+              <select
+                value={eyeColor}
                 onChange={(e) => setEyeColor(e.target.value)}
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-2 border border-white/10 rounded-lg text-sm bg-black/20 outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                {colors.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {colors.map(c => <option key={c.value} value={c.value} className="bg-[#090A0F] text-white">{c.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">لون الملابس</label>
-              <select 
-                value={clothingColor} 
+              <label className="block text-sm font-medium text-white/90 mb-2">لون الملابس</label>
+              <select
+                value={clothingColor}
                 onChange={(e) => setClothingColor(e.target.value)}
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-2 border border-white/10 rounded-lg text-sm bg-black/20 outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                {colors.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {colors.map(c => <option key={c.value} value={c.value} className="bg-[#090A0F] text-white">{c.label}</option>)}
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">لون الخلفية (مفيد للقص لاحقاً)</label>
-              <select 
-                value={backgroundColor} 
+              <label className="block text-sm font-medium text-white/90 mb-2">لون الخلفية (مفيد للقص لاحقاً)</label>
+              <select
+                value={backgroundColor}
                 onChange={(e) => setBackgroundColor(e.target.value)}
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-2 border border-white/10 rounded-lg text-sm bg-black/20 outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                {bgColors.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {bgColors.map(c => <option key={c.value} value={c.value} className="bg-[#090A0F] text-white">{c.label}</option>)}
               </select>
             </div>
           </div>
 
           {/* Accessories Input */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">الإكسسوارات (اختياري)</label>
+            <label className="block text-sm font-medium text-white/90 mb-1">الإكسسوارات (اختياري)</label>
             <input
               type="text"
               value={accessories}
               onChange={(e) => setAccessories(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              className="w-full p-3 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
               placeholder="مثال: نظارات، قبعة، قلادة..."
             />
           </div>
 
           {mode === 'text' ? (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">الوصف</label>
+              <label className="block text-sm font-medium text-white/90 mb-1">الوصف</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl h-32 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                className="w-full p-3 border border-white/10 rounded-xl h-32 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
                 placeholder="صف مظهر الشخصية، الملابس، الألوان..."
               />
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">صورة مرجعية</label>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center relative hover:bg-slate-50 transition-colors">
+              <label className="block text-sm font-medium text-white/90 mb-1">صورة مرجعية</label>
+              <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center relative hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 transition-colors">
                 {uploadedImage ? (
                   <img src={uploadedImage} alt="Preview" className="mx-auto h-48 object-contain rounded-lg" />
                 ) : (
                   <div className="space-y-2">
                     <Upload className="w-8 h-8 mx-auto text-slate-400" />
-                    <p className="text-sm text-slate-500">اضغط لرفع صورة</p>
+                    <p className="text-sm text-muted-foreground">اضغط لرفع صورة</p>
                   </div>
                 )}
                 <input
@@ -323,16 +323,16 @@ export default function CharacterCreate() {
       {(step === 'analyzing' || step === 'generating') && (
         <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 text-center">
           <div className="relative">
-            <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
-            <Loader2 className="w-16 h-16 text-indigo-600 animate-spin relative z-10" />
+            <div className="absolute inset-0 bg-primary/100 blur-xl opacity-20 animate-pulse rounded-full"></div>
+            <Loader2 className="w-16 h-16 text-primary/90 animate-spin relative z-10" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900">
+            <h3 className="text-xl font-bold text-white">
               {step === 'analyzing' ? 'جاري تحليل الصورة...' : 'جاري توليد الشخصية...'}
             </h3>
-            <p className="text-slate-500 mt-2">
-              {step === 'analyzing' 
-                ? 'يقوم Gemini باستخراج السمات البصرية' 
+            <p className="text-muted-foreground mt-2">
+              {step === 'analyzing'
+                ? 'يقوم Gemini باستخراج السمات البصرية'
                 : 'يقوم Nano Banana برسم الزوايا المختلفة'}
             </p>
           </div>
@@ -343,26 +343,26 @@ export default function CharacterCreate() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <span className="text-xs font-medium text-slate-500">أمام</span>
-              <img src={generatedImages.front} className="w-full rounded-xl shadow-sm border border-slate-100" />
+              <span className="text-xs font-medium text-muted-foreground">أمام</span>
+              <img src={generatedImages.front} className="w-full rounded-xl shadow-sm border border-white/5" />
             </div>
             <div className="space-y-2">
-              <span className="text-xs font-medium text-slate-500">جانب أيسر</span>
-              <img src={generatedImages.left} className="w-full rounded-xl shadow-sm border border-slate-100" />
+              <span className="text-xs font-medium text-muted-foreground">جانب أيسر</span>
+              <img src={generatedImages.left} className="w-full rounded-xl shadow-sm border border-white/5" />
             </div>
             <div className="space-y-2">
-              <span className="text-xs font-medium text-slate-500">جانب أيمن</span>
-              <img src={generatedImages.right} className="w-full rounded-xl shadow-sm border border-slate-100" />
+              <span className="text-xs font-medium text-muted-foreground">جانب أيمن</span>
+              <img src={generatedImages.right} className="w-full rounded-xl shadow-sm border border-white/5" />
             </div>
             <div className="space-y-2">
-              <span className="text-xs font-medium text-slate-500">3/4</span>
-              <img src={generatedImages.threeQuarter} className="w-full rounded-xl shadow-sm border border-slate-100" />
+              <span className="text-xs font-medium text-muted-foreground">3/4</span>
+              <img src={generatedImages.threeQuarter} className="w-full rounded-xl shadow-sm border border-white/5" />
             </div>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-xl">
-            <h4 className="font-medium text-sm mb-2 text-slate-900">الوصف المستخرج:</h4>
-            <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
+          <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl">
+            <h4 className="font-medium text-sm mb-2 text-white">الوصف المستخرج:</h4>
+            <p className="text-xs text-muted-foreground/80 leading-relaxed">{description}</p>
           </div>
 
           <button

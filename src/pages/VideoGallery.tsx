@@ -22,7 +22,7 @@ const SOURCE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function VideoGallery() {
-  const [storyboardVideos, setStoryboardVideos] = useState<{storyId: string, title: string, clip: string}[]>([]);
+  const [storyboardVideos, setStoryboardVideos] = useState<{ storyId: string, title: string, clip: string }[]>([]);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('all');
 
@@ -33,7 +33,7 @@ export default function VideoGallery() {
   async function loadAll() {
     // Load storyboard videos
     const storyboards = await db.getAllStoryboards();
-    const allClips: {storyId: string, title: string, clip: string}[] = [];
+    const allClips: { storyId: string, title: string, clip: string }[] = [];
     storyboards.forEach(story => {
       story.scenes.forEach(scene => {
         if (scene.videoClip) {
@@ -84,7 +84,7 @@ export default function VideoGallery() {
   ];
 
   return (
-    <div className="p-4 max-w-lg mx-auto pb-24">
+    <div className="p-4 max-w-7xl mx-auto pb-24">
       <header className="pt-2 mb-5">
         <h1 className="text-xl font-bold text-foreground">المعرض</h1>
         <p className="text-xs text-muted-foreground mt-0.5">جميع المحتوى المولد محفوظ هنا تلقائيا</p>
@@ -96,22 +96,20 @@ export default function VideoGallery() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-              activeTab === tab.key
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.key
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-muted'
-            }`}
+              }`}
           >
             {tab.label}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-              activeTab === tab.key ? 'bg-white/20' : 'bg-muted'
-            }`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-black/20/20' : 'bg-muted'
+              }`}>
               {tab.count}
             </span>
           </button>
         ))}
       </div>
-      
+
       <div className="space-y-4">
         {/* Storyboard Videos (show in 'all' and 'video' tabs) */}
         {(activeTab === 'all' || activeTab === 'video') && storyboardVideos.map((video, idx) => (

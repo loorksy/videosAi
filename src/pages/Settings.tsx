@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, AlertCircle, CheckCircle, XCircle, Loader2, LogOut, Zap, Brain, ImageIcon, Video, Sparkles, Globe } from 'lucide-react';
 import { GeminiService } from '../lib/gemini';
+import { useAuth } from '../context/AuthContext';
 
 interface SettingsPageProps {
   onLogout?: () => void;
@@ -24,7 +25,6 @@ const KIE_VIDEO_MODELS = [
   { value: 'sora2', label: 'Sora 2' },
   { value: 'wan2.5-t2v-preview', label: 'Wan 2.5' },
   { value: 'kling2.6', label: 'Kling 2.6' },
-  { value: 'kling-2.6/motion-control', label: 'Kling 2.6 Motion Control' },
   { value: 'runway', label: 'Runway' },
 ];
 
@@ -50,26 +50,33 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
+  const { token, user } = useAuth();
+
   useEffect(() => {
-    // Load Gemini key from localStorage
-    const storedGemini = localStorage.getItem('GEMINI_API_KEY');
-    if (storedGemini) setGeminiKey(storedGemini);
-
     // Load settings from backend
-    fetch(`${API}/api/settings`)
-      .then(r => r.json())
-      .then(data => {
-        setProvider(data.provider || 'gemini');
-        setTextModel(data.text_model || 'gemini-2.5-flash');
-        setImageModel(data.image_model || 'gemini-3-pro-image-preview');
-        setVideoModel(data.video_model || 'veo3_fast');
+    if (token) {
+      fetch(`${API}/api/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
       })
-      .catch(() => { });
+        .then(r => r.json())
+        .then(data => {
+          if (data) {
+            setProvider(data.provider || 'gemini');
+            setTextModel(data.text_model || 'gemini-2.5-flash');
+            setImageModel(data.image_model || 'gemini-3-pro-image-preview');
+            setVideoModel(data.video_model || 'veo3_fast');
+            setGeminiKey(data.gemini_key || '');
+            setKieKey(data.kie_key || '');
 
-    // Load kie key from localStorage
-    const storedKie = localStorage.getItem('KIE_API_KEY');
-    if (storedKie) setKieKey(storedKie);
-  }, []);
+            // Sync to localStorage
+            localStorage.setItem('AI_PROVIDER', data.provider || 'gemini');
+            if (data.gemini_key) localStorage.setItem('GEMINI_API_KEY', data.gemini_key);
+            if (data.kie_key) localStorage.setItem('KIE_API_KEY', data.kie_key);
+          }
+        })
+        .catch(() => { });
+    }
+  }, [token]);
 
   // When provider changes, reset models to defaults for that provider
   useEffect(() => {
@@ -87,27 +94,29 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const handleSave = async () => {
     setSaving(true);
 
-    // Save Gemini key to localStorage
-    if (geminiKey.trim()) {
-      localStorage.setItem('GEMINI_API_KEY', geminiKey.trim());
-    } else {
-      localStorage.removeItem('GEMINI_API_KEY');
-    }
+    // Always sync keys to localStorage for frontend API classes to use immediately
+    if (geminiKey.trim()) localStorage.setItem('GEMINI_API_KEY', geminiKey.trim());
+    else localStorage.removeItem('GEMINI_API_KEY');
 
-    // Save kie key to localStorage
-    if (kieKey.trim()) {
-      localStorage.setItem('KIE_API_KEY', kieKey.trim());
-    } else {
-      localStorage.removeItem('KIE_API_KEY');
-    }
+    if (kieKey.trim()) localStorage.setItem('KIE_API_KEY', kieKey.trim());
+    else localStorage.removeItem('KIE_API_KEY');
 
-    // Save provider settings + kie key to backend
+    localStorage.setItem('AI_PROVIDER', provider);
+    localStorage.setItem('AI_TEXT_MODEL', textModel);
+    localStorage.setItem('AI_IMAGE_MODEL', imageModel);
+    localStorage.setItem('AI_VIDEO_MODEL', videoModel);
+
+    // Save provider settings + keys to backend
     try {
       await fetch(`${API}/api/settings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({
-          kie_api_key: kieKey.trim() || null,
+          gemini_key: geminiKey.trim() || null,
+          kie_key: kieKey.trim() || null,
           provider,
           text_model: textModel,
           image_model: imageModel,
@@ -117,12 +126,6 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
     } catch (e) {
       console.error('Failed to save settings:', e);
     }
-
-    // Save provider settings to localStorage for frontend services
-    localStorage.setItem('AI_PROVIDER', provider);
-    localStorage.setItem('AI_TEXT_MODEL', textModel);
-    localStorage.setItem('AI_IMAGE_MODEL', imageModel);
-    localStorage.setItem('AI_VIDEO_MODEL', videoModel);
 
     setSaving(false);
     setSaved(true);
@@ -183,7 +186,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const videoModels = KIE_VIDEO_MODELS; // Video always through kie.ai
 
   return (
-    <div className="p-4 max-w-lg mx-auto space-y-5 pb-24" data-testid="settings-page">
+    <div className="p-4 max-w-7xl mx-auto space-y-5 pb-24" data-testid="settings-page">
       <header className="flex items-center gap-3 pt-2">
         <div className="w-10 h-10 bg-primary rounded-xl text-primary-foreground shadow-md shadow-primary/20 flex items-center justify-center">
           <Settings className="w-5 h-5" />
@@ -207,8 +210,8 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
             data-testid="provider-gemini"
             onClick={() => setProvider('gemini')}
             className={`relative p-5 rounded-2xl border-2 text-right transition-all flex flex-col items-start gap-2 shadow-sm ${provider === 'gemini'
-                ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
-                : 'border-border bg-card hover:border-indigo-200 hover:shadow-md'
+              ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
+              : 'border-border bg-card hover:border-indigo-200 hover:shadow-md'
               }`}
           >
             {provider === 'gemini' && (
@@ -239,8 +242,8 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
             data-testid="provider-kie"
             onClick={() => setProvider('kie')}
             className={`relative p-5 rounded-2xl border-2 text-right transition-all flex flex-col items-start gap-2 shadow-sm ${provider === 'kie'
-                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
-                : 'border-border bg-card hover:border-emerald-200 hover:shadow-md'
+              ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
+              : 'border-border bg-card hover:border-emerald-200 hover:shadow-md'
               }`}
           >
             {provider === 'kie' && (
@@ -336,7 +339,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
             className="w-full p-2.5 border border-border rounded-xl bg-secondary/50 text-sm focus:ring-2 focus:ring-ring/30 outline-none"
           >
             {textModels.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
+              <option key={m.value} value={m.value} className="bg-[#090A0F] text-white">{m.label}</option>
             ))}
           </select>
         </div>
@@ -353,7 +356,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
             className="w-full p-2.5 border border-border rounded-xl bg-secondary/50 text-sm focus:ring-2 focus:ring-ring/30 outline-none"
           >
             {imageModels.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
+              <option key={m.value} value={m.value} className="bg-[#090A0F] text-white">{m.label}</option>
             ))}
           </select>
         </div>
@@ -370,7 +373,7 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
             className="w-full p-2.5 border border-border rounded-xl bg-secondary/50 text-sm focus:ring-2 focus:ring-ring/30 outline-none"
           >
             {videoModels.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
+              <option key={m.value} value={m.value} className="bg-[#090A0F] text-white">{m.label}</option>
             ))}
           </select>
         </div>

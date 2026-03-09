@@ -444,7 +444,7 @@ export default function AdCampaignStudio() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-background pb-32 font-sans">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-transparent pb-32 font-sans">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -466,16 +466,16 @@ export default function AdCampaignStudio() {
         <div className="lg:col-span-7 space-y-6">
 
           {/* Brand Profile Section */}
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100/60 transition-all hover:shadow-md">
+          <div className="bg-black/20 p-6 rounded-3xl shadow-sm border border-white/5/60 transition-all hover:shadow-md">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Palette className="w-5 h-5 text-indigo-500" />
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Palette className="w-5 h-5 text-primary" />
                 الهوية البصرية للعلامة التجارية
               </h2>
               <div className="flex items-center gap-2">
                 {savedProfiles.length > 0 && isEditingBrand && (
                   <select
-                    className="text-xs border border-slate-200 rounded-full bg-slate-50 text-slate-700 px-3 py-1.5 outline-none focus:border-indigo-500"
+                    className="text-xs border border-white/10 rounded-full bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 text-white/90 px-3 py-1.5 outline-none focus:border-primary"
                     onChange={(e) => {
                       if (e.target.value) {
                         loadBrandProfile(e.target.value);
@@ -483,16 +483,16 @@ export default function AdCampaignStudio() {
                       }
                     }}
                   >
-                    <option value="">تحميل هوية سابقة...</option>
+                    <option value="" className="bg-[#090A0F] text-white">تحميل هوية سابقة...</option>
                     {savedProfiles.map((p, i) => (
-                      <option key={i} value={p.name}>{p.name}</option>
+                      <option key={i} value={p.name} className="bg-[#090A0F] text-white">{p.name}</option>
                     ))}
                   </select>
                 )}
                 {!isEditingBrand && (
                   <button
                     onClick={() => setIsEditingBrand(true)}
-                    className="text-sm text-indigo-600 font-bold flex items-center gap-1 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full transition-colors"
+                    className="text-sm text-primary/90 font-bold flex items-center gap-1 hover:text-primary/80 bg-primary/10 px-3 py-1.5 rounded-full transition-colors"
                   >
                     <Edit3 className="w-4 h-4" />
                     تعديل الهوية / إنشاء جديدة
@@ -506,17 +506,17 @@ export default function AdCampaignStudio() {
                 {/* Basic Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">اسم العلامة التجارية</label>
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">اسم العلامة التجارية</label>
                     <input
                       type="text"
                       value={brandProfile.name}
                       onChange={(e) => setBrandProfile({ ...brandProfile, name: e.target.value })}
-                      className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                      className="w-full p-3 border border-white/10 rounded-xl text-sm bg-card/40 backdrop-blur-xl shadow-lg border border-white/5/50 focus:bg-black/20 focus:ring-2 focus:ring-indigo-500/20 focus:border-primary outline-none transition-all"
                       placeholder="مثال: مطعم السعادة"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">مجال العمل / الصناعة</label>
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">مجال العمل / الصناعة</label>
                     {!isCustomIndustry ? (
                       <CustomSelect
                         value={brandProfile.industry || industryOptions[0]}
@@ -529,7 +529,7 @@ export default function AdCampaignStudio() {
                           }
                         }}
                         options={industryOptions}
-                        className="p-3 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-indigo-500/20 focus:border-indigo-500 text-sm transition-all"
+                        className="p-3 rounded-xl border-white/10 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5/50 focus:bg-black/20 focus:ring-indigo-500/20 focus:border-primary text-sm transition-all"
                       />
                     ) : (
                       <div className="flex gap-2">
@@ -538,14 +538,14 @@ export default function AdCampaignStudio() {
                           value={customIndustryVal}
                           onChange={(e) => setCustomIndustryVal(e.target.value)}
                           placeholder="اكتب مجالك هنا..."
-                          className="flex-1 p-3 border border-slate-200 rounded-xl text-sm bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                          className="flex-1 p-3 border border-white/10 rounded-xl text-sm bg-card/40 backdrop-blur-xl shadow-lg border border-white/5/50 focus:bg-black/20 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                         />
                         <button
                           onClick={() => {
                             setIsCustomIndustry(false);
                             setBrandProfile({ ...brandProfile, industry: industryOptions[0] });
                           }}
-                          className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 text-sm font-bold"
+                          className="p-3 bg-black/40 border border-white/10 backdrop-blur-md text-muted-foreground/80 rounded-xl hover:bg-slate-200 text-sm font-bold"
                         >
                           إلغاء
                         </button>
@@ -553,14 +553,14 @@ export default function AdCampaignStudio() {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">اللون الأساسي</label>
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">اللون الأساسي</label>
                     <ColorPicker
                       color={brandProfile.primaryColor}
                       onChange={(color) => setBrandProfile({ ...brandProfile, primaryColor: color })}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">اللون الثانوي</label>
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">اللون الثانوي</label>
                     <ColorPicker
                       color={brandProfile.secondaryColor}
                       onChange={(color) => setBrandProfile({ ...brandProfile, secondaryColor: color })}
@@ -569,21 +569,21 @@ export default function AdCampaignStudio() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">الأسلوب البصري (Visual Style)</label>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">الأسلوب البصري (Visual Style)</label>
                   <CustomSelect
                     value={brandProfile.visualStyle}
                     onChange={(val) => setBrandProfile({ ...brandProfile, visualStyle: val })}
                     options={styleOptions}
-                    className="p-3 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-indigo-500/20 focus:border-indigo-500 text-sm transition-all"
+                    className="p-3 rounded-xl border-white/10 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5/50 focus:bg-black/20 focus:ring-indigo-500/20 focus:border-primary text-sm transition-all"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">اختر الأسلوب الذي يعكس شخصية علامتك التجارية بدقة.</p>
                 </div>
 
                 {/* Additional Elements */}
-                <div className="pt-6 border-t border-slate-100 space-y-5">
+                <div className="pt-6 border-t border-white/5 space-y-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      <Layout className="w-4 h-4 text-indigo-500" />
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Layout className="w-4 h-4 text-primary" />
                       محتوى الإعلان الثابت
                     </h3>
                     <button
@@ -765,7 +765,7 @@ export default function AdCampaignStudio() {
                     {brandProfile.smallText && <span className="text-[11px] bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-600 font-medium">نص صغير</span>}
                     {brandProfile.phoneNumber && <span className="text-[11px] bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-600 font-medium">هاتف</span>}
                     {brandProfile.logoBase64 && <span className="text-[11px] bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-600 font-medium">شعار</span>}
-                    {brandProfile.language && <span className="text-[11px] bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg text-indigo-700 font-medium">{brandProfile.language.split(' ')[0]}</span>}
+                    {brandProfile.language && <span className="text-[11px] bg-indigo-50 border border-primary/20 px-2.5 py-1 rounded-lg text-indigo-700 font-medium">{brandProfile.language.split(' ')[0]}</span>}
                   </div>
                 )}
               </div>
@@ -829,7 +829,7 @@ export default function AdCampaignStudio() {
                     <button
                       onClick={improveIdea}
                       disabled={isImprovingIdea || !postTopic.trim()}
-                      className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md font-bold flex items-center gap-1 hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+                      className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md font-bold flex items-center gap-1 hover:bg-primary/20 disabled:opacity-50 transition-colors"
                     >
                       {isImprovingIdea ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                       تحسين الفكرة (AI)
@@ -894,9 +894,9 @@ export default function AdCampaignStudio() {
                           onChange={(e) => setSelectedCharacterId(e.target.value)}
                           className="w-full p-3 pr-10 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all appearance-none"
                         >
-                          <option value="">بدون شخصية (اختياري)</option>
+                          <option value="" className="bg-[#090A0F] text-white">بدون شخصية (اختياري)</option>
                           {characters.map(char => (
-                            <option key={char.id} value={char.id}>{char.name} ({char.type})</option>
+                            <option key={char.id} value={char.id} className="bg-[#090A0F] text-white">{char.name} ({char.type})</option>
                           ))}
                         </select>
                       </div>
@@ -934,7 +934,7 @@ export default function AdCampaignStudio() {
                   <button
                     onClick={saveToGallery}
                     disabled={isSavingToGallery}
-                    className="text-[10px] bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider hover:bg-indigo-200 transition-colors flex items-center gap-1 disabled:opacity-50"
+                    className="text-[10px] bg-primary/20 text-indigo-700 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider hover:bg-indigo-200 transition-colors flex items-center gap-1 disabled:opacity-50"
                   >
                     {isSavingToGallery ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                     حفظ في المعرض

@@ -384,7 +384,7 @@ export default function ThumbnailCreate() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-transparent pb-32">
       {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       {/* Hidden File Input */}
       <input
@@ -408,7 +408,7 @@ export default function ThumbnailCreate() {
           <ChevronRight className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold mr-2 flex items-center gap-2 text-foreground">
-          <Youtube className="w-5 h-5 text-red-600" />
+          <Youtube className="w-5 h-5 text-accent" />
           صورة مصغرة (Thumbnail)
         </h1>
       </div>
@@ -417,12 +417,12 @@ export default function ThumbnailCreate() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
 
           {/* Mode Toggle */}
-          <div className="flex bg-slate-100 p-1.5 rounded-xl">
+          <div className="flex bg-black/40 border border-white/10 backdrop-blur-md p-1.5 rounded-xl">
             <button
               onClick={() => setMode('create')}
               className={cn(
                 "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1",
-                mode === 'create' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
+                mode === 'create' ? "bg-black/20 shadow-sm text-accent" : "text-muted-foreground hover:text-white/90"
               )}
             >
               <Sparkles className="w-3 h-3" />
@@ -432,7 +432,7 @@ export default function ThumbnailCreate() {
               onClick={() => setMode('from_story' as any)}
               className={cn(
                 "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1",
-                mode === 'from_story' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
+                mode === 'from_story' ? "bg-black/20 shadow-sm text-accent" : "text-muted-foreground hover:text-white/90"
               )}
             >
               <BookOpen className="w-3 h-3" />
@@ -442,7 +442,7 @@ export default function ThumbnailCreate() {
               onClick={() => setMode('enhance')}
               className={cn(
                 "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1",
-                mode === 'enhance' ? "bg-white shadow-sm text-red-600" : "text-slate-500 hover:text-slate-700"
+                mode === 'enhance' ? "bg-black/20 shadow-sm text-accent" : "text-muted-foreground hover:text-white/90"
               )}
             >
               <Wand2 className="w-3 h-3" />
@@ -450,7 +450,7 @@ export default function ThumbnailCreate() {
             </button>
           </div>
 
-          <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-sm text-red-800 leading-relaxed">
+          <div className="bg-accent/10 border border-accent/20 p-4 rounded-xl text-sm text-white leading-relaxed">
             {mode === 'create'
               ? "صمم صورة مصغرة جذابة (Clickbait) لفيديو اليوتيوب الخاص بك."
               : mode === 'from_story'
@@ -461,13 +461,13 @@ export default function ThumbnailCreate() {
           <div className="space-y-6">
             {/* Story Selection (From Story Mode) */}
             {mode === 'from_story' && (
-              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-3">
-                <label className="block text-sm font-bold text-indigo-800 flex items-center gap-2">
+              <div className="bg-primary/10 p-4 rounded-xl border border-primary/20 space-y-3">
+                <label className="block text-sm font-bold text-primary flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   اختر القصة
                 </label>
                 {storyboards.length === 0 ? (
-                  <p className="text-xs text-slate-500">لا توجد قصص محفوظة. أنشئ قصة أولاً.</p>
+                  <p className="text-xs text-muted-foreground">لا توجد قصص محفوظة. أنشئ قصة أولاً.</p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {storyboards.map(sb => (
@@ -477,19 +477,19 @@ export default function ThumbnailCreate() {
                         className={cn(
                           "w-full text-right p-3 rounded-lg border transition-all text-sm",
                           selectedStoryId === sb.id
-                            ? "border-indigo-500 bg-indigo-100 text-indigo-800 font-bold"
-                            : "border-slate-200 bg-white hover:border-indigo-300 text-slate-700"
+                            ? "border-primary bg-primary/20 text-primary font-bold"
+                            : "border-white/10 bg-black/20 hover:border-primary/30 text-white/90"
                         )}
                       >
                         <div className="font-medium">{sb.title}</div>
-                        <div className="text-xs text-slate-500 mt-1">{sb.scenes.length} مشهد</div>
+                        <div className="text-xs text-muted-foreground mt-1">{sb.scenes.length} مشهد</div>
                       </button>
                     ))}
                   </div>
                 )}
 
                 {isAnalyzingStory && (
-                  <div className="flex items-center gap-2 text-xs text-indigo-600 py-2">
+                  <div className="flex items-center gap-2 text-xs text-primary/90 py-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     جاري تحليل القصة وتوليد البيانات...
                   </div>
@@ -497,29 +497,29 @@ export default function ThumbnailCreate() {
 
                 {/* Story Metadata Output */}
                 {storyMetadata && (
-                  <div className="space-y-3 bg-white p-4 rounded-lg border border-indigo-100">
+                  <div className="space-y-3 bg-black/20 p-4 rounded-lg border border-primary/20">
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-bold text-slate-700">عنوان الفيديو (Hook)</label>
-                        <button onClick={() => copyText(storyMetadata.videoTitle)} className="text-xs text-indigo-600 flex items-center gap-1">
+                        <label className="text-xs font-bold text-white/90">عنوان الفيديو (Hook)</label>
+                        <button onClick={() => copyText(storyMetadata.videoTitle)} className="text-xs text-primary/90 flex items-center gap-1">
                           <Copy className="w-3 h-3" /> نسخ
                         </button>
                       </div>
-                      <p className="text-sm text-slate-800 bg-yellow-50 p-2 rounded border border-yellow-100 font-medium">{storyMetadata.videoTitle}</p>
+                      <p className="text-sm text-white bg-yellow-50 p-2 rounded border border-yellow-100 font-medium">{storyMetadata.videoTitle}</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-bold text-slate-700">وصف الفيديو</label>
-                        <button onClick={() => copyText(storyMetadata.videoDescription)} className="text-xs text-indigo-600 flex items-center gap-1">
+                        <label className="text-xs font-bold text-white/90">وصف الفيديو</label>
+                        <button onClick={() => copyText(storyMetadata.videoDescription)} className="text-xs text-primary/90 flex items-center gap-1">
                           <Copy className="w-3 h-3" /> نسخ
                         </button>
                       </div>
-                      <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap leading-relaxed">{storyMetadata.videoDescription}</p>
+                      <p className="text-xs text-muted-foreground/80 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-2 rounded border border-white/5 whitespace-pre-wrap leading-relaxed">{storyMetadata.videoDescription}</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1"><Hash className="w-3 h-3" /> هاشتاقات</label>
-                        <button onClick={() => copyText(storyMetadata.hashtags)} className="text-xs text-indigo-600 flex items-center gap-1">
+                        <label className="text-xs font-bold text-white/90 flex items-center gap-1"><Hash className="w-3 h-3" /> هاشتاقات</label>
+                        <button onClick={() => copyText(storyMetadata.hashtags)} className="text-xs text-primary/90 flex items-center gap-1">
                           <Copy className="w-3 h-3" /> نسخ
                         </button>
                       </div>
@@ -532,19 +532,19 @@ export default function ThumbnailCreate() {
 
             {/* Base Thumbnail Upload (Enhance Mode Only) */}
             {mode === 'enhance' && (
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                <label className="block text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-indigo-500" />
+              <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl border border-white/5 space-y-4">
+                <label className="block text-sm font-bold text-white/90 flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-primary" />
                   صورة الأساس (مطلوب)
                 </label>
                 {baseThumbnail ? (
                   <div className="space-y-4">
-                    <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-indigo-500 shadow-md group">
+                    <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-primary shadow-md group">
                       <img src={baseThumbnail} alt="Base Thumbnail" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <button
                           onClick={() => baseThumbInputRef.current?.click()}
-                          className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold text-sm shadow-lg hover:bg-slate-50"
+                          className="bg-black/20 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5"
                         >
                           تغيير الصورة
                         </button>
@@ -552,27 +552,27 @@ export default function ThumbnailCreate() {
                     </div>
 
                     {/* Analysis Section */}
-                    <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm animate-in fade-in slide-in-from-top-2">
-                      <h4 className="font-bold text-indigo-900 mb-3 flex items-center gap-2 text-sm">
-                        <Sparkles className="w-4 h-4 text-indigo-500" />
+                    <div className="bg-black/20 p-4 rounded-lg border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2">
+                      <h4 className="font-bold text-white mb-3 flex items-center gap-2 text-sm">
+                        <Sparkles className="w-4 h-4 text-primary" />
                         تحليل الذكاء الاصطناعي
                       </h4>
                       {analysisLoading ? (
-                        <div className="flex items-center gap-3 text-slate-500 text-xs p-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                        <div className="flex items-center gap-3 text-muted-foreground text-xs p-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
                           جاري تحليل الصورة واقتراح تحسينات...
                         </div>
                       ) : thumbnailAnalysis ? (
                         <div className="space-y-3">
-                          <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap p-3 bg-indigo-50/50 rounded-md border border-indigo-50">
-                            <span className="font-bold block mb-1 text-indigo-900">التقييم:</span>
+                          <div className="text-xs text-white/90 leading-relaxed whitespace-pre-wrap p-3 bg-primary/10/50 rounded-md border border-indigo-50">
+                            <span className="font-bold block mb-1 text-white">التقييم:</span>
                             {thumbnailAnalysis.critique}
                           </div>
 
-                          <div className="text-xs text-slate-600 space-y-2 p-2 bg-slate-50 rounded-md border border-slate-100">
-                            <p><span className="font-bold text-slate-800">عناصر مقترحة:</span> {thumbnailAnalysis.suggestedElements}</p>
-                            <p><span className="font-bold text-slate-800">نص مقترح:</span> {thumbnailAnalysis.suggestedText}</p>
-                            <p><span className="font-bold text-slate-800">أسلوب مقترح:</span> {thumbnailAnalysis.suggestedStyle}</p>
+                          <div className="text-xs text-muted-foreground/80 space-y-2 p-2 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 rounded-md border border-white/5">
+                            <p><span className="font-bold text-white">عناصر مقترحة:</span> {thumbnailAnalysis.suggestedElements}</p>
+                            <p><span className="font-bold text-white">نص مقترح:</span> {thumbnailAnalysis.suggestedText}</p>
+                            <p><span className="font-bold text-white">أسلوب مقترح:</span> {thumbnailAnalysis.suggestedStyle}</p>
                           </div>
 
                           <button
@@ -581,7 +581,7 @@ export default function ThumbnailCreate() {
                               setImageText(thumbnailAnalysis.suggestedText);
                               setStyle(thumbnailAnalysis.suggestedStyle);
                             }}
-                            className="w-full py-2.5 bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs hover:bg-indigo-200 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                            className="w-full py-2.5 bg-primary/20 text-primary/80 rounded-lg font-bold text-xs hover:bg-primary/30 transition-colors flex items-center justify-center gap-2 shadow-sm"
                           >
                             <Wand2 className="w-4 h-4" />
                             تطبيق التحسينات المقترحة
@@ -593,7 +593,7 @@ export default function ThumbnailCreate() {
                 ) : (
                   <button
                     onClick={() => baseThumbInputRef.current?.click()}
-                    className="w-full aspect-video rounded-xl border-2 border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-indigo-400 transition-all flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-indigo-600"
+                    className="w-full aspect-video rounded-xl border-2 border-dashed border-white/20 bg-black/20 hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-3 text-muted-foreground hover:text-primary/90"
                   >
                     <Upload className="w-8 h-8" />
                     <span className="font-medium">اضغط لرفع الصورة المصغرة</span>
@@ -604,10 +604,10 @@ export default function ThumbnailCreate() {
             )}
 
             {/* Character Selection */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl border border-white/5">
               <div className="flex justify-between items-center mb-4">
-                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-indigo-500" />
+                <label className="text-sm font-bold text-white/90 flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-primary" />
                   الشخصيات (يمكنك اختيار أكثر من واحدة)
                 </label>
               </div>
@@ -617,7 +617,7 @@ export default function ThumbnailCreate() {
                 <div className="flex flex-col items-center gap-2 flex-shrink-0 w-20 snap-center">
                   <button
                     onClick={() => triggerUpload('character')}
-                    className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-indigo-400 transition-all flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-indigo-600 group"
+                    className="w-20 h-20 rounded-xl border-2 border-dashed border-white/20 bg-black/20 hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary/90 group"
                   >
                     <Upload className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
                     <span className="text-[10px] font-medium">رفع صورة</span>
@@ -627,15 +627,15 @@ export default function ThumbnailCreate() {
                 {/* Uploaded Characters */}
                 {uploadedImages.filter(img => img.type === 'character').map(img => (
                   <div key={img.id} className="flex flex-col items-center gap-2 flex-shrink-0 w-20 snap-center">
-                    <div className="relative w-20 h-20 rounded-xl border-2 border-indigo-500 shadow-md group">
+                    <div className="relative w-20 h-20 rounded-xl border-2 border-primary shadow-md group">
                       <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover rounded-lg" />
                       <button
                         onClick={() => removeUploadedImage(img.id)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
+                        className="absolute -top-2 -right-2 bg-accent/100 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
                       >
                         <X className="w-3 h-3" />
                       </button>
-                      <div className="absolute -top-2 -left-2 bg-indigo-500 text-white rounded-full p-1 shadow-sm z-10">
+                      <div className="absolute -top-2 -left-2 bg-primary/100 text-white rounded-full p-1 shadow-sm z-10">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
@@ -647,7 +647,7 @@ export default function ThumbnailCreate() {
                       onChange={(e) => {
                         setUploadedImages(prev => prev.map(p => p.id === img.id ? { ...p, name: e.target.value } : p));
                       }}
-                      className="text-[10px] text-center border border-slate-200 rounded px-1 py-1 w-full focus:ring-1 focus:ring-indigo-500 outline-none"
+                      className="text-[10px] text-center border border-white/10 rounded px-1 py-1 w-full focus:ring-1 focus:ring-primary/50 outline-none"
                       placeholder="اسم الشخصية"
                     />
                   </div>
@@ -663,15 +663,15 @@ export default function ThumbnailCreate() {
                         className={cn(
                           "w-20 h-20 rounded-xl border-2 overflow-hidden transition-all relative group",
                           isSelected
-                            ? "border-indigo-500 shadow-md ring-2 ring-indigo-500/20 ring-offset-1"
-                            : "border-slate-200 hover:border-indigo-300 hover:shadow-sm opacity-80 hover:opacity-100"
+                            ? "border-primary shadow-md ring-2 ring-primary/50/20 ring-offset-1"
+                            : "border-white/10 hover:border-primary/30 hover:shadow-sm opacity-80 hover:opacity-100"
                         )}
                       >
                         <img src={char.images.front} alt={char.name} className="w-full h-full object-cover" />
                         {isSelected && (
                           <>
-                            <div className="absolute inset-0 bg-indigo-500/10 transition-colors"></div>
-                            <div className="absolute -top-2 -left-2 bg-indigo-500 text-white rounded-full p-1 shadow-sm">
+                            <div className="absolute inset-0 bg-primary/100/10 transition-colors"></div>
+                            <div className="absolute -top-2 -left-2 bg-primary/100 text-white rounded-full p-1 shadow-sm">
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
@@ -679,7 +679,7 @@ export default function ThumbnailCreate() {
                           </>
                         )}
                       </button>
-                      <span className="text-[10px] text-slate-600 truncate w-full text-center font-medium px-1" title={char.name}>
+                      <span className="text-[10px] text-muted-foreground/80 truncate w-full text-center font-medium px-1" title={char.name}>
                         {char.name}
                       </span>
                     </div>
@@ -689,42 +689,42 @@ export default function ThumbnailCreate() {
             </div>
 
             {/* Text in Image */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <label className="block text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">
-                <TypeIcon className="w-4 h-4 text-indigo-500" />
+            <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl border border-white/5">
+              <label className="block text-sm font-bold text-white/90 mb-1 flex items-center gap-2">
+                <TypeIcon className="w-4 h-4 text-primary" />
                 النص المكتوب في الصورة (اختياري)
               </label>
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-xs text-muted-foreground mb-3">
                 {mode === 'enhance' ? 'سيتم استبدال النص القديم في الصورة بهذا النص.' : 'سيتم كتابة هذا النص بخط يوتيوب عريض ومجسم.'}
               </p>
               <input
                 type="text"
                 value={imageText}
                 onChange={(e) => setImageText(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-3 border border-white/10 rounded-xl text-sm bg-black/20 outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="مثال: لن تصدق ما حدث! 😱"
               />
             </div>
 
             {mode === 'create' && (
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">فكرة الفيديو / العنوان</label>
+                <label className="block text-sm font-bold text-white/90 mb-1">فكرة الفيديو / العنوان</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full p-3 border border-white/10 rounded-xl text-sm bg-black/20 outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="مثال: كيف ربحت مليون دولار في يومين..."
                 />
               </div>
             )}
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl border border-white/5">
               <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-bold text-slate-700">عناصر إضافية في الصورة</label>
+                <label className="text-sm font-bold text-white/90">عناصر إضافية في الصورة</label>
                 <button
                   onClick={() => triggerUpload('element')}
-                  className="text-xs bg-white border border-slate-200 px-2 py-1 rounded-md shadow-sm hover:bg-slate-50 flex items-center gap-1 text-slate-600"
+                  className="text-xs bg-black/20 border border-white/10 px-2 py-1 rounded-md shadow-sm hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 flex items-center gap-1 text-muted-foreground/80"
                 >
                   <Upload className="w-3 h-3" /> رفع عنصر
                 </button>
@@ -734,7 +734,7 @@ export default function ThumbnailCreate() {
               {uploadedImages.filter(img => img.type === 'element').length > 0 && (
                 <div className="flex gap-2 flex-wrap mb-3">
                   {uploadedImages.filter(img => img.type === 'element').map(img => (
-                    <div key={img.id} className="relative flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-1 pr-2 shadow-sm">
+                    <div key={img.id} className="relative flex items-center gap-2 bg-black/20 border border-white/10 rounded-lg p-1 pr-2 shadow-sm">
                       <img src={img.dataUrl} alt={img.name} className="w-8 h-8 object-cover rounded-md" />
                       <input
                         type="text"
@@ -745,7 +745,7 @@ export default function ThumbnailCreate() {
                         className="text-xs outline-none w-20 bg-transparent"
                         placeholder="اسم العنصر"
                       />
-                      <button onClick={() => removeUploadedImage(img.id)} className="text-slate-400 hover:text-red-500">
+                      <button onClick={() => removeUploadedImage(img.id)} className="text-slate-400 hover:text-accent">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -757,14 +757,14 @@ export default function ThumbnailCreate() {
                 type="text"
                 value={elements}
                 onChange={(e) => setElements(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-3 border border-white/10 rounded-xl text-sm bg-black/20 outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="مثال: حقائب أموال تتطاير، سهم أحمر صاعد..."
               />
             </div>
 
             {mode !== 'from_story' && (
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">أسلوب التصميم (ستايل القناة)</label>
+                <label className="block text-sm font-bold text-white/90 mb-1">أسلوب التصميم (ستايل القناة)</label>
                 <CustomSelect
                   value={style}
                   onChange={setStyle}
@@ -776,12 +776,12 @@ export default function ThumbnailCreate() {
 
             {mode === 'create' && (
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">الخلفية</label>
+                <label className="block text-sm font-bold text-white/90 mb-1">الخلفية</label>
                 <input
                   type="text"
                   value={background}
                   onChange={(e) => setBackground(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full p-3 border border-white/10 rounded-xl text-sm bg-black/20 outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="مثال: غرفة مظلمة مع إضاءة نيون ��رقاء..."
                 />
               </div>
@@ -790,26 +790,26 @@ export default function ThumbnailCreate() {
             {mode !== 'from_story' && (
               <div className="space-y-3 mt-6">
                 <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="font-bold text-slate-800">إعدادات متقدمة والهوية البصرية</h3>
+                  <h3 className="font-bold text-white">إعدادات متقدمة والهوية البصرية</h3>
                   <div className="flex gap-2">
                     {savedIdentities.length > 0 && (
                       <select
-                        className="text-xs border-slate-200 rounded-md bg-white text-slate-700 px-2 py-1 outline-none focus:border-red-500"
+                        className="text-xs border-white/10 rounded-md bg-black/20 text-white/90 px-2 py-1 outline-none focus:border-red-500"
                         onChange={(e) => {
                           const id = savedIdentities.find(s => s.name === e.target.value);
                           if (id) loadIdentity(id);
                           e.target.value = '';
                         }}
                       >
-                        <option value="">تحميل هوية محفوظة...</option>
+                        <option value="" className="bg-[#090A0F] text-white">تحميل هوية محفوظة...</option>
                         {savedIdentities.map((id: any, i: number) => (
-                          <option key={i} value={id.name}>{id.name}</option>
+                          <option key={i} value={id.name} className="bg-[#090A0F] text-white">{id.name}</option>
                         ))}
                       </select>
                     )}
                     <button
                       onClick={saveIdentity}
-                      className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1 rounded-md font-medium flex items-center gap-1 transition-colors"
+                      className="text-xs bg-primary/10 text-primary/80 hover:bg-primary/20 px-3 py-1 rounded-md font-medium flex items-center gap-1 transition-colors"
                     >
                       <Save className="w-3 h-3" />
                       حفظ الهوية
@@ -818,30 +818,30 @@ export default function ThumbnailCreate() {
                 </div>
 
                 {/* Video & Channel Settings */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="border border-white/10 rounded-lg overflow-hidden">
                   <button
                     onClick={() => setOpenSection(openSection === 'video' ? '' as any : 'video')}
-                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    className="w-full flex items-center justify-between p-3 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 hover:bg-black/40 border border-white/10 backdrop-blur-md transition-colors"
                   >
-                    <span className="font-bold text-sm text-slate-700">إعدادات القناة والفيديو</span>
+                    <span className="font-bold text-sm text-white/90">إعدادات القناة والفيديو</span>
                     {openSection === 'video' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                   {openSection === 'video' && (
-                    <div className="p-4 bg-white space-y-4">
+                    <div className="p-4 bg-black/20 space-y-4">
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">نيش القناة (Niche)</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">نيش القناة (Niche)</label>
                         <CustomSelect value={channelNiche} onChange={setChannelNiche} options={channelNiches} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">نوع الفيديو</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">نوع الفيديو</label>
                         <CustomSelect value={videoType} onChange={setVideoType} options={videoTypes} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">ألوان الهوية البصرية (Brand Colors)</label>
+                        <label className="block text-sm font-bold text-white/90 mb-2">ألوان الهوية البصرية (Brand Colors)</label>
                         <ColorPicker color={brandColor} onChange={setBrandColor} />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">أبعاد الصورة</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">أبعاد الصورة</label>
                         <CustomSelect value={aspectRatio} onChange={setAspectRatio} options={aspectRatios} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                     </div>
@@ -849,42 +849,42 @@ export default function ThumbnailCreate() {
                 </div>
 
                 {/* Character Settings */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="border border-white/10 rounded-lg overflow-hidden">
                   <button
                     onClick={() => setOpenSection(openSection === 'character' ? '' as any : 'character')}
-                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    className="w-full flex items-center justify-between p-3 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 hover:bg-black/40 border border-white/10 backdrop-blur-md transition-colors"
                   >
-                    <span className="font-bold text-sm text-slate-700">إعدادات الشخصية (إذا وجدت)</span>
+                    <span className="font-bold text-sm text-white/90">إعدادات الشخصية (إذا وجدت)</span>
                     {openSection === 'character' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                   {openSection === 'character' && (
-                    <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-black/20 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">تعابير الوجه</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">تعابير الوجه</label>
                         <CustomSelect value={facialExpression} onChange={setFacialExpression} options={['', ...facialExpressions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">المشاعر</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">المشاعر</label>
                         <CustomSelect value={emotion} onChange={setEmotion} options={['', ...emotions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">تعابير العيون</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">تعابير العيون</label>
                         <CustomSelect value={eyeExpression} onChange={setEyeExpression} options={['', ...eyeExpressions]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">لون العيون</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">لون العيون</label>
                         <CustomSelect value={eyeColor} onChange={setEyeColor} options={['', ...eyeColors]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">شكل الرأس</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">شكل الرأس</label>
                         <CustomSelect value={headShape} onChange={setHeadShape} options={['', ...headShapes]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">شكل الجسم</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">شكل الجسم</label>
                         <CustomSelect value={bodyShape} onChange={setBodyShape} options={['', ...bodyShapes]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-slate-700 mb-1">وضع الجسم (Pose)</label>
+                        <label className="block text-sm font-bold text-white/90 mb-1">وضع الجسم (Pose)</label>
                         <CustomSelect value={bodyPose} onChange={setBodyPose} options={['', ...bodyPoses]} placeholder="اختر أو اترك فارغاً" className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-red-500" />
                       </div>
                     </div>
@@ -897,10 +897,10 @@ export default function ThumbnailCreate() {
           <button
             onClick={startGeneration}
             disabled={mode === 'from_story' && (!selectedStoryId || isAnalyzingStory || !storyMetadata)}
-            className="w-full py-4 bg-red-600 text-white rounded-xl font-bold shadow-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-8"
+            className="w-full py-4 bg-gradient-to-r from-primary to-accent text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] mt-8 group relative overflow-hidden"
           >
-            {mode === 'enhance' ? <Wand2 className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-            <span>{mode === 'from_story' ? 'توليد صورة مصغرة للقصة' : mode === 'enhance' ? 'تحسين الصورة المصغرة' : 'توليد الصورة المصغرة'}</span>
+            {mode === 'enhance' ? <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" /> : <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
+            <span>{mode === 'from_story' ? 'توليد السحر: صورة مصغرة للقصة' : mode === 'enhance' ? 'تفعيل سحر التحسين' : 'إطلاق سحر التصميم'}</span>
           </button>
         </div>
       )}
@@ -908,12 +908,12 @@ export default function ThumbnailCreate() {
       {step === 'generating' && (
         <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 text-center">
           <div className="relative">
-            <div className="absolute inset-0 bg-red-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
-            <Loader2 className="w-16 h-16 text-red-600 animate-spin relative z-10" />
+            <div className="absolute inset-0 bg-accent/100 blur-xl opacity-20 animate-pulse rounded-full"></div>
+            <Loader2 className="w-16 h-16 text-accent animate-spin relative z-10" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900">جاري تصميم الـ Thumbnail...</h3>
-            <p className="text-slate-500 mt-2">نطبق أساليب القنوات المشهورة لجذب المشاهدات</p>
+            <h3 className="text-xl font-bold text-white">جاري تصميم الـ Thumbnail...</h3>
+            <p className="text-muted-foreground mt-2">نطبق أساليب القنوات المشهورة لجذب المشاهدات</p>
           </div>
         </div>
       )}
@@ -926,46 +926,46 @@ export default function ThumbnailCreate() {
               تم حفظ الصورة تلقائيا في المعرض
             </div>
           )}
-          <div className="aspect-video rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100">
+          <div className="aspect-video rounded-2xl overflow-hidden shadow-xl border border-white/10 bg-black/40 border border-white/10 backdrop-blur-md">
             <img src={generatedImage} className="w-full h-full object-cover" alt="Generated Thumbnail" />
           </div>
 
           {/* Show metadata for from_story mode */}
           {mode === 'from_story' && storyMetadata && (
-            <div className="space-y-3 bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+            <div className="space-y-3 bg-black/20 p-4 rounded-xl border border-primary/20 shadow-sm">
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-slate-700">عنوان الفيديو (Hook)</label>
-                  <button onClick={() => copyText(storyMetadata.videoTitle)} className="text-xs text-indigo-600 flex items-center gap-1">
+                  <label className="text-xs font-bold text-white/90">عنوان الفيديو (Hook)</label>
+                  <button onClick={() => copyText(storyMetadata.videoTitle)} className="text-xs text-primary/90 flex items-center gap-1">
                     <Copy className="w-3 h-3" /> نسخ
                   </button>
                 </div>
-                <p className="text-sm text-slate-800 bg-yellow-50 p-2 rounded border border-yellow-100 font-medium">{storyMetadata.videoTitle}</p>
+                <p className="text-sm text-white bg-yellow-50 p-2 rounded border border-yellow-100 font-medium">{storyMetadata.videoTitle}</p>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-slate-700">وصف الفيديو</label>
-                  <button onClick={() => copyText(storyMetadata.videoDescription)} className="text-xs text-indigo-600 flex items-center gap-1">
+                  <label className="text-xs font-bold text-white/90">وصف الفيديو</label>
+                  <button onClick={() => copyText(storyMetadata.videoDescription)} className="text-xs text-primary/90 flex items-center gap-1">
                     <Copy className="w-3 h-3" /> نسخ
                   </button>
                 </div>
-                <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap leading-relaxed">{storyMetadata.videoDescription}</p>
+                <p className="text-xs text-muted-foreground/80 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-2 rounded border border-white/5 whitespace-pre-wrap leading-relaxed">{storyMetadata.videoDescription}</p>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1"><Hash className="w-3 h-3" /> هاشتاقات</label>
-                  <button onClick={() => copyText(storyMetadata.hashtags)} className="text-xs text-indigo-600 flex items-center gap-1">
+                  <label className="text-xs font-bold text-white/90 flex items-center gap-1"><Hash className="w-3 h-3" /> هاشتاقات</label>
+                  <button onClick={() => copyText(storyMetadata.hashtags)} className="text-xs text-primary/90 flex items-center gap-1">
                     <Copy className="w-3 h-3" /> نسخ
                   </button>
                 </div>
-                <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100">{storyMetadata.hashtags}</p>
+                <p className="text-xs text-secondary-foreground bg-secondary/50 p-3 rounded-xl border border-white/5">{storyMetadata.hashtags}</p>
               </div>
             </div>
           )}
 
-          <div className="bg-slate-50 p-4 rounded-xl">
-            <h4 className="font-medium text-sm mb-2 text-slate-900">تفاصيل التصميم:</h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+          <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl">
+            <h4 className="font-medium text-sm mb-2 text-white">تفاصيل التصميم:</h4>
+            <p className="text-xs text-muted-foreground/80 leading-relaxed">
               الأسلوب: {style.split(' (')[0]}<br />
               العناصر: {elements || 'بدون'}<br />
               الخلفية: {background}
@@ -975,15 +975,15 @@ export default function ThumbnailCreate() {
           <div className="flex flex-col gap-3 pb-8">
             <button
               onClick={downloadImage}
-              className="w-full py-4 bg-red-600 text-white rounded-xl font-bold shadow-lg hover:bg-red-700 flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-4 bg-gradient-to-r from-primary to-accent text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] transition-all active:scale-[0.98] group relative overflow-hidden"
             >
-              <Download className="w-5 h-5" />
-              <span>تنزيل الصورة (16:9)</span>
+              <Download className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
+              <span>تنزيل الصورة المختارة (16:9)</span>
             </button>
             <button
               onClick={startGeneration}
               disabled={isProcessing}
-              className="w-full py-3 bg-red-50 text-red-700 rounded-xl font-bold shadow-sm hover:bg-red-100 flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-3 bg-accent/10 text-red-700 rounded-xl font-bold shadow-sm hover:bg-accent/20 flex items-center justify-center gap-2 transition-colors"
             >
               <RefreshCw className="w-5 h-5" />
               <span>إعادة توليد بنتيجة مختلفة</span>

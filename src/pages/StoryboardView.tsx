@@ -101,7 +101,7 @@ export default function StoryboardView() {
     const videoUrls = storyboard.scenes
       .filter(s => s.videoClip)
       .map(s => s.videoClip!);
-    
+
     if (videoUrls.length === 0) {
       alert('لا توجد فيديوهات لدمجها');
       return;
@@ -130,7 +130,7 @@ export default function StoryboardView() {
 
     const newScenes = [...storyboard.scenes];
     const tasks: { idx: number; taskId: string }[] = [];
-    
+
     try {
       // Step 1: Submit all video generation tasks
       for (let i = 0; i < newScenes.length - 1; i++) {
@@ -213,7 +213,7 @@ export default function StoryboardView() {
   const generateImageForScene = async (sceneIndex: number) => {
     if (!storyboard) return;
     const scene = storyboard.scenes[sceneIndex];
-    
+
     setIsGenerating(true);
     setCurrentGeneratingIndex(sceneIndex);
     setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'generating' }));
@@ -241,10 +241,10 @@ export default function StoryboardView() {
         referenceImages,
         storyboard.aspectRatio || '16:9'
       );
-      
+
       const newScenes = [...storyboard.scenes];
       newScenes[sceneIndex].frameImage = imageUrl;
-      
+
       const updatedStoryboard = { ...storyboard, scenes: newScenes };
       setStoryboard(updatedStoryboard);
       await db.saveStoryboard(updatedStoryboard);
@@ -269,12 +269,12 @@ export default function StoryboardView() {
       // Alternate voices based on index for variety, or let user choose.
       const voices = ['Zephyr', 'Kore', 'Puck', 'Charon', 'Fenrir'];
       const voiceName = voices[sceneIndex % voices.length];
-      
+
       const audioUrl = await AIService.generateVoiceover(scene.dialogue, voiceName);
-      
+
       const newScenes = [...storyboard.scenes];
       newScenes[sceneIndex].audioClip = audioUrl;
-      
+
       const updatedStoryboard = { ...storyboard, scenes: newScenes };
       setStoryboard(updatedStoryboard);
       await db.saveStoryboard(updatedStoryboard);
@@ -288,7 +288,7 @@ export default function StoryboardView() {
 
   const runAutoPilot = async () => {
     if (!storyboard) return;
-    
+
     // Check API Key for Pro models
     if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
       await window.aistudio.openSelectKey();
@@ -320,7 +320,7 @@ export default function StoryboardView() {
           return result;
         } catch (error: any) {
           console.error(`Attempt ${attempt} failed for scene ${sceneIndex}:`, error);
-          
+
           // Check if rate limited
           if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('rate')) {
             setSceneStatuses(prev => ({ ...prev, [sceneIndex]: 'rate_limited' }));
@@ -346,7 +346,7 @@ export default function StoryboardView() {
         if (!currentStoryboard.scenes[i].frameImage) {
           setAutoPilotStatus(`توليد صورة المشهد ${i + 1}...`);
           setCurrentGeneratingIndex(i);
-          
+
           const scene = currentStoryboard.scenes[i];
           const referenceImages: string[] = [];
           for (const charId of scene.characterIds) {
@@ -383,10 +383,10 @@ export default function StoryboardView() {
         if (scene.dialogue && !scene.audioClip) {
           setAutoPilotStatus(`توليد صوت المشهد ${i + 1}...`);
           setCurrentGeneratingIndex(i);
-          
+
           const voices = ['Zephyr', 'Kore', 'Puck', 'Charon', 'Fenrir'];
           const voiceName = voices[i % voices.length];
-          
+
           const audioUrl = await generateWithRetry(
             () => AIService.generateVoiceover(scene.dialogue!, voiceName),
             i + 1000 // Use different index range for audio
@@ -405,9 +405,9 @@ export default function StoryboardView() {
         if (!currentStoryboard.scenes[i].videoClip) {
           setAutoPilotStatus(`توليد فيديو المشهد ${i + 1}...`);
           setCurrentGeneratingIndex(i);
-          
+
           const startFrame = currentStoryboard.scenes[i].frameImage;
-          const endFrame = currentStoryboard.scenes[i+1].frameImage;
+          const endFrame = currentStoryboard.scenes[i + 1].frameImage;
 
           if (startFrame && endFrame) {
             const motionPrompt = cameraMotion !== 'Static' ? cameraMotion : undefined;
@@ -446,7 +446,7 @@ export default function StoryboardView() {
   if (!storyboard) return <div className="p-8 text-center">جاري التحميل...</div>;
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-7xl mx-auto min-h-screen bg-transparent pb-32">
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate('/storyboards')} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
           <ChevronRight className="w-5 h-5" />
@@ -455,22 +455,22 @@ export default function StoryboardView() {
       </div>
 
       <div className="space-y-6">
-        <div className="bg-indigo-50 p-4 rounded-xl">
+        <div className="bg-primary/10 p-4 rounded-xl">
           <h3 className="font-bold text-sm mb-2 text-indigo-900">السيناريو</h3>
           <p className="text-xs text-indigo-800 leading-relaxed">{storyboard.script}</p>
         </div>
 
         <div className="space-y-8">
           {storyboard.scenes.map((scene, idx) => (
-            <div key={scene.id} className="relative bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+            <div key={scene.id} className="relative bg-black/20 border border-white/5 rounded-2xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="font-bold text-sm text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">مشهد {idx + 1}</span>
+                <span className="font-bold text-sm text-primary/90 bg-primary/10 px-2 py-1 rounded-md">مشهد {idx + 1}</span>
                 <div className="flex gap-2">
                   {scene.audioClip && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full">صوت ✅</span>}
                   {idx < storyboard.scenes.length - 1 && (
-                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                          {scene.videoClip ? 'فيديو ✅' : 'بانتظار الفيديو'}
-                      </span>
+                    <span className="text-[10px] bg-black/40 border border-white/10 backdrop-blur-md text-muted-foreground/80 px-2 py-1 rounded-full">
+                      {scene.videoClip ? 'فيديو ✅' : 'بانتظار الفيديو'}
+                    </span>
                   )}
                 </div>
               </div>
@@ -535,7 +535,7 @@ export default function StoryboardView() {
                     </button>
                   </div>
                 )}
-                
+
                 {/* Status indicator */}
                 {sceneStatuses[idx] === 'generating' && currentGeneratingIndex === idx && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -546,13 +546,13 @@ export default function StoryboardView() {
                   </div>
                 )}
               </div>
-              
-              <p className="text-xs text-slate-600 mb-3 leading-relaxed">{scene.description}</p>
-              
+
+              <p className="text-xs text-muted-foreground/80 mb-3 leading-relaxed">{scene.description}</p>
+
               {/* Dialogue */}
               {scene.dialogue && (
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <p className="text-xs font-medium text-slate-700">الحوار: "{scene.dialogue}"</p>
+                <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-3 rounded-lg border border-white/5">
+                  <p className="text-xs font-medium text-white/90">الحوار: "{scene.dialogue}"</p>
                 </div>
               )}
 
@@ -568,7 +568,7 @@ export default function StoryboardView() {
       {/* Merged Video Modal */}
       {mergedVideoUrl && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setMergedVideoUrl('')}>
-          <div className="bg-white rounded-2xl max-w-lg w-full p-4 space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-black/20 rounded-2xl max-w-7xl w-full p-4 space-y-3" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-center">الفيديو النهائي</h3>
             <video src={mergedVideoUrl} controls className="w-full rounded-xl" autoPlay />
             <a
@@ -581,7 +581,7 @@ export default function StoryboardView() {
             </a>
             <button
               onClick={() => setMergedVideoUrl('')}
-              className="block w-full py-2 text-slate-500 text-sm"
+              className="block w-full py-2 text-muted-foreground text-sm"
             >
               إغلاق
             </button>
@@ -595,10 +595,10 @@ export default function StoryboardView() {
         const hasAnyVideos = storyboard.scenes.some(s => s.videoClip);
         const hasAnyImages = storyboard.scenes.some(s => s.frameImage);
         const hasMissingImages = storyboard.scenes.some(s => !s.frameImage);
-        
+
         return (
           <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/60 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-            <div className="max-w-lg mx-auto space-y-2.5">
+            <div className="max-w-7xl mx-auto space-y-2.5">
 
               {/* Auto-pilot button - when images are missing */}
               {hasMissingImages && (

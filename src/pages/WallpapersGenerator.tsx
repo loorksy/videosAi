@@ -232,7 +232,7 @@ export default function WallpapersGenerator() {
     };
 
     return (
-        <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+        <div className="p-4 max-w-4xl mx-auto min-h-screen bg-transparent pb-32">
             {/* Header */}
             <div className="flex items-center mb-6 pt-2">
                 <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -246,24 +246,24 @@ export default function WallpapersGenerator() {
 
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                 {/* Settings Form */}
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div className="bg-black/20 p-4 rounded-2xl shadow-sm border border-white/5 space-y-4">
 
                     {/* Identity Controls */}
                     <div className="flex justify-between items-center border-b pb-3 mb-2">
-                        <h3 className="font-bold text-slate-800">أسلوب التصميم والهوية</h3>
+                        <h3 className="font-bold text-white">أسلوب التصميم والهوية</h3>
                         <div className="flex gap-2">
                             {savedIdentities.length > 0 && (
                                 <select
-                                    className="text-xs border-slate-200 rounded-md bg-white text-slate-700 px-2 py-1 outline-none focus:border-fuchsia-500"
+                                    className="text-xs border-white/10 rounded-md bg-black/20 text-white/90 px-2 py-1 outline-none focus:border-fuchsia-500"
                                     onChange={(e) => {
                                         const id = savedIdentities.find(s => s.name === e.target.value);
                                         if (id) loadIdentity(id);
                                         e.target.value = '';
                                     }}
                                 >
-                                    <option value="">تحميل أسلوب...</option>
+                                    <option value="" className="bg-[#090A0F] text-white">تحميل أسلوب...</option>
                                     {savedIdentities.map((id: any, i: number) => (
-                                        <option key={i} value={id.name}>{id.name}</option>
+                                        <option key={i} value={id.name} className="bg-[#090A0F] text-white">{id.name}</option>
                                     ))}
                                 </select>
                             )}
@@ -279,7 +279,7 @@ export default function WallpapersGenerator() {
 
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="block text-xs font-bold text-slate-700">الفكرة</label>
+                            <label className="block text-xs font-bold text-white/90">الفكرة</label>
                             <button
                                 onClick={handleEnhanceIdea}
                                 disabled={isEnhancingIdea}
@@ -293,7 +293,7 @@ export default function WallpapersGenerator() {
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="اكتب فكرتك للخلفية هنا..."
-                            className="w-full h-24 p-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:ring-2 focus:ring-fuchsia-500 outline-none resize-none"
+                            className="w-full h-24 p-2 border border-white/10 rounded-xl text-xs bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 focus:ring-2 focus:ring-fuchsia-500 outline-none resize-none"
                         />
 
                         <label className="flex items-center gap-2 mt-3 cursor-pointer">
@@ -303,23 +303,23 @@ export default function WallpapersGenerator() {
                                 onChange={(e) => setIncludePeople(e.target.checked)}
                                 className="w-4 h-4 text-fuchsia-600 rounded border-gray-300 focus:ring-fuchsia-500"
                             />
-                            <span className="text-xs text-slate-700 font-medium">إظهار أشخاص في الخلفية</span>
+                            <span className="text-xs text-white/90 font-medium">إظهار أشخاص في الخلفية</span>
                         </label>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">أسلوب الرسم</label>
+                            <label className="block text-xs font-bold text-white/90 mb-1">أسلوب الرسم</label>
                             <CustomSelect value={style} onChange={setStyle} options={styles} className="p-2 text-xs rounded-xl focus:ring-fuchsia-500" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">لوحة الألوان المِسَيطِرة</label>
+                            <label className="block text-xs font-bold text-white/90 mb-1">لوحة الألوان المِسَيطِرة</label>
                             <CustomSelect value={colorPalette} onChange={setColorPalette} options={colors} className="p-2 text-xs rounded-xl focus:ring-fuchsia-500" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-2">أبعاد الخلفية</label>
+                        <label className="block text-xs font-bold text-white/90 mb-2">أبعاد الخلفية</label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             {aspectRatios.map(ar => (
                                 <button
@@ -327,7 +327,7 @@ export default function WallpapersGenerator() {
                                     onClick={() => setAspectRatio(ar.value)}
                                     className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${aspectRatio === ar.value
                                         ? 'bg-fuchsia-50 border-fuchsia-500 text-fuchsia-700 shadow-sm'
-                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                        : 'bg-black/20 border-white/10 text-muted-foreground/80 hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5'
                                         }`}
                                 >
                                     {ar.label}
@@ -336,13 +336,13 @@ export default function WallpapersGenerator() {
                         </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100">
+                    <div className="pt-2 border-t border-white/5">
                         <div className="flex justify-between items-center mb-3">
                             <div>
-                                <label className="block text-xs font-bold text-slate-700">صور مرجعية للاستنساخ</label>
-                                <p className="text-xs text-slate-500 mt-1">ارفع صورة لاستنساخ الأسلوب أو الألوان.</p>
+                                <label className="block text-xs font-bold text-white/90">صور مرجعية للاستنساخ</label>
+                                <p className="text-xs text-muted-foreground mt-1">ارفع صورة لاستنساخ الأسلوب أو الألوان.</p>
                             </div>
-                            <label className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm hover:bg-slate-50 flex items-center gap-1.5 text-slate-600 cursor-pointer transition-colors font-medium">
+                            <label className="text-xs bg-black/20 border border-white/10 px-3 py-1.5 rounded-md shadow-sm hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 flex items-center gap-1.5 text-muted-foreground/80 cursor-pointer transition-colors font-medium">
                                 <Upload className="w-3.5 h-3.5" />
                                 رفع صور
                                 <input
@@ -358,7 +358,7 @@ export default function WallpapersGenerator() {
                         {referenceImages.length > 0 && (
                             <div className="flex gap-2 flex-wrap mb-2">
                                 {referenceImages.map(img => (
-                                    <div key={img.id} className="relative w-16 h-16 rounded-xl border-2 border-slate-200 overflow-hidden group">
+                                    <div key={img.id} className="relative w-16 h-16 rounded-xl border-2 border-white/10 overflow-hidden group">
                                         <img src={img.dataUrl} alt="Reference" className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <button
@@ -375,36 +375,36 @@ export default function WallpapersGenerator() {
                     </div>
 
                     {/* Text & Logo Overlay Options */}
-                    <div className="pt-4 border-t border-slate-100 space-y-4">
-                        <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <div className="pt-4 border-t border-white/5 space-y-4">
+                        <h3 className="font-bold text-white text-sm flex items-center gap-2">
                             <TypeIcon className="w-4 h-4 text-fuchsia-500" />
                             النصوص والشعارات
                         </h3>
 
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">نص مضاف للصورة</label>
+                            <label className="block text-xs font-bold text-white/90 mb-1">نص مضاف للصورة</label>
                             <textarea
                                 value={overlayText}
                                 onChange={(e) => setOverlayText(e.target.value)}
                                 placeholder="النص..."
-                                className="w-full h-16 p-2 border border-slate-200 rounded-md text-xs bg-slate-50 outline-none resize-none"
+                                className="w-full h-16 p-2 border border-white/10 rounded-md text-xs bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 outline-none resize-none"
                             />
                         </div>
 
                         {overlayText && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-3 rounded-xl border border-white/5">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">نوع الخط</label>
+                                    <label className="block text-xs font-bold text-white/90 mb-1">نوع الخط</label>
                                     <CustomSelect value={overlayFont} onChange={setOverlayFont} options={fonts} className="p-2 text-xs rounded-md" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="block text-xs font-bold text-slate-700">لون النص</label>
+                                    <label className="block text-xs font-bold text-white/90">لون النص</label>
                                     <div className="scale-90 origin-top-right">
                                         <ColorPicker color={overlayColor} onChange={setOverlayColor} />
                                     </div>
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">موضع النص</label>
+                                    <label className="block text-xs font-bold text-white/90 mb-1">موضع النص</label>
                                     <CustomSelect
                                         value={overlayPosition}
                                         onChange={setOverlayPosition as any}
@@ -417,7 +417,7 @@ export default function WallpapersGenerator() {
 
                         <div>
                             <div className="flex justify-between items-center mb-1">
-                                <label className="block text-xs font-bold text-slate-700">شعار (Logo)</label>
+                                <label className="block text-xs font-bold text-white/90">شعار (Logo)</label>
                                 {logoImage && (
                                     <button onClick={() => setLogoImage(null)} className="text-[10px] text-red-500 hover:underline">
                                         إزالة الشعار
@@ -425,11 +425,11 @@ export default function WallpapersGenerator() {
                                 )}
                             </div>
                             {logoImage ? (
-                                <div className="w-16 h-16 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center p-1">
+                                <div className="w-16 h-16 rounded-lg border border-white/10 overflow-hidden bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 flex items-center justify-center p-1">
                                     <img src={logoImage} alt="Logo" className="max-w-full max-h-full object-contain" />
                                 </div>
                             ) : (
-                                <label className="text-xs bg-white border border-slate-200 border-dashed w-full py-4 rounded-xl hover:bg-slate-50 flex flex-col items-center gap-2 text-slate-500 cursor-pointer transition-colors">
+                                <label className="text-xs bg-black/20 border border-white/10 border-dashed w-full py-4 rounded-xl hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 flex flex-col items-center gap-2 text-muted-foreground cursor-pointer transition-colors">
                                     <Upload className="w-4 h-4" />
                                     رفع شعار
                                     <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
@@ -460,9 +460,9 @@ export default function WallpapersGenerator() {
 
                 {/* Result */}
                 {generatedImage && (
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-in zoom-in-95">
+                    <div className="bg-black/20 p-4 rounded-2xl shadow-sm border border-white/5 animate-in zoom-in-95">
                         <div className="flex items-center justify-between mb-3">
-                            <h2 className="font-bold text-slate-800">النتيجة النهائية</h2>
+                            <h2 className="font-bold text-white">النتيجة النهائية</h2>
                             {saved && (
                                 <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                                     <Check className="w-3 h-3" />

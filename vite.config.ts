@@ -1,9 +1,9 @@
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
 
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     plugins: [react(), tailwindcss()],
@@ -16,26 +16,20 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      hmr: false, // Disable HMR completely
-      allowedHosts: true,
-      watch: {
-        usePolling: false, // Disable file watching
-        ignored: ['**/*'], // Ignore all files
-      },
+      port: 3000,
+      host: '0.0.0.0', // Bind to 0.0.0.0 to make it accessible over local network
+      strictPort: false,
+      cors: true,
       proxy: {
-        '/api': {
-          target: 'http://localhost:8001',
-          changeOrigin: true,
-        },
-      },
+        '/api/auth': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/settings': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/admin/users': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api': { target: 'http://localhost:8000', changeOrigin: true }
+      }
     },
-    preview: {
-      proxy: {
-        '/api': {
-          target: 'http://localhost:8001',
-          changeOrigin: true,
-        },
-      },
-    },
+    build: {
+      outDir: 'dist',
+      sourcemap: true
+    }
   };
 });

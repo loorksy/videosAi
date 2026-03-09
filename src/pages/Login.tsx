@@ -1,31 +1,50 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Lock, User as UserIcon, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-interface LoginProps {
-  onLogin: () => void;
-}
-
-export default function Login({ onLogin }: LoginProps) {
+export default function Login() {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    setTimeout(() => {
-      if (password === 'Ahmetlork0009') {
-        localStorage.setItem('isAuthenticated', 'true');
-        onLogin();
-      } else {
-        setError('كلمة المرور غير صحيحة');
-        setIsLoading(false);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to login');
       }
-    }, 500);
+
+      // Sync settings on login
+      if (data.settings) {
+        localStorage.setItem('AI_PROVIDER', data.settings.provider || 'gemini');
+        if (data.settings.gemini_key) localStorage.setItem('GEMINI_API_KEY', data.settings.gemini_key);
+        if (data.settings.kie_key) localStorage.setItem('KIE_API_KEY', data.settings.kie_key);
+      }
+
+      login(data.token, data.user);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,11 +73,26 @@ export default function Login({ onLogin }: LoginProps) {
               <Sparkles className="w-10 h-10 text-white" />
             </motion.div>
             <h1 className="text-2xl font-bold text-white mb-2">مرحباً بك</h1>
-            <p className="text-white/60 text-sm">أدخل كلمة المرور للوصول إلى التطبيق</p>
+            <p className="text-white/60 text-sm">أدخل بياناتك للوصول إلى المنصة</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">
+                <UserIcon className="w-5 h-5" />
+              </div>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="اسم المستخدم"
+                className="w-full bg-white/10 border border-white/20 rounded-xl py-4 pr-12 pl-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-right"
+                dir="ltr"
+                required
+              />
+            </div>
+
             <div className="relative">
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">
                 <Lock className="w-5 h-5" />
@@ -70,7 +104,7 @@ export default function Login({ onLogin }: LoginProps) {
                 placeholder="كلمة المرور"
                 className="w-full bg-white/10 border border-white/20 rounded-xl py-4 pr-12 pl-12 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-right"
                 dir="ltr"
-                data-testid="password-input"
+                required
               />
               <button
                 type="button"
@@ -94,7 +128,7 @@ export default function Login({ onLogin }: LoginProps) {
 
             <motion.button
               type="submit"
-              disabled={isLoading || !password}
+              disabled={isLoading || !password || !username}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold py-4 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
@@ -110,12 +144,16 @@ export default function Login({ onLogin }: LoginProps) {
               )}
             </motion.button>
           </form>
-        </div>
 
-        {/* Footer */}
-        <p className="text-center text-white/30 text-xs mt-6">
-          تطبيق شخصي محمي
-        </p>
+          <div className="mt-6 text-center">
+            <p className="text-white/60 text-sm">
+              ليس لديك حساب؟{' '}
+              <Link to="/register" className="text-purple-400 hover:text-purple-300 font-medium">
+                إنشاء حساب
+              </Link>
+            </p>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

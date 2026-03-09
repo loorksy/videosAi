@@ -12,7 +12,7 @@ import { CustomSelect } from '../components/CustomSelect';
 export default function FunnyHumanCreate() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
-  
+
   // Form State
   const [baseHuman, setBaseHuman] = useState('رجل أعمال جاد');
   const [mergedWith, setMergedWith] = useState('جسم ثلاجة');
@@ -20,7 +20,7 @@ export default function FunnyHumanCreate() {
   const [expression, setExpression] = useState('نظرة ميتة (Deadpan)');
   const [style, setStyle] = useState('صورة فوتوغرافية واقعية');
   const [environment, setEnvironment] = useState('اجتماع عمل رسمي');
-  
+
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [missingKeyError, setMissingKeyError] = useState<MissingApiKeyError | null>(null);
@@ -37,7 +37,7 @@ export default function FunnyHumanCreate() {
   const startGeneration = async () => {
     setIsProcessing(true);
     setStep('generating');
-    
+
     try {
       const image = await AIService.generateFunnyHuman({
         baseHuman, mergedWith, crazyFeature, expression, style, environment
@@ -94,13 +94,13 @@ export default function FunnyHumanCreate() {
       },
       createdAt: Date.now()
     };
-    
+
     await db.saveCharacter(character);
     navigate('/characters');
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-background pb-32">
       {/* Header */}
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -114,7 +114,7 @@ export default function FunnyHumanCreate() {
 
       {step === 'input' && (
         <div className="space-y-6">
-          
+
           <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl text-sm text-orange-800 leading-relaxed">
             هذا القسم مخصص لصنع شخصيات بشرية مجنونة ومضحكة جداً (دمج البشر مع الأشياء، نسب جسم غريبة، مواقف مضحكة).
           </div>
@@ -131,32 +131,32 @@ export default function FunnyHumanCreate() {
 
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الشخصية الأساسية</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">الشخصية الأساسية</label>
               <CustomSelect value={baseHuman} onChange={setBaseHuman} options={baseHumans} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">مدمج مع (اختياري)</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">مدمج مع (اختياري)</label>
               <CustomSelect value={mergedWith} onChange={setMergedWith} options={mergedWithList} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">ميزة غريبة / طفرة</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">ميزة غريبة / طفرة</label>
               <CustomSelect value={crazyFeature} onChange={setCrazyFeature} options={crazyFeatures} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">تعبير الوجه</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">تعبير الوجه</label>
               <CustomSelect value={expression} onChange={setExpression} options={expressions} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">البيئة / المكان</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">البيئة / المكان</label>
               <CustomSelect value={environment} onChange={setEnvironment} options={environments} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">نمط الرسم</label>
+              <label className="block text-sm font-bold text-white/90 mb-1">نمط الرسم</label>
               <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3 rounded-xl text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
           </div>
@@ -178,23 +178,23 @@ export default function FunnyHumanCreate() {
             <Loader2 className="w-16 h-16 text-orange-500 animate-spin relative z-10" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900">جاري توليد الكارثة...</h3>
-            <p className="text-slate-500 mt-2">استعد للضحك، يقوم الذكاء الاصطناعي بدمج الأشياء الآن</p>
+            <h3 className="text-xl font-bold text-white">جاري توليد الكارثة...</h3>
+            <p className="text-muted-foreground mt-2">استعد للضحك، يقوم الذكاء الاصطناعي بدمج الأشياء الآن</p>
           </div>
         </div>
       )}
 
       {step === 'review' && generatedImage && (
         <div className="space-y-6">
-          <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-slate-200">
+          <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-white/10">
             <img src={generatedImage} className="w-full h-full object-cover" alt="Generated Funny Human" />
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-xl">
-            <h4 className="font-medium text-sm mb-2 text-slate-900">تفاصيل الكارثة:</h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              الشخصية: {baseHuman}<br/>
-              الدمج: {mergedWith}<br/>
+          <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl">
+            <h4 className="font-medium text-sm mb-2 text-white">تفاصيل الكارثة:</h4>
+            <p className="text-xs text-muted-foreground/80 leading-relaxed">
+              الشخصية: {baseHuman}<br />
+              الدمج: {mergedWith}<br />
               الميزة: {crazyFeature}
             </p>
           </div>
@@ -203,7 +203,7 @@ export default function FunnyHumanCreate() {
             <div className="flex gap-3">
               <button
                 onClick={downloadImage}
-                className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 py-3 bg-black/20 border border-white/10 text-white/90 rounded-xl font-bold shadow-sm hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 flex items-center justify-center gap-2 transition-colors"
               >
                 <Download className="w-5 h-5" />
                 <span>تنزيل الصورة</span>

@@ -4,6 +4,7 @@ import { Package, ChevronRight, Loader2, Image as ImageIcon, Sparkles, Palette, 
 import { AIService } from '../lib/aiService';
 import { db, MediaItem } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProductStudio() {
   const navigate = useNavigate();
@@ -188,30 +189,30 @@ export default function ProductStudio() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-transparent pb-32">
       {/* Header */}
       <div className="flex items-center mb-6 pt-2">
-        <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-white transition-colors">
           <ChevronRight className="w-5 h-5" />
         </button>
-        <h1 className="text-lg font-bold mr-2 flex items-center gap-2 text-foreground">
-          <Package className="w-5 h-5 text-sky-500" />
+        <h1 className="text-lg font-bold mr-2 flex items-center gap-2 text-white">
+          <Package className="w-5 h-5 text-primary" />
           استوديو المنتجات والهوية
         </h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-card rounded-xl p-1 border border-border/60 mb-6">
+      <div className="flex bg-black/20 rounded-xl p-1 border border-white/5 mb-6 backdrop-blur-md">
         <button
           onClick={() => setActiveTab('product')}
-          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'product' ? 'bg-sky-50 text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'product' ? 'bg-primary/20 text-primary shadow-sm' : 'text-muted-foreground hover:text-white'
             }`}
         >
           تصوير المنتجات
         </button>
         <button
           onClick={() => setActiveTab('brand')}
-          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'brand' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'brand' ? 'bg-accent/20 text-accent shadow-sm' : 'text-muted-foreground hover:text-white'
             }`}
         >
           بناء الهوية البصرية
@@ -221,32 +222,32 @@ export default function ProductStudio() {
       {/* Tab 1: Product Shot */}
       {activeTab === 'product' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+          <div className="bg-card/40 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/5 space-y-4">
 
             {/* Visual Identity Save/Load */}
-            <div className="flex justify-between items-center border-b pb-3 mb-2">
-              <h3 className="font-bold text-slate-800">إعدادات الهوية والتصنيف</h3>
+            <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-2">
+              <h3 className="font-bold text-white tracking-wide">إعدادات الهوية والتصنيف</h3>
               <div className="flex gap-2">
                 {savedIdentities.length > 0 && (
                   <select
-                    className="text-xs border-slate-200 rounded-md bg-white text-slate-700 px-2 py-1 outline-none focus:border-sky-500"
+                    className="text-xs border border-white/10 rounded-md bg-black/20 text-white/90 px-2 py-1 outline-none focus:border-primary/50"
                     onChange={(e) => {
                       const id = savedIdentities.find(s => s.name === e.target.value);
                       if (id) loadIdentity(id);
                       e.target.value = '';
                     }}
                   >
-                    <option value="">تحميل هوية محفوظة...</option>
+                    <option value="" className="bg-[#090A0F]">تحميل هوية محفوظة...</option>
                     {savedIdentities.map((id: any, i: number) => (
-                      <option key={i} value={id.name}>{id.name}</option>
+                      <option key={i} value={id.name} className="bg-[#090A0F]">{id.name}</option>
                     ))}
                   </select>
                 )}
                 <button
                   onClick={saveIdentity}
-                  className="text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 px-3 py-1 rounded-md font-medium flex items-center gap-1 transition-colors"
+                  className="text-xs bg-primary/20 text-primary hover:bg-primary/30 px-3 py-1.5 rounded-md font-bold flex items-center gap-1.5 transition-colors"
                 >
-                  <Palette className="w-3 h-3" />
+                  <Palette className="w-3.5 h-3.5" />
                   حفظ الهوية
                 </button>
               </div>
@@ -255,7 +256,7 @@ export default function ProductStudio() {
             {/* Product Category */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">التصنيف الرئيسي</label>
+                <label className="block text-sm font-bold text-white/90 mb-1.5">التصنيف الرئيسي</label>
                 <select
                   value={selectedMainCategory}
                   onChange={(e) => {
@@ -264,70 +265,70 @@ export default function ProductStudio() {
                     setSelectedSubCategory(subCats[0] || '');
                     setIsCustomCategory(e.target.value === 'أخرى (Custom)');
                   }}
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                  className="w-full p-3.5 border border-white/10 rounded-xl text-sm bg-black/20 focus:ring-2 focus:ring-primary/40 outline-none text-white transition-all"
                 >
                   {Object.keys(categoryTree).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat} className="bg-[#090A0F]">{cat}</option>
                   ))}
-                  <option value="أخرى (Custom)">أخرى (Custom)</option>
+                  <option value="أخرى (Custom)" className="bg-[#090A0F]">أخرى (Custom)</option>
                 </select>
               </div>
 
               {!isCustomCategory ? (
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">التصنيف الفرعي</label>
+                  <label className="block text-sm font-bold text-white/90 mb-1.5">التصنيف الفرعي</label>
                   <select
                     value={selectedSubCategory}
                     onChange={(e) => setSelectedSubCategory(e.target.value)}
-                    className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                    className="w-full p-3.5 border border-white/10 rounded-xl text-sm bg-black/20 focus:ring-2 focus:ring-primary/40 outline-none text-white transition-all"
                   >
                     {(categoryTree[selectedMainCategory as keyof typeof categoryTree] || []).map((sub: string) => (
-                      <option key={sub} value={sub}>{sub}</option>
+                      <option key={sub} value={sub} className="bg-[#090A0F]">{sub}</option>
                     ))}
-                    <option value="تخصيص">تخصيص مانيوال...</option>
+                    <option value="تخصيص" className="bg-[#090A0F]">تخصيص مانيوال...</option>
                   </select>
                 </div>
               ) : null}
             </div>
 
             {(isCustomCategory || selectedSubCategory === 'تخصيص') && (
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">اكتب التصنيف بوضوح</label>
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                <label className="block text-sm font-bold text-white/90 mb-1.5 mt-2">اكتب التصنيف بوضوح</label>
                 <input
                   type="text"
                   value={customCategoryText}
                   onChange={(e) => setCustomCategoryText(e.target.value)}
                   placeholder="مثال: أدوات زراعية، معدات رياضية نادرة..."
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                  className="w-full p-3.5 border border-white/10 rounded-xl text-sm bg-black/20 focus:ring-2 focus:ring-primary/40 outline-none text-white placeholder:text-muted-foreground/50 transition-all"
                 />
-              </div>
+              </motion.div>
             )}
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">وصف المنتج الدقيق</label>
+              <label className="block text-sm font-bold text-white/90 mb-1.5 mt-2">وصف المنتج الدقيق</label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 placeholder="مثال: زجاجة عطر فاخرة، كوب قهوة سيراميك أسود..."
-                className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-sky-500 outline-none"
+                className="w-full p-3.5 border border-white/10 rounded-xl text-sm bg-black/20 focus:ring-2 focus:ring-primary/40 outline-none text-white placeholder:text-muted-foreground/50 transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">الخلفية والبيئة</label>
-              <CustomSelect value={background} onChange={setBackground} options={backgrounds} className="p-3 rounded-xl focus:ring-sky-500" />
+              <label className="block text-sm font-bold text-white/90 mb-1.5">الخلفية والبيئة</label>
+              <CustomSelect value={background} onChange={setBackground} options={backgrounds} className="p-3.5 rounded-xl border-white/10 bg-black/20 text-white focus:ring-primary/40" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">الإضاءة</label>
-                <CustomSelect value={lighting} onChange={setLighting} options={lightings} className="p-3 rounded-xl focus:ring-sky-500" />
+                <label className="block text-sm font-bold text-white/90 mb-1.5">الإضاءة</label>
+                <CustomSelect value={lighting} onChange={setLighting} options={lightings} className="p-3.5 rounded-xl border-white/10 bg-black/20 text-white focus:ring-primary/40" />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">الأسلوب (Style)</label>
-                <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3 rounded-xl focus:ring-sky-500" />
+                <label className="block text-sm font-bold text-white/90 mb-1.5">الأسلوب (Style)</label>
+                <CustomSelect value={style} onChange={setStyle} options={styles} className="p-3.5 rounded-xl border-white/10 bg-black/20 text-white focus:ring-primary/40" />
               </div>
             </div>
           </div>
@@ -335,12 +336,12 @@ export default function ProductStudio() {
           <button
             onClick={generateProduct}
             disabled={isGeneratingProduct}
-            className="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:from-sky-600 hover:to-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-4 bg-gradient-to-r from-primary to-accent text-white rounded-2xl font-bold shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:shadow-[0_0_30px_rgba(236,72,153,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             {isGeneratingProduct ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>جاري تصوير المنتج...</span>
+                <span>جاري تصوير المنتج بسحر الذكاء...</span>
               </>
             ) : (
               <>
@@ -351,25 +352,25 @@ export default function ProductStudio() {
           </button>
 
           {productImage && (
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-in zoom-in-95">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-slate-800">النتيجة النهائية</h2>
+            <div className="bg-card/40 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/5 animate-in zoom-in-95">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> النتيجة النهائية</h2>
                 {productSaved && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                    <Check className="w-3 h-3" />
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                    <Check className="w-3.5 h-3.5" />
                     تم الحفظ
                   </span>
                 )}
               </div>
-              <div className="aspect-square rounded-xl overflow-hidden shadow-inner mb-4">
+              <div className="aspect-square rounded-2xl overflow-hidden shadow-2xl mb-5">
                 <img src={productImage} alt="Product" className="w-full h-full object-cover" />
               </div>
               <button
                 onClick={() => handleDownload(productImage, 'product-shot.png')}
-                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 flex items-center justify-center gap-2 transition-all"
+                className="w-full py-3.5 bg-white/10 text-white border border-white/10 rounded-xl font-bold hover:bg-white/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
               >
                 <Download className="w-5 h-5" />
-                <span>تحميل الصورة</span>
+                <span>تحميل الصورة عالية الدقة</span>
               </button>
             </div>
           )}
@@ -379,14 +380,14 @@ export default function ProductStudio() {
       {/* Tab 2: Brand Identity */}
       {activeTab === 'brand' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+          <div className="bg-card/40 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/5 space-y-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">فكرة المشروع / المنتج</label>
+              <label className="block text-sm font-bold text-white/90 mb-2">فكرة المشروع / المنتج</label>
               <textarea
                 value={brandDescription}
                 onChange={(e) => setBrandDescription(e.target.value)}
                 placeholder="مثال: مقهى مختص يقدم قهوة عضوية في أجواء كلاسيكية هادئة..."
-                className="w-full h-24 p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                className="w-full h-28 p-4 border border-white/10 rounded-xl text-sm bg-black/20 focus:ring-2 focus:ring-accent/40 outline-none resize-none text-white placeholder:text-muted-foreground/50 transition-all text-right"
               />
             </div>
           </div>
@@ -394,74 +395,74 @@ export default function ProductStudio() {
           <button
             onClick={generateBrand}
             disabled={isGeneratingBrand}
-            className="w-full py-4 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl font-bold shadow-lg hover:from-indigo-600 hover:to-violet-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-4 bg-gradient-to-r from-accent to-accent-tertiary text-white rounded-2xl font-bold shadow-[0_0_20px_rgba(236,72,153,0.2)] hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             {isGeneratingBrand ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>جاري بناء الهوية (قد يستغرق وقتاً)...</span>
+                <span>يتم استدعاء سحر الهوية البصرية...</span>
               </>
             ) : (
               <>
                 <Palette className="w-5 h-5" />
-                <span>ابتكار الهوية البصرية</span>
+                <span>ابتكار الهوية البصرية الشاملة</span>
               </>
             )}
           </button>
 
           {brandResult && (
-            <div className="space-y-4 animate-in zoom-in-95">
+            <div className="space-y-5 animate-in zoom-in-95">
               {/* Names & Slogan */}
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">الأسماء المقترحة</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
+              <div className="bg-card/40 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-white/5">
+                <h3 className="text-xs font-bold text-accent-tertiary uppercase tracking-wider mb-4">الأسماء المقترحة</h3>
+                <div className="flex flex-wrap gap-2.5 mb-6">
                   {brandResult.names.map((name, i) => (
-                    <span key={i} className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-indigo-100">
+                    <span key={i} className="bg-accent/10 text-accent px-4 py-2 rounded-xl text-sm font-bold border border-accent/20">
                       {name}
                     </span>
                   ))}
                 </div>
 
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">الشعار اللفظي (Slogan)</h3>
-                <p className="text-slate-800 font-medium text-lg italic">"{brandResult.slogan}"</p>
+                <h3 className="text-xs font-bold text-accent-tertiary uppercase tracking-wider mb-3">الشعار اللفظي (Slogan)</h3>
+                <p className="text-white font-medium text-xl italic leading-relaxed">"{brandResult.slogan}"</p>
               </div>
 
               {/* Colors & Typography */}
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">لوحة الألوان</h3>
-                <div className="flex gap-2 mb-5">
+              <div className="bg-card/40 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-white/5">
+                <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-4">لوحة الألوان</h3>
+                <div className="flex gap-3 mb-6">
                   {brandResult.colors.map((color, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
                       <div
-                        className="w-full aspect-square rounded-xl shadow-inner border border-slate-200"
+                        className="w-full aspect-square rounded-2xl shadow-lg border border-white/10"
                         style={{ backgroundColor: color }}
                       />
-                      <span className="text-[10px] font-mono text-slate-500">{color}</span>
+                      <span className="text-[11px] font-mono font-bold text-muted-foreground">{color}</span>
                     </div>
                   ))}
                 </div>
 
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">الخطوط المقترحة</h3>
-                <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-3">الخطوط المقترحة</h3>
+                <p className="text-sm text-white/90 bg-black/20 p-4 rounded-2xl border border-white/5 leading-relaxed">
                   {brandResult.typography}
                 </p>
               </div>
 
               {/* Moodboard */}
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+              <div className="bg-card/40 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-white/5">
+                <h3 className="text-xs font-bold text-accent uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" />
                   لوحة الإلهام (Moodboard)
                 </h3>
-                <div className="aspect-video rounded-xl overflow-hidden shadow-inner mb-4">
+                <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl mb-5">
                   <img src={brandResult.moodboardImage} alt="Moodboard" className="w-full h-full object-cover" />
                 </div>
                 <button
                   onClick={() => handleDownload(brandResult.moodboardImage, 'brand-moodboard.png')}
-                  className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 flex items-center justify-center gap-2 transition-all"
+                  className="w-full py-3.5 bg-white/10 text-white border border-white/10 rounded-xl font-bold hover:bg-white/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                 >
                   <Download className="w-5 h-5" />
-                  <span>تحميل الـ Moodboard</span>
+                  <span>تحميل الـ Moodboard الشامل</span>
                 </button>
               </div>
             </div>

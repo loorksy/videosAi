@@ -555,7 +555,7 @@ export default function StoryboardCreate() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-24">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-transparent pb-24">
       {missingKeyError && <ApiKeyMissing error={missingKeyError} onDismiss={() => setMissingKeyError(null)} />}
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -575,7 +575,7 @@ export default function StoryboardCreate() {
                 <button onClick={resumeDraft} className="px-3 py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600">
                   استئناف
                 </button>
-                <button onClick={startNew} className="px-3 py-1.5 bg-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-300">
+                <button onClick={startNew} className="px-3 py-1.5 bg-slate-200 text-muted-foreground/80 text-xs font-bold rounded-lg hover:bg-slate-300">
                   تجاهل
                 </button>
               </div>
@@ -584,7 +584,7 @@ export default function StoryboardCreate() {
 
           <div>
             <h2 className="text-lg font-semibold mb-2">اختر الشخصيات</h2>
-            <p className="text-sm text-slate-500 mb-4">حدد الشخصيات التي ستظهر في القصة</p>
+            <p className="text-sm text-muted-foreground mb-4">حدد الشخصيات التي ستظهر في القصة</p>
             <div className="grid grid-cols-3 gap-3">
               {characters.map(char => (
                 <button
@@ -608,7 +608,7 @@ export default function StoryboardCreate() {
               ))}
               <button
                 onClick={() => navigate('/characters/new')}
-                className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50"
+                className="aspect-square rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-slate-400 hover:bg-card/40 backdrop-blur-xl shadow-lg border border-white/5"
               >
                 <Users className="w-6 h-6 mb-1" />
                 <span className="text-xs">إضافة</span>
@@ -631,11 +631,11 @@ export default function StoryboardCreate() {
         <div className="space-y-5">
           {/* Content Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">نوع المحتوى</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">نوع المحتوى</label>
             <select
               value={contentType}
               onChange={(e) => setContentType(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              className="w-full p-3 border border-white/10 rounded-xl bg-black/20 focus:ring-2 focus:ring-primary/50 outline-none text-sm"
             >
               {contentTypes.map(ct => (
                 <option key={ct} value={ct}>{ct}</option>
@@ -645,7 +645,7 @@ export default function StoryboardCreate() {
               <input
                 value={customContentType}
                 onChange={(e) => setCustomContentType(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl mt-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                className="w-full p-3 border border-white/10 rounded-xl mt-2 focus:ring-2 focus:ring-primary/50 outline-none text-sm"
                 placeholder="اكتب نوع المحتوى المخصص..."
               />
             )}
@@ -654,11 +654,11 @@ export default function StoryboardCreate() {
           {/* Story Idea */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-slate-700">فكرة القصة <span className="text-slate-400 font-normal">(اختياري)</span></label>
+              <label className="block text-sm font-medium text-white/90">فكرة القصة <span className="text-slate-400 font-normal">(اختياري)</span></label>
               <button
                 onClick={generateIdeaWithAI}
                 disabled={isGeneratingIdea}
-                className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 disabled:opacity-50"
+                className="text-xs text-primary/90 hover:text-primary flex items-center gap-1 disabled:opacity-50"
               >
                 {isGeneratingIdea ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                 توليد فكرة بالذكاء الاصطناعي
@@ -667,14 +667,14 @@ export default function StoryboardCreate() {
             <textarea
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl h-28 focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm"
+              className="w-full p-3 border border-white/10 rounded-xl h-28 focus:ring-2 focus:ring-primary/50 outline-none resize-none text-sm"
               placeholder="اكتب ملخصاً للقصة أو اتركه فارغاً ليقوم الذكاء الاصطناعي بتوليدها..."
             />
           </div>
 
           {/* Scene Count */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">عدد المشاهد: <span className="text-indigo-600 font-bold">{sceneCount}</span></label>
+            <label className="block text-sm font-medium text-white/90 mb-2">عدد المشاهد: <span className="text-primary/90 font-bold">{sceneCount}</span></label>
             <div className="flex items-center gap-3">
               <input
                 type="range"
@@ -693,14 +693,14 @@ export default function StoryboardCreate() {
                   const v = Math.min(60, Math.max(2, Number(e.target.value) || 2));
                   setSceneCount(v);
                 }}
-                className="w-16 p-2 border border-slate-200 rounded-lg text-center text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-16 p-2 border border-white/10 rounded-lg text-center text-sm focus:ring-2 focus:ring-primary/50 outline-none"
               />
             </div>
           </div>
 
           {/* Style Selector */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">نمط الفيديو</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">نمط الفيديو</label>
             <div className="flex gap-2 overflow-x-auto pb-2">
               {styles.map((s) => (
                 <button
@@ -709,8 +709,8 @@ export default function StoryboardCreate() {
                   className={cn(
                     "whitespace-nowrap py-2 px-3 text-xs font-medium rounded-lg border transition-all",
                     style === s.value
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
+                      ? "bg-primary/10 border-primary text-primary/80 shadow-sm"
+                      : "bg-black/20 border-white/10 text-muted-foreground/80 hover:border-indigo-200"
                   )}
                 >
                   {s.label}
@@ -721,7 +721,7 @@ export default function StoryboardCreate() {
 
           {/* Aspect Ratio Selector */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">أبعاد الفيديو</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">أبعاد الفيديو</label>
             <div className="grid grid-cols-2 gap-2">
               {ratios.map((r) => (
                 <button
@@ -730,8 +730,8 @@ export default function StoryboardCreate() {
                   className={cn(
                     "py-3 px-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all",
                     aspectRatio === r.id
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200"
+                      ? "bg-primary/10 border-primary text-primary/80 shadow-sm"
+                      : "bg-black/20 border-white/10 text-muted-foreground/80 hover:border-indigo-200"
                   )}
                 >
                   <span className="text-lg">{r.icon}</span>
@@ -743,11 +743,11 @@ export default function StoryboardCreate() {
 
           {/* Dialogue Language */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">لغة الحوار</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">لغة الحوار</label>
             <select
               value={dialogueLanguage}
               onChange={(e) => setDialogueLanguage(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              className="w-full p-3 border border-white/10 rounded-xl bg-black/20 focus:ring-2 focus:ring-primary/50 outline-none text-sm"
               data-testid="dialogue-language-select"
             >
               {dialogueLanguages.map(lang => (
@@ -766,9 +766,9 @@ export default function StoryboardCreate() {
           </button>
 
           {isProcessing && (
-            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-center space-y-3">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
-              <p className="text-sm font-medium text-indigo-700">{processingStatus}</p>
+            <div className="mt-4 p-4 bg-primary/10 border border-indigo-200 rounded-xl text-center space-y-3">
+              <Loader2 className="w-8 h-8 animate-spin text-primary/90 mx-auto" />
+              <p className="text-sm font-medium text-primary/80">{processingStatus}</p>
               <p className="text-xs text-indigo-400">قد يستغرق الأمر دقيقة واحدة...</p>
             </div>
           )}
@@ -778,22 +778,22 @@ export default function StoryboardCreate() {
       {/* Step 3: Review Scenes */}
       {step === 'scenes' && (
         <div className="space-y-6">
-          <div className="bg-slate-50 p-4 rounded-xl max-h-40 overflow-y-auto">
+          <div className="bg-card/40 backdrop-blur-xl shadow-lg border border-white/5 p-4 rounded-xl max-h-40 overflow-y-auto">
             <h3 className="font-bold text-sm mb-2">السيناريو:</h3>
-            <p className="text-xs text-slate-600 whitespace-pre-wrap">{script}</p>
+            <p className="text-xs text-muted-foreground/80 whitespace-pre-wrap">{script}</p>
           </div>
 
           <div className="space-y-4">
             <h3 className="font-bold text-sm">المشاهد المقترحة ({scenes.length}):</h3>
             {scenes.map((scene, idx) => (
-              <div key={idx} className="bg-white border border-slate-200 p-3 rounded-lg text-sm">
+              <div key={idx} className="bg-black/20 border border-white/10 p-3 rounded-lg text-sm">
                 <div className="flex justify-between mb-1">
-                  <span className="font-bold text-indigo-600">مشهد {idx + 1}</span>
+                  <span className="font-bold text-primary/90">مشهد {idx + 1}</span>
                 </div>
-                <p className="text-slate-600 text-xs mb-2">{scene.description}</p>
+                <p className="text-muted-foreground/80 text-xs mb-2">{scene.description}</p>
                 {scene.dialogue && (
-                  <div className="bg-indigo-50 p-2 rounded-lg border border-indigo-100">
-                    <p className="text-xs font-medium text-indigo-700">الحوار: "{scene.dialogue}"</p>
+                  <div className="bg-primary/10 p-2 rounded-lg border border-primary/20">
+                    <p className="text-xs font-medium text-primary/80">الحوار: "{scene.dialogue}"</p>
                   </div>
                 )}
               </div>
@@ -815,7 +815,7 @@ export default function StoryboardCreate() {
       {(step === 'frames' || step === 'preview') && (
         <div className="space-y-6">
           {isProcessing && (
-            <div className="bg-indigo-50 text-indigo-700 p-4 rounded-xl flex items-center gap-3 text-sm font-medium animate-pulse">
+            <div className="bg-primary/10 text-primary/80 p-4 rounded-xl flex items-center gap-3 text-sm font-medium animate-pulse">
               <Loader2 className="w-5 h-5 animate-spin" />
               {processingStatus}
             </div>
@@ -855,15 +855,15 @@ export default function StoryboardCreate() {
               return (
                 <div key={idx} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900">مشهد {idx + 1} {idx === 0 ? '(مرجعي)' : ''}</span>
+                    <span className="font-bold text-sm text-white">مشهد {idx + 1} {idx === 0 ? '(مرجعي)' : ''}</span>
                     {!isProcessing && (
-                      <button onClick={regenerateScene} className="text-xs text-slate-400 flex items-center gap-1 hover:text-indigo-600">
+                      <button onClick={regenerateScene} className="text-xs text-slate-400 flex items-center gap-1 hover:text-primary/90">
                         <RefreshCw className="w-3 h-3" /> {scene.frameImage ? '' : 'إعادة التوليد'}
                       </button>
                     )}
                   </div>
                   <div className={cn(
-                    "bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative",
+                    "bg-black/40 border border-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/10 relative",
                     aspectRatio === '9:16' ? 'aspect-[9/16] max-w-[220px] mx-auto' : 'aspect-video'
                   )}>
                     {scene.frameImage ? (
@@ -874,10 +874,10 @@ export default function StoryboardCreate() {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">{scene.description}</p>
+                  <p className="text-xs text-muted-foreground">{scene.description}</p>
                   {scene.dialogue && (
-                    <div className="bg-indigo-50 p-2 rounded-lg border border-indigo-100">
-                      <p className="text-xs font-medium text-indigo-700">الحوار: "{scene.dialogue}"</p>
+                    <div className="bg-primary/10 p-2 rounded-lg border border-primary/20">
+                      <p className="text-xs font-medium text-primary/80">الحوار: "{scene.dialogue}"</p>
                     </div>
                   )}
                   {/* Video status */}

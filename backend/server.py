@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -12,7 +12,12 @@ import uuid
 import base64
 import json
 import asyncio
+import jwt
 
+# محلياً: .env من جذر المشروع
+_env_local = os.path.join(os.path.dirname(__file__), "..", ".env")
+if os.path.isfile(_env_local):
+    load_dotenv(_env_local)
 load_dotenv("/app/.env")
 
 app = FastAPI()
@@ -23,6 +28,7 @@ KIE_BASE_URL = "https://api.kie.ai/api/v1"
 APP_URL = os.environ.get("APP_URL", "")
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "storyweaver")
+JWT_SECRET = os.environ.get("JWT_SECRET", "super-secret-key-change-in-prod")
 
 
 def get_kie_api_key() -> str:
@@ -58,6 +64,33 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+class AuthedUser(BaseModel):
+    id: str
+    username: str
+    role: str
+    tenantId: str
+
+
+def get_current_user(authorization: str = Header(...)) -> AuthedUser:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+    token = authorization.split(" ", 1)[1].strip()
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    tenant_id = payload.get("tenantId")
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="Missing tenant in token")
+
+    return AuthedUser(
+        id=str(payload.get("id")),
+        username=str(payload.get("username") or ""),
+        role=str(payload.get("role") or "user"),
+        tenantId=str(tenant_id),
+    )
+
 # ============ HEALTH ============
 
 @app.get("/api/health")
@@ -78,11 +111,12 @@ class MediaUploadRequest(BaseModel):
 
 
 @app.post("/api/media/upload")
-async def upload_media(req: MediaUploadRequest):
+async def upload_media(req: MediaUploadRequest, user: AuthedUser = Depends(get_current_user)):
     ext = "mp4" if req.type == "video" else "jpg"
     url = save_base64_file(req.data, ext)
     doc = {
         "id": req.id or uuid.uuid4().hex,
+        "tenant_id": user.tenantId,
         "url": url,
         "type": req.type,
         "source": req.source,
@@ -91,13 +125,19 @@ async def upload_media(req: MediaUploadRequest):
         "aspectRatio": req.aspectRatio,
         "createdAt": now_iso(),
     }
-    db.media.update_one({"id": doc["id"]}, {"$set": doc}, upsert=True)
+    db.media.update_one(
+        {"id": doc["id"], "tenant_id": user.tenantId}, {"$set": doc}, upsert=True
+    )
     return {"id": doc["id"], "url": url}
 
 
 @app.get("/api/media/list")
-async def list_media(type: Optional[str] = None, source: Optional[str] = None):
-    query = {}
+async def list_media(
+    type: Optional[str] = None,
+    source: Optional[str] = None,
+    user: AuthedUser = Depends(get_current_user),
+):
+    query: Dict[str, Any] = {"tenant_id": user.tenantId}
     if type:
         query["type"] = type
     if source:
@@ -117,7 +157,7 @@ class CharacterSaveRequest(BaseModel):
 
 
 @app.post("/api/characters/save")
-async def save_character(req: CharacterSaveRequest):
+async def save_character(req: CharacterSaveRequest, user: AuthedUser = Depends(get_current_user)):
     char_id = req.id or uuid.uuid4().hex
 
     # Upload images and convert base64 to URLs
@@ -131,6 +171,7 @@ async def save_character(req: CharacterSaveRequest):
 
     doc = {
         "id": char_id,
+        "tenant_id": user.tenantId,
         "name": req.name,
         "description": req.description,
         "visualTraits": req.visualTraits,
@@ -138,25 +179,33 @@ async def save_character(req: CharacterSaveRequest):
         "createdAt": now_iso(),
     }
 
-    db.characters.update_one({"id": char_id}, {"$set": doc}, upsert=True)
+    db.characters.update_one(
+        {"id": char_id, "tenant_id": user.tenantId}, {"$set": doc}, upsert=True
+    )
     return doc
 
 
 @app.get("/api/characters/list")
-async def list_characters():
-    chars = list(db.characters.find({}, {"_id": 0}).sort("createdAt", -1))
+async def list_characters(user: AuthedUser = Depends(get_current_user)):
+    chars = list(
+        db.characters.find({"tenant_id": user.tenantId}, {"_id": 0}).sort(
+            "createdAt", -1
+        )
+    )
     return chars
 
 
 @app.delete("/api/characters/{char_id}")
-async def delete_character(char_id: str):
-    db.characters.delete_one({"id": char_id})
+async def delete_character(char_id: str, user: AuthedUser = Depends(get_current_user)):
+    db.characters.delete_one({"id": char_id, "tenant_id": user.tenantId})
     return {"ok": True}
 
 
 @app.get("/api/characters/{char_id}")
-async def get_character(char_id: str):
-    char = db.characters.find_one({"id": char_id}, {"_id": 0})
+async def get_character(char_id: str, user: AuthedUser = Depends(get_current_user)):
+    char = db.characters.find_one(
+        {"id": char_id, "tenant_id": user.tenantId}, {"_id": 0}
+    )
     if not char:
         raise HTTPException(status_code=404, detail="Character not found")
     return char
@@ -183,7 +232,9 @@ class StoryboardSaveRequest(BaseModel):
 
 
 @app.post("/api/storyboards/save")
-async def save_storyboard(req: StoryboardSaveRequest):
+async def save_storyboard(
+    req: StoryboardSaveRequest, user: AuthedUser = Depends(get_current_user)
+):
     sb_id = req.id or uuid.uuid4().hex
 
     saved_scenes = []
@@ -205,6 +256,7 @@ async def save_storyboard(req: StoryboardSaveRequest):
 
     doc = {
         "id": sb_id,
+        "tenant_id": user.tenantId,
         "title": req.title,
         "script": req.script,
         "style": req.style,
@@ -215,33 +267,45 @@ async def save_storyboard(req: StoryboardSaveRequest):
     if req.videoTasks is not None:
         doc["videoTasks"] = req.videoTasks
 
-    db.storyboards.update_one({"id": sb_id}, {"$set": doc}, upsert=True)
+    db.storyboards.update_one(
+        {"id": sb_id, "tenant_id": user.tenantId}, {"$set": doc}, upsert=True
+    )
     return doc
 
 
 @app.get("/api/storyboards/list")
-async def list_storyboards():
-    items = list(db.storyboards.find({}, {"_id": 0}).sort("createdAt", -1))
+async def list_storyboards(user: AuthedUser = Depends(get_current_user)):
+    items = list(
+        db.storyboards.find({"tenant_id": user.tenantId}, {"_id": 0}).sort(
+            "createdAt", -1
+        )
+    )
     return items
 
 
 @app.get("/api/storyboards/{sb_id}")
-async def get_storyboard(sb_id: str):
-    sb = db.storyboards.find_one({"id": sb_id}, {"_id": 0})
+async def get_storyboard(
+    sb_id: str, user: AuthedUser = Depends(get_current_user)
+):
+    sb = db.storyboards.find_one(
+        {"id": sb_id, "tenant_id": user.tenantId}, {"_id": 0}
+    )
     if not sb:
         raise HTTPException(status_code=404, detail="Storyboard not found")
     return sb
 
 
 @app.delete("/api/storyboards/{sb_id}")
-async def delete_storyboard(sb_id: str):
-    db.storyboards.delete_one({"id": sb_id})
+async def delete_storyboard(
+    sb_id: str, user: AuthedUser = Depends(get_current_user)
+):
+    db.storyboards.delete_one({"id": sb_id, "tenant_id": user.tenantId})
     return {"ok": True}
 
 
 @app.delete("/api/media/{media_id}")
-async def delete_media(media_id: str):
-    db.media.delete_one({"id": media_id})
+async def delete_media(media_id: str, user: AuthedUser = Depends(get_current_user)):
+    db.media.delete_one({"id": media_id, "tenant_id": user.tenantId})
     return {"ok": True}
 
 
@@ -328,7 +392,9 @@ class BatchTaskRequest(BaseModel):
 
 
 @app.post("/api/kie/batch-task-status")
-async def batch_task_status(req: BatchTaskRequest):
+async def batch_task_status(
+    req: BatchTaskRequest, user: AuthedUser = Depends(get_current_user)
+):
     """Check status of multiple tasks at once. Auto-update storyboard if provided."""
     api_key = get_kie_api_key()
     if not api_key:
@@ -358,7 +424,9 @@ async def batch_task_status(req: BatchTaskRequest):
 
     # Auto-update storyboard scenes with completed video URLs
     if req.storyboard_id:
-        sb = db.storyboards.find_one({"id": req.storyboard_id}, {"_id": 0})
+        sb = db.storyboards.find_one(
+            {"id": req.storyboard_id, "tenant_id": user.tenantId}, {"_id": 0}
+        )
         if sb and sb.get("videoTasks"):
             updated = False
             scenes = sb.get("scenes", [])
@@ -574,6 +642,60 @@ async def save_settings(req: SettingsSaveRequest):
         update["kie_api_key"] = req.kie_api_key
     db.settings.update_one({"key": "app_settings"}, {"$set": update}, upsert=True)
     return {"ok": True}
+
+
+# ============ TENANT & FAL.AI ADMIN ============
+
+
+class TenantAISettings(BaseModel):
+    fal_api_key: Optional[str] = None
+
+
+@app.get("/api/tenant/ai-settings")
+async def get_tenant_ai_settings(user: AuthedUser = Depends(get_current_user)):
+    doc = db.tenant_settings.find_one(
+        {"tenant_id": user.tenantId}, {"_id": 0, "fal_api_key": 1, "updatedAt": 1}
+    )
+    return {
+        "tenant_id": user.tenantId,
+        "has_fal_key": bool(doc and doc.get("fal_api_key")),
+        "updatedAt": doc.get("updatedAt"),
+    }
+
+
+@app.put("/api/tenant/ai-settings")
+async def update_tenant_ai_settings(
+    req: TenantAISettings, user: AuthedUser = Depends(get_current_user)
+):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    update: Dict[str, Any] = {
+        "tenant_id": user.tenantId,
+        "updatedAt": now_iso(),
+    }
+    if req.fal_api_key is not None:
+        update["fal_api_key"] = req.fal_api_key
+
+    db.tenant_settings.update_one(
+        {"tenant_id": user.tenantId},
+        {"$set": update},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+@app.get("/api/admin/tenants")
+async def list_tenants(user: AuthedUser = Depends(get_current_user)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    items = list(
+        db.tenant_settings.find({}, {"_id": 0, "tenant_id": 1, "updatedAt": 1})
+    )
+    if not items:
+        items = [{"tenant_id": user.tenantId, "updatedAt": None}]
+    return items
 
 
 # ============ KIE.AI TEXT GENERATION ============

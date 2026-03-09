@@ -1,0 +1,162 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Lock, User as UserIcon, Eye, EyeOff, Sparkles, UserPlus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function Register() {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to register');
+            }
+
+            setSuccess('تم إنشاء الحساب بنجاح. حسابك الآن قيد المراجعة الرجاء الانتظار حتى يتم الموافقة عليه من قبل الإدارة.');
+            setTimeout(() => navigate('/login'), 5000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 flex items-center justify-center p-4">
+            {/* Background Effects */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-10 left-10 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 animate-pulse" />
+                <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 animate-pulse" />
+            </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative w-full max-w-md"
+            >
+                <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+                    {/* Logo/Header */}
+                    <div className="text-center mb-8">
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                            className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg"
+                        >
+                            <UserPlus className="w-10 h-10 text-white" />
+                        </motion.div>
+                        <h1 className="text-2xl font-bold text-white mb-2">إنشاء حساب</h1>
+                        <p className="text-white/60 text-sm">سجل للانضمام إلى المنصة</p>
+                    </div>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="relative">
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">
+                                <UserIcon className="w-5 h-5" />
+                            </div>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="اسم المستخدم"
+                                className="w-full bg-white/10 border border-white/20 rounded-xl py-4 pr-12 pl-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-right"
+                                dir="ltr"
+                                required
+                            />
+                        </div>
+
+                        <div className="relative">
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">
+                                <Lock className="w-5 h-5" />
+                            </div>
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="كلمة المرور"
+                                className="w-full bg-white/10 border border-white/20 rounded-xl py-4 pr-12 pl-12 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-right"
+                                dir="ltr"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                        </div>
+
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 text-center"
+                            >
+                                <p className="text-red-300 text-sm">{error}</p>
+                            </motion.div>
+                        )}
+
+                        {success && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3 text-center"
+                            >
+                                <p className="text-emerald-300 text-sm">{success}</p>
+                            </motion.div>
+                        )}
+
+                        <motion.button
+                            type="submit"
+                            disabled={isLoading || !password || !username}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-4 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        >
+                            {isLoading ? (
+                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <span>تسجيل</span>
+                                    <UserPlus className="w-5 h-5" />
+                                </>
+                            )}
+                        </motion.button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <p className="text-white/60 text-sm">
+                            لديك حساب بالفعل؟{' '}
+                            <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">
+                                تسجيل الدخول
+                            </Link>
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+}

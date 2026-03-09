@@ -10,7 +10,7 @@ export default function CharacterSheetCreate() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [step, setStep] = useState<'upload' | 'generating' | 'review'>('upload');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [characterName, setCharacterName] = useState('');
@@ -70,7 +70,7 @@ export default function CharacterSheetCreate() {
 
     try {
       console.log('Starting character sheet generation...');
-      
+
       // Generate all 3 views
       const images = await AIService.generateCharacterSheet({
         referenceImage: uploadedImage,
@@ -80,7 +80,7 @@ export default function CharacterSheetCreate() {
       });
 
       console.log('Character sheet generated successfully');
-      
+
       requestAnimationFrame(() => {
         setGeneratedImages(images);
         setStep('review');
@@ -97,7 +97,7 @@ export default function CharacterSheetCreate() {
 
   const regenerateView = async (view: 'front' | 'back' | 'closeup') => {
     if (!uploadedImage) return;
-    
+
     setIsProcessing(true);
     try {
       const newImage = await AIService.regenerateCharacterView({
@@ -107,7 +107,7 @@ export default function CharacterSheetCreate() {
         characterType,
         characterName
       });
-      
+
       setGeneratedImages(prev => prev ? { ...prev, [view]: newImage } : null);
       showToast('تم إعادة توليد الصورة', 'success');
     } catch (error: any) {
@@ -128,7 +128,7 @@ export default function CharacterSheetCreate() {
 
   const saveCharacter = async () => {
     if (!generatedImages) return;
-    
+
     try {
       const character: Character = {
         id: uuidv4(),
@@ -143,7 +143,7 @@ export default function CharacterSheetCreate() {
         },
         createdAt: Date.now()
       };
-      
+
       await db.saveCharacter(character);
       showToast('تم حفظ الشخصية بنجاح!', 'success');
       navigate('/characters');
@@ -153,7 +153,7 @@ export default function CharacterSheetCreate() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto min-h-screen bg-background pb-32">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-background pb-32">
       {/* Header */}
       <div className="flex items-center mb-6 pt-2">
         <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -197,11 +197,10 @@ export default function CharacterSheetCreate() {
                 <button
                   key={type.id}
                   onClick={() => setCharacterType(type.id as any)}
-                  className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                    characterType === type.id
+                  className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${characterType === type.id
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
                       : 'border-border bg-card text-muted-foreground hover:border-blue-200'
-                  }`}
+                    }`}
                 >
                   <span className="text-2xl">{type.icon}</span>
                   <span className="text-[10px] font-medium">{type.label}</span>
@@ -217,11 +216,10 @@ export default function CharacterSheetCreate() {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-                uploadedImage
+              className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${uploadedImage
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-border hover:border-blue-300 hover:bg-blue-50/50'
-              }`}
+                }`}
             >
               {uploadedImage ? (
                 <div className="space-y-4">

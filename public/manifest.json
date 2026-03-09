@@ -1,0 +1,23 @@
+{
+    "name": "StoryWeaver AI",
+    "short_name": "Weaver",
+    "description": "منصة صناعة القصص وصناعة المحتوى بالذكاء الاصطناعي",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0c0e12",
+    "theme_color": "#0c0e12",
+    "orientation": "portrait",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/vite.svg",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "/vite.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }
+    ]
+}

@@ -1,16 +1,10 @@
 import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
 
 const getAI = () => {
-  const storedKey = localStorage.getItem('GEMINI_API_KEY');
-  let apiKey = storedKey || process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
-  // Filter out the placeholder from .env.example
-  if (apiKey === "MY_GEMINI_API_KEY") {
-    apiKey = undefined;
-  }
-
-  if (!apiKey) {
-    throw new Error("مفتاح Gemini API مفقود. الرجاء إدخاله في صفحة الإعدادات.");
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    throw new Error("مفتاح Gemini API غير مهيأ على الخادم. يرجى طلب تهيئته من الأدمن.");
   }
 
   // Route requests through our backend proxy to bypass VPN requirements
@@ -474,8 +468,10 @@ DIRECTOR'S RULES:
       if (!videoUri) throw new Error("Video generation failed");
 
       // Fetch the actual video blob
-      const storedKey = localStorage.getItem('GEMINI_API_KEY');
-      const apiKey = storedKey || process.env.GEMINI_API_KEY!;
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        throw new Error("مفتاح Gemini API غير مهيأ على الخادم.");
+      }
 
       const response = await fetch(videoUri, {
         headers: {
@@ -1220,9 +1216,11 @@ DIRECTOR'S RULES:
 
     // Download helper
     const downloadVideo = async (uri: string): Promise<string> => {
-      const storedKey = localStorage.getItem('GEMINI_API_KEY');
-      const apiKey = storedKey || process.env.GEMINI_API_KEY;
-      const resp = await fetch(uri, { headers: { 'x-goog-api-key': apiKey || '' } });
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        throw new Error("مفتاح Gemini API غير مهيأ على الخادم.");
+      }
+      const resp = await fetch(uri, { headers: { 'x-goog-api-key': apiKey } });
       if (!resp.ok) throw new Error("فشل تحميل الفيديو المولد.");
       const blob = await resp.blob();
       return new Promise((resolve, reject) => {
