@@ -9,8 +9,14 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-prod';
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || 'internal-change-in-prod';
 
 // ====== MIDDLEWARE ======
+function requireInternal(req: any, res: any, next: any) {
+    const key = req.headers['x-internal-key'] || (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') ? req.headers.authorization.slice(7) : '');
+    if (key !== INTERNAL_API_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    next();
+}
 function requireAuth(req: any, res: any, next: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'No token provided' });
@@ -49,9 +55,11 @@ app.post('/api/auth/register', (req, res) => {
 
     // For الآن كل مستخدم يكون مستأجر مستقل، نربط tenant_id = id
     const tenantId = id;
+    const settingsRow = db.prepare('SELECT default_credits FROM admin_settings WHERE id = 1').get() as { default_credits: number } | undefined;
+    const initialCredits = settingsRow?.default_credits ?? 100;
 
-    db.prepare('INSERT INTO users (id, username, password_hash, role, status, tenant_id) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(id, username, hash, role, status, tenantId);
+    db.prepare('INSERT INTO users (id, username, password_hash, role, status, tenant_id, credits_balance) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .run(id, username, hash, role, status, tenantId, initialCredits);
 
     // Create initial empty settings
     db.prepare('INSERT INTO user_settings (user_id) VALUES (?)').run(id);
@@ -82,6 +90,7 @@ app.post('/api/auth/login', (req, res) => {
       JWT_SECRET
     );
 
+    const totalUsage = (db.prepare('SELECT COALESCE(SUM(cost), 0) as total FROM usage_log WHERE user_id = ?').get(user.id) as { total: number }).total;
     const settings = db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(user.id);
 
     res.json({
@@ -92,6 +101,8 @@ app.post('/api/auth/login', (req, res) => {
         role: user.role,
         status: user.status,
         tenantId: user.tenant_id,
+        creditsBalance: user.credits_balance ?? 0,
+        totalUsage: totalUsage ?? 0,
       },
       settings,
     });
@@ -102,10 +113,11 @@ app.post('/api/auth/login', (req, res) => {
 
 app.get('/api/auth/me', requireAuth, (req: any, res) => {
   const user = db
-    .prepare('SELECT id, username, role, status, tenant_id FROM users WHERE id = ?')
+    .prepare('SELECT id, username, role, status, tenant_id, credits_balance FROM users WHERE id = ?')
     .get(req.user.id) as any;
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    const totalUsage = (db.prepare('SELECT COALESCE(SUM(cost), 0) as total FROM usage_log WHERE user_id = ?').get(user.id) as { total: number }).total;
     const settings = db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(user.id);
   res.json({
     user: {
@@ -114,6 +126,8 @@ app.get('/api/auth/me', requireAuth, (req: any, res) => {
       role: user.role,
       status: user.status,
       tenantId: user.tenant_id,
+      creditsBalance: user.credits_balance ?? 0,
+      totalUsage: totalUsage ?? 0,
     },
     settings,
   });
@@ -122,8 +136,41 @@ app.get('/api/auth/me', requireAuth, (req: any, res) => {
 
 // ====== ADMIN ROUTES ======
 app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
-    const users = db.prepare('SELECT id, username, role, status, created_at FROM users ORDER BY created_at DESC').all();
-    res.json(users);
+    const users = db.prepare('SELECT id, username, role, status, created_at, credits_balance FROM users ORDER BY created_at DESC').all() as any[];
+    const withUsage = users.map((u) => {
+        const row = db.prepare('SELECT COALESCE(SUM(cost), 0) as total FROM usage_log WHERE user_id = ?').get(u.id) as { total: number };
+        return { ...u, creditsBalance: u.credits_balance ?? 0, totalUsage: row?.total ?? 0 };
+    });
+    res.json(withUsage);
+});
+
+app.get('/api/admin/credits/settings', requireAuth, requireAdmin, (req, res) => {
+    const row = db.prepare('SELECT default_credits, cost_text, cost_image, cost_video, updated_at FROM admin_settings WHERE id = 1').get();
+    res.json(row || { default_credits: 100, cost_text: 1, cost_image: 2, cost_video: 10, updated_at: null });
+});
+
+app.put('/api/admin/credits/settings', requireAuth, requireAdmin, (req: any, res) => {
+    const { default_credits, cost_text, cost_image, cost_video } = req.body;
+    const updates: string[] = [];
+    const params: any[] = [];
+    if (default_credits !== undefined) { updates.push('default_credits = ?'); params.push(default_credits); }
+    if (cost_text !== undefined) { updates.push('cost_text = ?'); params.push(cost_text); }
+    if (cost_image !== undefined) { updates.push('cost_image = ?'); params.push(cost_image); }
+    if (cost_video !== undefined) { updates.push('cost_video = ?'); params.push(cost_video); }
+    if (updates.length) {
+        updates.push('updated_at = CURRENT_TIMESTAMP');
+        db.prepare(`UPDATE admin_settings SET ${updates.join(', ')} WHERE id = 1`).run(...params);
+    }
+    const row = db.prepare('SELECT default_credits, cost_text, cost_image, cost_video, updated_at FROM admin_settings WHERE id = 1').get();
+    res.json(row);
+});
+
+app.put('/api/admin/users/:id/credits', requireAuth, requireAdmin, (req: any, res) => {
+    const { credits } = req.body;
+    if (typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid credits value' });
+    db.prepare('UPDATE users SET credits_balance = ? WHERE id = ?').run(credits, req.params.id);
+    const user = db.prepare('SELECT id, credits_balance FROM users WHERE id = ?').get(req.params.id);
+    res.json(user);
 });
 
 app.put('/api/admin/users/:id/status', requireAuth, requireAdmin, (req, res) => {
@@ -141,41 +188,45 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, (req, res) => {
 });
 
 
-// ====== SETTINGS ROUTES ======
-app.get('/api/settings', requireAuth, (req: any, res) => {
-    const settings = db.prepare('SELECT provider, text_model, image_model, video_model, gemini_key, kie_key FROM user_settings WHERE user_id = ?').get(req.user.id);
-    res.json(settings);
+// ====== SETTINGS ROUTES (fal-only; no provider/keys) ======
+app.get('/api/settings', requireAuth, (_req: any, res) => {
+    res.json({ provider: 'fal' });
 });
 
-app.post('/api/settings', requireAuth, (req: any, res) => {
-    const { provider, text_model, image_model, video_model, gemini_key, kie_key } = req.body;
-
-    // We allow partial updates
-    const setClauses: string[] = [];
-    const params: any[] = [];
-
-    if (provider !== undefined) { setClauses.push('provider = ?'); params.push(provider); }
-    if (text_model !== undefined) { setClauses.push('text_model = ?'); params.push(text_model); }
-    if (image_model !== undefined) { setClauses.push('image_model = ?'); params.push(image_model); }
-    if (video_model !== undefined) { setClauses.push('video_model = ?'); params.push(video_model); }
-    if (gemini_key !== undefined) { setClauses.push('gemini_key = ?'); params.push(gemini_key); }
-    if (kie_key !== undefined) { setClauses.push('kie_key = ?'); params.push(kie_key); }
-
-    if (setClauses.length > 0) {
-        params.push(req.user.id);
-        db.prepare(`UPDATE user_settings SET ${setClauses.join(', ')} WHERE user_id = ?`).run(...params);
-    }
-
-
+app.post('/api/settings', requireAuth, (_req: any, res) => {
     res.json({ success: true });
 });
 
-// ====== JOBS & KIE ROUTES ======
+// ====== INTERNAL (Backend calls for credits) ======
+app.get('/api/internal/credits/check', requireInternal, (req: any, res) => {
+    const userId = req.query.user_id as string;
+    const type = req.query.type as string; // text | image | video
+    if (!userId || !type) return res.status(400).json({ error: 'user_id and type required' });
+    const user = db.prepare('SELECT credits_balance FROM users WHERE id = ?').get(userId) as { credits_balance: number } | undefined;
+    const settings = db.prepare('SELECT cost_text, cost_image, cost_video FROM admin_settings WHERE id = 1').get() as { cost_text: number; cost_image: number; cost_video: number };
+    if (!user || !settings) return res.status(404).json({ error: 'User or settings not found' });
+    const cost = type === 'text' ? settings.cost_text : type === 'image' ? settings.cost_image : type === 'video' ? settings.cost_video : 0;
+    const ok = user.credits_balance >= cost;
+    res.json({ ok, balance: user.credits_balance, cost });
+});
+
+app.post('/api/internal/credits/deduct', requireInternal, (req: any, res) => {
+    const { user_id: userId, type, cost } = req.body;
+    if (!userId || !type || typeof cost !== 'number' || cost < 0) return res.status(400).json({ error: 'user_id, type, cost required' });
+    const user = db.prepare('SELECT credits_balance FROM users WHERE id = ?').get(userId) as { credits_balance: number } | undefined;
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.credits_balance < cost) return res.status(402).json({ error: 'Insufficient credits', balance: user.credits_balance });
+    db.prepare('UPDATE users SET credits_balance = credits_balance - ? WHERE id = ?').run(cost, userId);
+    const logId = crypto.randomUUID();
+    db.prepare('INSERT INTO usage_log (id, user_id, type, cost) VALUES (?, ?, ?, ?)').run(logId, userId, type, cost);
+    const updated = db.prepare('SELECT credits_balance FROM users WHERE id = ?').get(userId) as { credits_balance: number };
+    res.json({ ok: true, newBalance: updated.credits_balance });
+});
+
+// ====== JOBS ROUTES ======
 import jobsRouter from './routes/jobs.js';
-import kieRouter from './routes/kie.js';
 
 app.use('/api/jobs', requireAuth, jobsRouter);
-app.use('/api/kie', requireAuth, kieRouter);
 
 // Create basic health check
 app.get('/api/health', (req, res) => {

@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronRight, Play, Loader2, Download, Film, Mic, Video, Wand2, RefreshCw, AlertCircle } from 'lucide-react';
 import { db, Storyboard, Scene } from '../lib/db';
 import { AIService } from '../lib/aiService';
-import { KieService } from '../lib/kie';
 
 // Scene status type
 type SceneStatus = 'pending' | 'generating' | 'success' | 'failed' | 'rate_limited';
@@ -43,52 +42,8 @@ export default function StoryboardView() {
     }
   }, [id]);
 
-  const resumePendingTasks = async (sb: Storyboard) => {
-    const pendingTasks = (sb.videoTasks || []).filter((t: any) => {
-      const idx = t.sceneIndex;
-      return idx >= 0 && idx < sb.scenes.length && !sb.scenes[idx]?.videoClip;
-    });
-    if (pendingTasks.length === 0) return;
-
-    setIsGenerating(true);
-    const newScenes = [...sb.scenes];
-    const taskIds = pendingTasks.map((t: any) => t.taskId);
-
-    // Check status via batch endpoint
-    let pollCount = 0;
-    const pending = new Set(pendingTasks.map((t: any) => t.taskId));
-
-    while (pending.size > 0 && pollCount < 60) {
-      await new Promise(r => setTimeout(r, 5000));
-      pollCount++;
-
-      try {
-        const resp = await fetch(`${window.location.origin}/api/kie/batch-task-status`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task_ids: [...pending], storyboard_id: sb.id }),
-        });
-        const results = await resp.json();
-
-        for (const task of pendingTasks) {
-          const r = results[task.taskId];
-          if (!r) continue;
-          if (r.status === 'completed' && r.videoUrl) {
-            newScenes[task.sceneIndex].videoClip = r.videoUrl;
-            pending.delete(task.taskId);
-            setVideoStatuses(prev => ({ ...prev, [task.sceneIndex]: 'مكتمل' }));
-            const updated = { ...sb, scenes: newScenes };
-            setStoryboard(updated);
-            await db.saveStoryboard(updated);
-          } else if (r.status === 'failed') {
-            pending.delete(task.taskId);
-            setVideoStatuses(prev => ({ ...prev, [task.sceneIndex]: 'فشل' }));
-          } else {
-            setVideoStatuses(prev => ({ ...prev, [task.sceneIndex]: `جاري التوليد... (${pollCount})` }));
-          }
-        }
-      } catch { /* continue */ }
-    }
+  const resumePendingTasks = async (_sb: Storyboard) => {
+    // Sync fal.ai flow: no async task IDs to resume. Old KIE task IDs are no longer supported.
     setIsGenerating(false);
   };
 
@@ -129,10 +84,8 @@ export default function StoryboardView() {
     setIsGenerating(true);
 
     const newScenes = [...storyboard.scenes];
-    const tasks: { idx: number; taskId: string }[] = [];
 
     try {
-      // Step 1: Submit all video generation tasks
       for (let i = 0; i < newScenes.length - 1; i++) {
         if (newScenes[i].videoClip) continue;
 
@@ -140,7 +93,7 @@ export default function StoryboardView() {
         if (!startFrame) continue;
 
         setCurrentGeneratingIndex(i);
-        setVideoStatuses(prev => ({ ...prev, [i]: 'جاري الرفع...' }));
+        setVideoStatuses(prev => ({ ...prev, [i]: 'جاري التوليد...' }));
 
         let prompt = newScenes[i].description;
         if (newScenes[i].dialogue) {
@@ -149,56 +102,18 @@ export default function StoryboardView() {
         prompt += `. انتقال سلس إلى المشهد التالي.`;
 
         try {
-          const result = await KieService.generateImageToVideo(
-            startFrame,
-            prompt,
-            'veo3_fast',
-            storyboard.aspectRatio || '16:9'
-          );
-          tasks.push({ idx: i, taskId: result.taskId });
-          setVideoStatuses(prev => ({ ...prev, [i]: 'جاري التوليد...' }));
+          const endFrame = newScenes[i + 1]?.frameImage;
+          const aspectRatio = (storyboard.aspectRatio === '9:16' ? '9:16' : '16:9') as '16:9' | '9:16';
+          const videoUrl = await AIService.generateVideoClip(startFrame, endFrame || startFrame, aspectRatio, prompt);
+          if (videoUrl) {
+            newScenes[i].videoClip = videoUrl;
+            setVideoStatuses(prev => ({ ...prev, [i]: 'مكتمل' }));
+            const updated = { ...storyboard, scenes: newScenes };
+            setStoryboard(updated);
+            await db.saveStoryboard(updated);
+          }
         } catch (e: any) {
           setVideoStatuses(prev => ({ ...prev, [i]: `فشل: ${e.message}` }));
-        }
-      }
-
-      // Save task IDs to database so they persist even if browser is closed
-      if (tasks.length > 0) {
-        const videoTasks = tasks.map(t => ({ taskId: t.taskId, sceneIndex: t.idx }));
-        await fetch(`${window.location.origin}/api/storyboards/save`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...storyboard, videoTasks }),
-        });
-      }
-
-      // Step 2: Poll all tasks
-      const pending = new Set(tasks.map(t => t.idx));
-      let pollCount = 0;
-      while (pending.size > 0 && pollCount < 120) {
-        await new Promise(r => setTimeout(r, 5000));
-        pollCount++;
-
-        for (const task of tasks) {
-          if (!pending.has(task.idx)) continue;
-          try {
-            const resp = await fetch(`${window.location.origin}/api/kie/task-status/${task.taskId}`);
-            const result = await resp.json();
-
-            if (result.status === 'completed' && result.videoUrl) {
-              newScenes[task.idx].videoClip = result.videoUrl;
-              pending.delete(task.idx);
-              setVideoStatuses(prev => ({ ...prev, [task.idx]: 'مكتمل' }));
-              const updated = { ...storyboard, scenes: newScenes };
-              setStoryboard(updated);
-              await db.saveStoryboard(updated);
-            } else if (result.status === 'failed') {
-              pending.delete(task.idx);
-              setVideoStatuses(prev => ({ ...prev, [task.idx]: 'فشل التوليد' }));
-            } else {
-              setVideoStatuses(prev => ({ ...prev, [task.idx]: `جاري التوليد... (${pollCount})` }));
-            }
-          } catch { /* continue */ }
         }
       }
     } catch (error: any) {
@@ -236,11 +151,15 @@ export default function StoryboardView() {
         }
       }
 
-      const imageUrl = await AIService.generateStoryboardFrame(
-        scene.description,
-        referenceImages,
-        storyboard.aspectRatio || '16:9'
-      );
+      const imageUrl = await AIService.generateStoryboardFrame({
+        sceneDescription: scene.description,
+        characterImages: referenceImages,
+        sceneIndex: sceneIndex,
+        totalScenes: storyboard.scenes.length,
+        style: 'Pixar',
+        aspectRatio: (storyboard.aspectRatio === '9:16' ? '9:16' : '16:9') as '16:9' | '9:16',
+        characterDNA: referenceImages.length ? 'Match reference images' : '',
+      });
 
       const newScenes = [...storyboard.scenes];
       newScenes[sceneIndex].frameImage = imageUrl;
@@ -360,11 +279,15 @@ export default function StoryboardView() {
           }
 
           const imageUrl = await generateWithRetry(
-            () => AIService.generateStoryboardFrame(
-              scene.description,
-              referenceImages,
-              currentStoryboard.aspectRatio || '16:9'
-            ),
+            () => AIService.generateStoryboardFrame({
+              sceneDescription: scene.description,
+              characterImages: referenceImages,
+              sceneIndex: i,
+              totalScenes: currentStoryboard.scenes.length,
+              style: 'Pixar',
+              aspectRatio: (currentStoryboard.aspectRatio === '9:16' ? '9:16' : '16:9') as '16:9' | '9:16',
+              characterDNA: referenceImages.length ? 'Match reference images' : '',
+            }),
             i
           );
 

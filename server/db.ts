@@ -46,6 +46,25 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS admin_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    default_credits INTEGER NOT NULL DEFAULT 100,
+    cost_text INTEGER NOT NULL DEFAULT 1,
+    cost_image INTEGER NOT NULL DEFAULT 2,
+    cost_video INTEGER NOT NULL DEFAULT 10,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  INSERT OR IGNORE INTO admin_settings (id, default_credits, cost_text, cost_image, cost_video) VALUES (1, 100, 1, 2, 10);
+
+  CREATE TABLE IF NOT EXISTS usage_log (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    cost INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 // Lightweight migration: ensure tenant_id column exists and is populated
@@ -55,6 +74,15 @@ const hasTenantId = userColumns.some((col) => col.name === 'tenant_id');
 if (!hasTenantId) {
   db.exec(`ALTER TABLE users ADD COLUMN tenant_id TEXT`);
   db.exec(`UPDATE users SET tenant_id = id WHERE tenant_id IS NULL`);
+}
+
+// Credits: add credits_balance to users if missing
+const hasCreditsBalance = userColumns.some((col) => col.name === 'credits_balance');
+if (!hasCreditsBalance) {
+  db.exec(`ALTER TABLE users ADD COLUMN credits_balance INTEGER NOT NULL DEFAULT 0`);
+  const row = db.prepare('SELECT default_credits FROM admin_settings WHERE id = 1').get() as { default_credits: number } | undefined;
+  const defaultCredits = row?.default_credits ?? 100;
+  db.prepare('UPDATE users SET credits_balance = ? WHERE credits_balance = 0').run(defaultCredits);
 }
 
 console.log('Database initialized at:', dbPath);

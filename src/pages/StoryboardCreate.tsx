@@ -4,7 +4,6 @@ import { ChevronRight, Sparkles, Users, Film, Play, Loader2, Check, RefreshCw, V
 import { v4 as uuidv4 } from 'uuid';
 import { db, Character, Storyboard, Scene } from '../lib/db';
 import { AIService } from '../lib/aiService';
-import { KieService } from '../lib/kie';
 import { MissingApiKeyError } from '../lib/aiProvider';
 import { ApiKeyMissing } from '../components/ApiKeyMissing';
 import { cn } from '../lib/utils';
@@ -264,85 +263,57 @@ export default function StoryboardCreate() {
     }
   };
 
-  // Generate videos for all scenes using kie.ai (consecutive pairs)
+  // Generate videos for all scenes via fal.ai (sync)
   const generateVideos = async () => {
     setIsGeneratingVideos(true);
     const videos: Record<number, { status: string; url?: string }> = {};
+    const aspectRatioTyped = (aspectRatio === '9:16' ? '9:16' : '16:9') as '16:9' | '9:16';
 
-    // Step 1: Start video tasks using consecutive scene pairs
-    const tasks: { idx: number; taskId: string }[] = [];
     for (let i = 0; i < scenes.length - 1; i++) {
       if (!scenes[i].frameImage || !scenes[i + 1].frameImage) continue;
-      videos[i] = { status: 'جاري الرفع...' };
+      videos[i] = { status: 'جاري التوليد...' };
       setSceneVideos({ ...videos });
 
       try {
-        // Build prompt with dialogue and lip movement
         let prompt = scenes[i].description;
         if (scenes[i].dialogue) {
           prompt += `. الشخصية تتحدث بوضوح وتحريك الشفاه طوال المشهد: "${scenes[i].dialogue}"`;
         }
         prompt += `. الانتقال من هذا المشهد إلى المشهد التالي بسلاسة.`;
 
-        const result = await KieService.generateImageToVideo(
+        const videoUrl = await AIService.generateVideoClip(
           scenes[i].frameImage!,
-          prompt,
-          'veo3_fast',
-          aspectRatio
+          scenes[i + 1].frameImage!,
+          aspectRatioTyped,
+          prompt
         );
-        tasks.push({ idx: i, taskId: result.taskId });
-        videos[i] = { status: 'جاري التوليد...' };
+
+        if (videoUrl) {
+          videos[i] = { status: 'مكتمل', url: videoUrl };
+          scenes[i].videoClip = videoUrl;
+          setScenes([...scenes]);
+          try {
+            await db.saveMediaItem({
+              id: uuidv4(),
+              type: 'video',
+              source: 'storyboard',
+              title: idea.substring(0, 30) || 'مقطع قصة',
+              description: scenes[i].description,
+              data: videoUrl,
+              aspectRatio: aspectRatio,
+              createdAt: Date.now()
+            });
+          } catch (err) {
+            console.error("Failed to save storyboard video to gallery", err);
+          }
+        } else {
+          videos[i] = { status: 'فشل التوليد' };
+        }
         setSceneVideos({ ...videos });
       } catch (e: any) {
         if (e instanceof MissingApiKeyError) { setMissingKeyError(e); setIsGeneratingVideos(false); return; }
         videos[i] = { status: `فشل: ${e.message}` };
         setSceneVideos({ ...videos });
-      }
-    }
-
-    // Step 2: Poll all tasks
-    const pending = new Set(tasks.map(t => t.idx));
-    let pollCount = 0;
-    while (pending.size > 0 && pollCount < 120) {
-      await new Promise(r => setTimeout(r, 5000));
-      pollCount++;
-
-      for (const task of tasks) {
-        if (!pending.has(task.idx)) continue;
-        try {
-          const resp = await fetch(`${window.location.origin}/api/kie/task-status/${task.taskId}`);
-          const result = await resp.json();
-
-          if (result.status === 'completed' && result.videoUrl) {
-            videos[task.idx] = { status: 'مكتمل', url: result.videoUrl };
-            pending.delete(task.idx);
-            // Save video URL to the scene
-            scenes[task.idx].videoClip = result.videoUrl;
-            setScenes([...scenes]);
-
-            // Auto-save to gallery
-            try {
-              await db.saveMediaItem({
-                id: uuidv4(),
-                type: 'video',
-                source: 'storyboard',
-                title: idea.substring(0, 30) || 'مقطع قصة',
-                description: scenes[task.idx].description,
-                data: result.videoUrl,
-                aspectRatio: aspectRatio,
-                createdAt: Date.now()
-              });
-            } catch (err) {
-              console.error("Failed to save storyboard video to gallery", err);
-            }
-          } else if (result.status === 'failed') {
-            videos[task.idx] = { status: 'فشل التوليد' };
-            pending.delete(task.idx);
-          } else {
-            videos[task.idx] = { status: `جاري التوليد... (${pollCount})` };
-          }
-          setSceneVideos({ ...videos });
-        } catch { /* continue polling */ }
       }
     }
     setIsGeneratingVideos(false);

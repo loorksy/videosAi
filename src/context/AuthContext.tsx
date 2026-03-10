@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { setAIAuthToken } from '../lib/aiProvider';
 
 export interface User {
     id: string;
@@ -6,6 +7,8 @@ export interface User {
     role: 'admin' | 'user';
     status: 'pending' | 'approved' | 'banned';
     tenantId: string;
+    creditsBalance?: number;
+    totalUsage?: number;
 }
 
 interface AuthContextType {
@@ -36,13 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         const data = await res.json();
                         setUser(data.user);
                         setToken(storedToken);
-
-                        // Sync settings to localStorage for frontend usage
-                        if (data.settings) {
-                            localStorage.setItem('AI_PROVIDER', data.settings.provider || 'gemini');
-                            if (data.settings.gemini_key) localStorage.setItem('GEMINI_API_KEY', data.settings.gemini_key);
-                            if (data.settings.kie_key) localStorage.setItem('KIE_API_KEY', data.settings.kie_key);
-                        }
+                        setAIAuthToken(storedToken);
                     } else {
                         localStorage.removeItem('token');
                         setToken(null);
@@ -60,12 +57,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('token', newToken);
         setToken(newToken);
         setUser(userData);
+        setAIAuthToken(newToken);
     };
 
     const logout = () => {
         localStorage.removeItem('token');
-        localStorage.removeItem('GEMINI_API_KEY');
-        localStorage.removeItem('KIE_API_KEY');
+        setAIAuthToken(null);
         setToken(null);
         setUser(null);
     };

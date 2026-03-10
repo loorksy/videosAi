@@ -1,11 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { KeyRound, Loader2, Shield } from 'lucide-react';
+import { KeyRound, Loader2, Shield, Settings2, RefreshCw } from 'lucide-react';
 
 interface TenantAISettingsDto {
   tenant_id: string;
   has_fal_key: boolean;
   updatedAt?: string | null;
+}
+
+interface FalModelDto {
+  id: string;
+  kind: 'text' | 'image' | 'video' | string;
+  description?: string | null;
+}
+
+interface FalFeatureDef {
+  key: string;
+  kind: 'text' | 'image' | 'video' | string;
+  label: string;
+}
+
+interface FalModelMappingsResponse {
+  features: FalFeatureDef[];
+  mappings: Record<string, string>;
+  availableModelsByKind: {
+    text?: FalModelDto[];
+    image?: FalModelDto[];
+    video?: FalModelDto[];
+    [k: string]: FalModelDto[] | undefined;
+  };
 }
 
 export default function AdminFalSettingsPage() {
@@ -16,19 +39,32 @@ export default function AdminFalSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [modelMappings, setModelMappings] = useState<FalModelMappingsResponse | null>(null);
+  const [savingMappings, setSavingMappings] = useState(false);
+  const [refreshingModels, setRefreshingModels] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/tenant/ai-settings', {
+        // Tenant-level key info
+        const resSettings = await fetch('/api/tenant/ai-settings', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || `فشل تحميل إعدادات fal.ai (${res.status})`);
+        if (!resSettings.ok) {
+          const data = await resSettings.json().catch(() => ({}));
+          throw new Error(data.detail || `فشل تحميل إعدادات fal.ai (${resSettings.status})`);
         }
-        const data = (await res.json()) as TenantAISettingsDto;
-        setSettings(data);
+        const dataSettings = (await resSettings.json()) as TenantAISettingsDto;
+        setSettings(dataSettings);
+
+        // Global model mappings for admin
+        const resMappings = await fetch('/api/admin/fal/model-mappings', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resMappings.ok) {
+          const dataMappings = (await resMappings.json()) as FalModelMappingsResponse;
+          setModelMappings(dataMappings);
+        }
       } catch (e: any) {
         setError(e.message || 'فشل تحميل الإعدادات');
       } finally {
@@ -97,9 +133,9 @@ export default function AdminFalSettingsPage() {
           <KeyRound className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-foreground">إعدادات fal.ai للمستأجر</h1>
+          <h1 className="text-lg font-bold text-foreground">إعدادات fal.ai</h1>
           <p className="text-xs text-muted-foreground">
-            إدارة مفتاح fal.ai للمستأجر الحالي ({settings?.tenant_id || user.tenantId}).
+            إدارة مفتاح fal.ai للمستأجر الحالي ({settings?.tenant_id || user.tenantId})، واختيار الموديلات المستخدمة لكل أداة.
           </p>
         </div>
       </header>
@@ -160,6 +196,133 @@ export default function AdminFalSettingsPage() {
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
             حفظ إعدادات fal.ai
+          </button>
+        </div>
+      )}
+
+      {user.role === 'admin' && modelMappings && (
+        <div className="bg-card border border-border/60 rounded-2xl p-4 space-y-4">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Settings2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-card-foreground">اختيار موديلات fal.ai لكل أداة</h2>
+                <p className="text-[11px] text-muted-foreground">
+                  اختر الموديل لكل نوع استخدام (نص / صورة / فيديو). التغييرات تؤثر على جميع المستخدمين.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  setRefreshingModels(true);
+                  const res = await fetch('/api/admin/fal/models?force=true', {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const models = (await res.json()) as FalModelDto[];
+                  const grouped: FalModelMappingsResponse['availableModelsByKind'] = { text: [], image: [], video: [] };
+                  models.forEach((m) => {
+                    const k = m.kind || 'text';
+                    if (!grouped[k]) grouped[k] = [];
+                    grouped[k]!.push(m);
+                  });
+                  setModelMappings((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          availableModelsByKind: grouped,
+                        }
+                      : prev,
+                  );
+                } catch (e) {
+                  console.error(e);
+                } finally {
+                  setRefreshingModels(false);
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-[11px] text-muted-foreground hover:bg-secondary/60"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshingModels ? 'animate-spin' : ''}`} />
+              تحديث قائمة الموديلات
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            {['text', 'image', 'video'].map((kind) => {
+              const features = modelMappings.features.filter((f) => f.kind === kind);
+              if (!features.length) return null;
+              const models = modelMappings.availableModelsByKind[kind] || [];
+              return (
+                <div key={kind} className="space-y-2">
+                  <h3 className="font-semibold text-card-foreground text-xs mb-1">
+                    {kind === 'text' ? 'نماذج النصوص' : kind === 'image' ? 'نماذج الصور' : 'نماذج الفيديو'}
+                  </h3>
+                  {features.map((f) => (
+                    <div key={f.key} className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground block">{f.label}</label>
+                      <select
+                        className="w-full border border-border rounded-lg bg-background px-2 py-1.5 text-[11px]"
+                        value={modelMappings.mappings[f.key] || ''}
+                        onChange={(e) =>
+                          setModelMappings((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  mappings: {
+                                    ...prev.mappings,
+                                    [f.key]: e.target.value,
+                                  },
+                                }
+                              : prev,
+                          )
+                        }
+                      >
+                        <option value="">افتراضي (حسب الإعداد المدمج)</option>
+                        {models.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.id} {m.description ? `- ${m.description}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            disabled={savingMappings}
+            onClick={async () => {
+              try {
+                setSavingMappings(true);
+                const res = await fetch('/api/admin/fal/model-mappings', {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ mappings: modelMappings.mappings }),
+                });
+                if (!res.ok) {
+                  const data = await res.json().catch(() => ({}));
+                  throw new Error(data.detail || `فشل حفظ ربط الموديلات (${res.status})`);
+                }
+                setSuccess('تم حفظ ربط الموديلات بنجاح.');
+              } catch (e: any) {
+                setError(e.message || 'فشل حفظ ربط الموديلات');
+              } finally {
+                setSavingMappings(false);
+              }
+            }}
+            className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {savingMappings && <Loader2 className="w-3 h-3 animate-spin" />}
+            حفظ ربط الموديلات
           </button>
         </div>
       )}

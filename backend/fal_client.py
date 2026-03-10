@@ -14,12 +14,12 @@ db = client[DB_NAME]
 
 
 def get_fal_api_key_for_tenant(tenant_id: str) -> str:
-  """
-  Return the fal.ai API key for a given tenant.
-  Priority:
-    1) tenant_settings collection (per-tenant config)
-    2) global FAL_API_KEY from environment as a fallback
-  """
+    """
+    Return the fal.ai API key for a given tenant.
+    Priority:
+      1) tenant_settings collection (per-tenant config)
+      2) global FAL_API_KEY from environment as a fallback
+    """
     settings: Optional[dict] = db.tenant_settings.find_one(
         {"tenant_id": tenant_id}, {"_id": 0, "fal_api_key": 1}
     )

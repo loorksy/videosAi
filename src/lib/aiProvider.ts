@@ -1,93 +1,117 @@
-// AI Provider - Routes calls to Gemini or kie.ai based on user settings
+// AI Provider - fal.ai only via Backend /api/ai/* (credits + JWT)
 
 const API = window.location.origin;
 
-export type Provider = 'gemini' | 'kie';
+let _authToken: string | null = null;
 
-export function getProviderSettings() {
-  return {
-    provider: (localStorage.getItem('AI_PROVIDER') || 'gemini') as Provider,
-    textModel: localStorage.getItem('AI_TEXT_MODEL') || 'gemini-2.5-flash',
-    imageModel: localStorage.getItem('AI_IMAGE_MODEL') || 'gemini-3-pro-image-preview',
-    videoModel: localStorage.getItem('AI_VIDEO_MODEL') || 'veo3_fast',
-  };
+export function setAIAuthToken(token: string | null) {
+  _authToken = token;
 }
 
-export class MissingApiKeyError extends Error {
-  provider: Provider;
-  constructor(provider: Provider) {
-    super('API key configuration is missing');
-    this.name = 'MissingApiKeyError';
-    this.provider = provider;
+function getAuthHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (_authToken) h['Authorization'] = `Bearer ${_authToken}`;
+  return h;
+}
+
+export class InsufficientCreditsError extends Error {
+  constructor() {
+    super('Insufficient credits');
+    this.name = 'InsufficientCreditsError';
   }
 }
 
-/** In SaaS mode, keys تُدار من الخادم، فلا نتحقق من localStorage هنا */
-export function requireApiKey(): void {
-  return;
-}
-
-/** kie.ai مفاتيح تُدار مركزياً عبر الخادم */
-export function requireKieKey(): void {
-  return;
-}
-
-export function isKieProvider(): boolean {
-  return getProviderSettings().provider === 'kie';
-}
-
-// kie.ai text generation via backend
-export async function kieGenerateText(prompt: string, systemPrompt = ''): Promise<string> {
-  const { textModel } = getProviderSettings();
-  const resp = await fetch(`${API}/api/kie/generate-text`, {
+/** Text generation via Backend (fal + credits) */
+export async function falGenerateText(
+  userPrompt: string,
+  systemPrompt?: string,
+  featureKey?: string,
+): Promise<string> {
+  const resp = await fetch(`${API}/api/ai/generate-text`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, system_prompt: systemPrompt, model: textModel }),
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ user: userPrompt, system: systemPrompt ?? undefined, featureKey }),
   });
+  if (resp.status === 402) throw new InsufficientCreditsError();
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.detail || `خطأ ${resp.status}`);
   }
   const data = await resp.json();
-  return data.text || '';
+  return data.text ?? '';
 }
 
-// kie.ai JSON text generation (parse JSON from response)
-export async function kieGenerateJSON<T>(prompt: string, systemPrompt = ''): Promise<T> {
+/** JSON generation (text + parse) */
+export async function falGenerateJSON<T>(
+  prompt: string,
+  systemPrompt = '',
+  featureKey?: string,
+): Promise<T> {
   const fullSystem = `${systemPrompt}\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explanations.`;
-  const text = await kieGenerateText(prompt, fullSystem);
-  
-  // Try to extract JSON from the response
+  const text = await falGenerateText(prompt, fullSystem, featureKey);
   const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
-  
   try {
-    return JSON.parse(cleaned);
+    return JSON.parse(cleaned) as T;
   } catch {
-    // Try to find JSON in the text
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) {
-      return JSON.parse(match[0]);
-    }
+    if (match) return JSON.parse(match[0]) as T;
     throw new Error('فشل تحليل الرد كـ JSON');
   }
 }
 
-// kie.ai image generation via backend (synchronous - waits for result)
-export async function kieGenerateImage(
+/** Image generation via Backend (fal + credits). Returns first image URL or empty. */
+export async function falGenerateImage(
   prompt: string,
-  size = '1:1',
-  imageUrls: string[] = [],
+  imageSize = 'landscape_16_9',
+  featureKey?: string,
 ): Promise<string> {
-  const { imageModel } = getProviderSettings();
-  const resp = await fetch(`${API}/api/kie/generate-image`, {
+  const resp = await fetch(`${API}/api/ai/generate-image`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, model: imageModel, size, image_urls: imageUrls }),
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ prompt, image_size: imageSize, featureKey }),
   });
+  if (resp.status === 402) throw new InsufficientCreditsError();
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.detail || `خطأ توليد الصورة: ${resp.status}`);
   }
   const data = await resp.json();
-  return data.imageUrl || '';
+  const images = data.images;
+  if (Array.isArray(images) && images.length > 0) return images[0];
+  return '';
+}
+
+/** Video generation via Backend (fal + credits). Returns video_url. */
+export async function falGenerateVideo(params: {
+  prompt?: string;
+  image_url?: string;
+  duration?: number;
+  featureKey?: string;
+}): Promise<string> {
+  const resp = await fetch(`${API}/api/ai/generate-video`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (resp.status === 402) throw new InsufficientCreditsError();
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.detail || `خطأ توليد الفيديو: ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.video_url ?? '';
+}
+
+/** Upload base64 media to Backend; returns public URL (e.g. /api/uploads/xxx). */
+export async function uploadMediaBase64(data: string, type: 'image' | 'video' = 'image'): Promise<string> {
+  const resp = await fetch(`${API}/api/media/upload`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ data, type, title: '', description: '', aspectRatio: '16:9' }),
+  });
+  if (!resp.ok) throw new Error('فشل رفع الملف');
+  const json = await resp.json();
+  const url = json.url || json.path;
+  if (typeof url === 'string') return url.startsWith('http') ? url : `${API}${url.startsWith('/') ? '' : '/'}${url}`;
+  throw new Error('لم يتم إرجاع رابط');
 }

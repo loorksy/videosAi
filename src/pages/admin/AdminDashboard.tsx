@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, ShieldAlert, CheckCircle, XCircle, Trash2, UserPlus, Loader2 } from 'lucide-react';
+import { Shield, ShieldAlert, CheckCircle, XCircle, Trash2, UserPlus, Loader2, Coins, BarChart3, Save, Settings2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface AdminUser {
@@ -9,6 +9,16 @@ interface AdminUser {
     role: 'admin' | 'user';
     status: 'pending' | 'approved' | 'banned';
     created_at: string;
+    creditsBalance?: number;
+    totalUsage?: number;
+}
+
+interface CreditSettings {
+    default_credits: number;
+    cost_text: number;
+    cost_image: number;
+    cost_video: number;
+    updated_at: string | null;
 }
 
 export default function AdminDashboard() {
@@ -16,6 +26,11 @@ export default function AdminDashboard() {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [creditSettings, setCreditSettings] = useState<CreditSettings | null>(null);
+    const [creditSettingsEditing, setCreditSettingsEditing] = useState<Partial<CreditSettings>>({});
+    const [savingCredits, setSavingCredits] = useState(false);
+    const [editingCreditsFor, setEditingCreditsFor] = useState<string | null>(null);
+    const [editCreditsValue, setEditCreditsValue] = useState<string>('');
 
     const fetchUsers = async () => {
         try {
@@ -32,9 +47,66 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchCreditSettings = async () => {
+        try {
+            const res = await fetch('/api/admin/credits/settings', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCreditSettings(data);
+                setCreditSettingsEditing(data);
+            }
+        } catch { /* ignore */ }
+    };
+
     useEffect(() => {
         fetchUsers();
     }, [token]);
+
+    useEffect(() => {
+        if (token) fetchCreditSettings();
+    }, [token]);
+
+    const saveCreditSettings = async () => {
+        setSavingCredits(true);
+        try {
+            const res = await fetch('/api/admin/credits/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(creditSettingsEditing),
+            });
+            if (!res.ok) throw new Error('Failed to save');
+            const data = await res.json();
+            setCreditSettings(data);
+            setCreditSettingsEditing(data);
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setSavingCredits(false);
+        }
+    };
+
+    const handleSetCredits = async (userId: string) => {
+        const val = parseInt(editCreditsValue, 10);
+        if (isNaN(val) || val < 0) {
+            alert('أدخل رقماً صحيحاً غير سالب');
+            return;
+        }
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/credits`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ credits: val }),
+            });
+            if (!res.ok) throw new Error('Failed to update credits');
+            setEditingCreditsFor(null);
+            setEditCreditsValue('');
+            fetchUsers();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
 
     const handleStatusChange = async (userId: string, status: 'approved' | 'banned' | 'pending') => {
         try {
@@ -93,6 +165,66 @@ export default function AdminDashboard() {
                 </div>
             )}
 
+            {/* Credit settings */}
+            <div className="bg-card border border-border/60 rounded-2xl p-4 space-y-4">
+                <h2 className="font-bold flex items-center gap-2">
+                    <Settings2 className="w-4 h-4 text-primary" />
+                    إعدادات الكريدت
+                </h2>
+                {creditSettings && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                            <label className="text-xs text-muted-foreground block mb-1">رصيد افتراضي (مستخدم جديد)</label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={creditSettingsEditing.default_credits ?? creditSettings.default_credits}
+                                onChange={(e) => setCreditSettingsEditing((p) => ({ ...p, default_credits: parseInt(e.target.value, 10) || 0 }))}
+                                className="w-full p-2 border border-border rounded-lg bg-background"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground block mb-1">تكلفة النص</label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={creditSettingsEditing.cost_text ?? creditSettings.cost_text}
+                                onChange={(e) => setCreditSettingsEditing((p) => ({ ...p, cost_text: parseInt(e.target.value, 10) || 0 }))}
+                                className="w-full p-2 border border-border rounded-lg bg-background"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground block mb-1">تكلفة الصورة</label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={creditSettingsEditing.cost_image ?? creditSettings.cost_image}
+                                onChange={(e) => setCreditSettingsEditing((p) => ({ ...p, cost_image: parseInt(e.target.value, 10) || 0 }))}
+                                className="w-full p-2 border border-border rounded-lg bg-background"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground block mb-1">تكلفة الفيديو</label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={creditSettingsEditing.cost_video ?? creditSettings.cost_video}
+                                onChange={(e) => setCreditSettingsEditing((p) => ({ ...p, cost_video: parseInt(e.target.value, 10) || 0 }))}
+                                className="w-full p-2 border border-border rounded-lg bg-background"
+                            />
+                        </div>
+                    </div>
+                )}
+                <button
+                    onClick={saveCreditSettings}
+                    disabled={savingCredits}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:brightness-110 disabled:opacity-50"
+                >
+                    {savingCredits ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    حفظ إعدادات الكريدت
+                </button>
+            </div>
+
             <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-border/60 flex items-center justify-between">
                     <h2 className="font-bold flex items-center gap-2">
@@ -111,6 +243,8 @@ export default function AdminDashboard() {
                                 <th className="px-4 py-3 font-medium">اسم المستخدم</th>
                                 <th className="px-4 py-3 font-medium">الدور</th>
                                 <th className="px-4 py-3 font-medium">الحالة</th>
+                                <th className="px-4 py-3 font-medium"><Coins className="w-3.5 h-3.5 inline ml-1" /> الرصيد</th>
+                                <th className="px-4 py-3 font-medium"><BarChart3 className="w-3.5 h-3.5 inline ml-1" /> الاستهلاك</th>
                                 <th className="px-4 py-3 font-medium">تاريخ التسجيل</th>
                                 <th className="px-4 py-3 font-medium text-center">الإجراءات</th>
                             </tr>
@@ -145,6 +279,27 @@ export default function AdminDashboard() {
                                             {u.status === 'approved' ? 'نشط' : u.status === 'pending' ? 'قيد الانتظار' : 'محظور'}
                                         </span>
                                     </td>
+                                    <td className="px-4 py-3">
+                                        {editingCreditsFor === u.id ? (
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={editCreditsValue}
+                                                    onChange={(e) => setEditCreditsValue(e.target.value)}
+                                                    className="w-20 p-1.5 border border-border rounded bg-background text-xs"
+                                                />
+                                                <button onClick={() => handleSetCredits(u.id)} className="p-1.5 bg-primary text-primary-foreground rounded text-xs">حفظ</button>
+                                                <button onClick={() => { setEditingCreditsFor(null); setEditCreditsValue(''); }} className="p-1.5 bg-secondary rounded text-xs">إلغاء</button>
+                                            </div>
+                                        ) : (
+                                            <span className="font-medium">{u.creditsBalance ?? 0}</span>
+                                        )}
+                                        {editingCreditsFor !== u.id && u.role !== 'admin' && (
+                                            <button onClick={() => { setEditingCreditsFor(u.id); setEditCreditsValue(String(u.creditsBalance ?? 0)); }} className="mr-2 text-xs text-primary hover:underline">تعديل</button>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-muted-foreground">{u.totalUsage ?? 0}</td>
                                     <td className="px-4 py-3 text-muted-foreground text-xs" dir="ltr">
                                         {new Date(u.created_at).toLocaleString()}
                                     </td>
@@ -186,7 +341,7 @@ export default function AdminDashboard() {
 
                             {users.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
                                         لا يوجد مستخدمين
                                     </td>
                                 </tr>
