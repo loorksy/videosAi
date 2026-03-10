@@ -50,7 +50,11 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { token, user } = useAuth();
+  const { token, user, refreshUser } = useAuth();
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   useEffect(() => {
     // Load settings from backend
