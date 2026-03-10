@@ -14,5 +14,5 @@ Start-Sleep -Seconds 2
 # نافذة 3: Vite على المنفذ 3000
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$root'; npm run dev"
 
-Write-Host "تم فتح 3 نوافذ. الواجهة: http://localhost:3000" -ForegroundColor Green
-Write-Host "تأكد أن MongoDB يعمل على localhost:27017" -ForegroundColor Yellow
+Write-Host "3 windows opened. Frontend: http://localhost:3000" -ForegroundColor Green
+Write-Host "Ensure MongoDB is running on localhost:27017" -ForegroundColor Yellow

@@ -22,6 +22,11 @@ backend/venv/
 backend/__pycache__/
 backend/uploads/
 
+# SQLite (auth DB - do not commit)
+database.sqlite
+database.sqlite-shm
+database.sqlite-wal
+
 # ===============================
 # Environment files
 # ===============================
