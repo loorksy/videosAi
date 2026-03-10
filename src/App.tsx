@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Users, Clapperboard, Film, Settings } from 'lucide-react';
+import { Users, Clapperboard, Film, Settings, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/utils';
 import { ToastProvider } from './components/Toast';
@@ -156,6 +156,9 @@ function AuthenticatedApp() {
             <NavItem to="/characters" icon={Users} label="الشخصيات" />
             <NavItem to="/storyboards" icon={Clapperboard} label="القصص" />
             <NavItem to="/gallery" icon={Film} label="المعرض" />
+            {user?.role === 'admin' && (
+              <NavItem to="/admin" icon={ShieldCheck} label="لوحة الإدارة" />
+            )}
             <NavItem to="/settings" icon={Settings} label="الإعدادات" />
           </nav>
         </aside>
@@ -169,11 +172,14 @@ function AuthenticatedApp() {
       {/* Mobile Bottom Navigation - only show if user is logged in */}
       {user && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-card/60 backdrop-blur-2xl border-t border-white/5 shadow-[0_-2px_24px_rgba(0,0,0,0.2)] z-50">
-          <div className="grid grid-cols-5 h-full max-w-lg mx-auto">
+          <div className={`grid h-full max-w-lg mx-auto ${user?.role === 'admin' ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <NavItem to="/" icon={HomeIcon} label="الرئيسية" />
             <NavItem to="/characters" icon={Users} label="الشخصيات" />
             <NavItem to="/storyboards" icon={Clapperboard} label="القصص" />
             <NavItem to="/gallery" icon={Film} label="المعرض" />
+            {user?.role === 'admin' && (
+              <NavItem to="/admin" icon={ShieldCheck} label="الإدارة" />
+            )}
             <NavItem to="/settings" icon={Settings} label="الإعدادات" />
           </div>
         </nav>
