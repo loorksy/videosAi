@@ -23,7 +23,9 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api/auth': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/settings': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/jobs': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/admin/users': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/admin/credits': { target: 'http://localhost:3001', changeOrigin: true },
         '/api': { target: 'http://localhost:8000', changeOrigin: true }
       }
     },

@@ -1,4 +1,4 @@
-import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, Type, VideoGenerationReferenceType } from "@google/genai";
 
 const getAI = () => {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -12,7 +12,9 @@ const getAI = () => {
 
   const ai = new GoogleGenAI({
     apiKey,
-    baseUrl
+    httpOptions: {
+      baseUrl,
+    },
   });
 
   // Wrap generateContent with automatic retry on network/rate limit errors
@@ -1211,7 +1213,7 @@ DIRECTOR'S RULES:
     // Build referenceImages array for Veo 3.1
     const referenceImages = compressed.map(img => ({
       image: { imageBytes: img.data, mimeType: img.mimeType },
-      referenceType: 'REFERENCE_TYPE_SUBJECT',
+      referenceType: VideoGenerationReferenceType.ASSET,
     }));
 
     // Download helper

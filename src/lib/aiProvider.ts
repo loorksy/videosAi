@@ -23,9 +23,12 @@ export class InsufficientCreditsError extends Error {
 
 // Kept for compatibility with pages/components that still catch this error type.
 export class MissingApiKeyError extends Error {
-  constructor() {
+  provider: 'gemini' | 'kie' | 'fal';
+
+  constructor(provider: 'gemini' | 'kie' | 'fal' = 'gemini') {
     super('Missing API key');
     this.name = 'MissingApiKeyError';
+    this.provider = provider;
   }
 }
 
