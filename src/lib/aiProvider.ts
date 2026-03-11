@@ -21,6 +21,13 @@ export class InsufficientCreditsError extends Error {
   }
 }
 
+export class MissingApiKeyError extends Error {
+  constructor(message = 'API key is not configured') {
+    super(message);
+    this.name = 'MissingApiKeyError';
+  }
+}
+
 /** Text generation via Backend (fal + credits) */
 export async function falGenerateText(
   userPrompt: string,

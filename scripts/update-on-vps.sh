@@ -1,28 +1,56 @@
 #!/bin/bash
-# تشغيل هذا السكربت على الـ VPS بعد الدخول عبر SSH
-# أو من جهازك: ssh user@72.60.83.140 'bash -s' < scripts/update-on-vps.sh
+# ============================================================
+# StoryWeaver AI – تحديث المشروع على VPS
+# شغّله من على السيرفر:  bash scripts/update-on-vps.sh
+# أو من جهازك:           ssh user@IP 'cd /var/www/videosAi && bash scripts/update-on-vps.sh'
+# ============================================================
+set -euo pipefail
 
-set -e
-cd /var/www/videosAi 2>/dev/null || cd ~/videosAi 2>/dev/null || cd "$(dirname "$0")/.." || { echo "حدد مسار المشروع على الـ VPS (مثلاً: cd /var/www/videosAi)"; exit 1; }
+cd /var/www/videosAi 2>/dev/null \
+  || cd ~/videosAi 2>/dev/null \
+  || cd "$(dirname "$0")/.." \
+  || { echo "❌ حدد مسار المشروع على الـ VPS"; exit 1; }
 
-echo "==> المسار الحالي: $(pwd)"
+APP_DIR="$(pwd)"
+DIST_DIR="/var/www/videosai"
+
+echo "========================================"
+echo "  StoryWeaver AI – تحديث"
+echo "  المسار: $APP_DIR"
+echo "========================================"
+
+echo ""
 echo "==> سحب التحديثات من GitHub..."
 git fetch origin
 git pull origin main
 
-echo "==> تثبيت تبعيات Node (إن وجدت تغييرات)..."
-npm install --production=false
+echo ""
+echo "==> تثبيت تبعيات Node..."
+npm install
 
-echo "==> تثبيت تبعيات Python للـ backend..."
-pip install -r backend/requirements.txt -q 2>/dev/null || python3 -m pip install -r backend/requirements.txt -q
+echo ""
+echo "==> تثبيت تبعيات Python..."
+pip install -r backend/requirements.txt --break-system-packages -q 2>/dev/null \
+  || pip install -r backend/requirements.txt -q \
+  || python3 -m pip install -r backend/requirements.txt -q
 
-echo "==> إعادة بناء الواجهة (إن كنت تخدمها من dist)..."
-npm run build 2>/dev/null || true
+echo ""
+echo "==> بناء الواجهة الأمامية..."
+npm run build
+mkdir -p "$DIST_DIR"
+rsync -a --delete dist/ "$DIST_DIR/"
 
-echo "==> إعادة تشغيل الخدمات (عدّل الأسماء حسب نظامك: systemd أو pm2)..."
-# إذا كنت تستخدم systemd:
-# sudo systemctl restart videosai-backend videosai-node videosai-frontend 2>/dev/null || true
-# إذا كنت تستخدم pm2:
-# pm2 restart all 2>/dev/null || true
+echo ""
+echo "==> إعادة تشغيل الخدمات..."
+pm2 restart ecosystem.config.cjs --update-env
+echo ""
+echo "==> إعادة تحميل Nginx..."
+sudo nginx -t && sudo systemctl reload nginx
 
-echo "==> انتهى. تحقق من عمل الموقع."
+echo ""
+echo "========================================"
+echo "  ✅ التحديث اكتمل!"
+echo "========================================"
+echo "  pm2 status   – للتحقق من حالة الخدمات"
+echo "  pm2 logs     – لمتابعة السجلات"
+echo ""
