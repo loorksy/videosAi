@@ -101,5 +101,5 @@ cd /var/www/videosAi
 - Node API يعمل على `127.0.0.1:3011`.
 - Python API يعمل على `127.0.0.1:8000`.
 - Nginx يوجه:
-  - `/api/auth` و`/api/settings` و`/api/admin` إلى Node
-  - باقي `/api/*` إلى Python
+  - `/api/auth` و`/api/settings` و`/api/jobs` و`/api/admin/users*` و`/api/admin/credits*` إلى Node
+  - `/api/admin/fal*` و`/api/admin/tenants*` وباقي `/api/*` إلى Python

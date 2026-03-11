@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -10,50 +10,57 @@ interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+function ErrorBoundary({ children }: Props) {
+  const [state, setState] = useState<State>({ hasError: false, error: null });
 
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
+  useEffect(() => {
+    const onError = (event: ErrorEvent) => {
+      setState({
+        hasError: true,
+        error: event.error instanceof Error ? event.error : new Error(event.message || 'حدث خطأ غير متوقع'),
+      });
+    };
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
-  }
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const error = reason instanceof Error ? reason : new Error(String(reason || 'حدث خطأ غير متوقع'));
+      setState({ hasError: true, error });
+    };
 
-  private handleRetry = () => {
-    this.setState({ hasError: false, error: null });
-  };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
+  }, []);
 
-  public render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <div className="bg-card p-8 rounded-2xl shadow-lg max-w-md w-full text-center border border-border">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">حدث خطأ غير متوقع</h2>
-            <p className="text-muted-foreground text-sm mb-4">
-              {this.state.error?.message || 'حدث خطأ أثناء تحميل الصفحة'}
-            </p>
-            <button
-              onClick={this.handleRetry}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 mx-auto"
-            >
-              <RefreshCw className="w-5 h-5" />
-              <span>حاول مرة أخرى</span>
-            </button>
+  const handleRetry = () => setState({ hasError: false, error: null });
+
+  if (state.hasError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card p-8 rounded-2xl shadow-lg max-w-md w-full text-center border border-border">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">حدث خطأ غير متوقع</h2>
+          <p className="text-muted-foreground text-sm mb-4">
+            {state.error?.message || 'حدث خطأ أثناء تحميل الصفحة'}
+          </p>
+          <button
+            onClick={handleRetry}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 mx-auto"
+          >
+            <RefreshCw className="w-5 h-5" />
+            <span>حاول مرة أخرى</span>
+          </button>
         </div>
-      );
-    }
-
-    return this.props.children;
+      </div>
+    );
   }
+
+  return <>{children}</>;
 }
 
 export default ErrorBoundary;

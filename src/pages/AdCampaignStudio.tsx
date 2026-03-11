@@ -310,10 +310,6 @@ export default function AdCampaignStudio() {
       return;
     }
 
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsImprovingText(true);
     try {
       const result = await AIService.improveAdCopy(postTopic, brandProfile.industry);
@@ -337,10 +333,6 @@ export default function AdCampaignStudio() {
       return;
     }
 
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsImprovingIdea(true);
     try {
       const result = await AIService.improveAdCopy(postTopic, isCustomIndustry && customIndustryVal ? customIndustryVal : brandProfile.industry);
@@ -360,17 +352,17 @@ export default function AdCampaignStudio() {
       return;
     }
 
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsGenerating(true);
     try {
       let characterImageBase64 = undefined;
       if (selectedCharacterId) {
         const char = characters.find(c => c.id === selectedCharacterId);
-        if (char && char.imageUrl) {
-          characterImageBase64 = char.imageUrl;
+        if (char) {
+          characterImageBase64 =
+            char.images.front ||
+            char.images.reference ||
+            char.images.closeup ||
+            char.images.normal;
         }
       }
 
@@ -896,7 +888,7 @@ export default function AdCampaignStudio() {
                         >
                           <option value="" className="bg-[#090A0F] text-white">بدون شخصية (اختياري)</option>
                           {characters.map(char => (
-                            <option key={char.id} value={char.id} className="bg-[#090A0F] text-white">{char.name} ({char.type})</option>
+                            <option key={char.id} value={char.id} className="bg-[#090A0F] text-white">{char.name}</option>
                           ))}
                         </select>
                       </div>

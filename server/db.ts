@@ -25,12 +25,10 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS user_settings (
     user_id TEXT PRIMARY KEY,
-    provider TEXT DEFAULT 'gemini',
-    text_model TEXT DEFAULT 'gemini-2.5-flash',
-    image_model TEXT DEFAULT 'gemini-3-pro-image-preview',
-    video_model TEXT DEFAULT 'veo3_fast',
-    gemini_key TEXT,
-    kie_key TEXT,
+    provider TEXT DEFAULT 'fal',
+    text_model TEXT DEFAULT 'fal-ai/llama-3.2-3b-instruct',
+    image_model TEXT DEFAULT 'fal-ai/fast-sdxl',
+    video_model TEXT DEFAULT 'fal-ai/minimax-video-01',
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
@@ -84,6 +82,28 @@ if (!hasCreditsBalance) {
   const defaultCredits = row?.default_credits ?? 100;
   db.prepare('UPDATE users SET credits_balance = ? WHERE credits_balance = 0').run(defaultCredits);
 }
+
+// Provider cleanup: drop legacy provider key columns if they still exist.
+const settingsColumns = db.prepare('PRAGMA table_info(user_settings)').all() as { name: string }[];
+const hasGeminiKey = settingsColumns.some((col) => col.name === 'gemini_key');
+const hasKieKey = settingsColumns.some((col) => col.name === 'kie_key');
+
+if (hasGeminiKey) {
+  try { db.exec(`ALTER TABLE user_settings DROP COLUMN gemini_key`); } catch {}
+}
+if (hasKieKey) {
+  try { db.exec(`ALTER TABLE user_settings DROP COLUMN kie_key`); } catch {}
+}
+
+// Provider migration: enforce fal-only settings for existing users
+db.exec(`
+  UPDATE user_settings
+  SET
+    provider = 'fal',
+    text_model = COALESCE(NULLIF(text_model, ''), 'fal-ai/llama-3.2-3b-instruct'),
+    image_model = COALESCE(NULLIF(image_model, ''), 'fal-ai/fast-sdxl'),
+    video_model = COALESCE(NULLIF(video_model, ''), 'fal-ai/minimax-video-01')
+`);
 
 console.log('Database initialized at:', dbPath);
 

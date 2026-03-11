@@ -337,7 +337,7 @@ export default function SurrealCharacterCreate() {
           <div>
             <h3 className="text-xl font-bold text-slate-900">جاري التوليد...</h3>
             <p className="text-muted-foreground mt-2">
-              {generateNormal ? 'يقوم Gemini برسم النسخة الطبيعية والنسخة الخيالية معاً' : `يقوم Gemini برسم وجه بشري على ${objectName || 'الشيء'}`}
+              {generateNormal ? 'يقوم محرك fal.ai برسم النسخة الطبيعية والنسخة الخيالية معاً' : `يقوم محرك fal.ai برسم وجه بشري على ${objectName || 'الشيء'}`}
             </p>
           </div>
         </div>
