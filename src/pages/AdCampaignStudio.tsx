@@ -310,10 +310,6 @@ export default function AdCampaignStudio() {
       return;
     }
 
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsImprovingText(true);
     try {
       const result = await AIService.improveAdCopy(postTopic, brandProfile.industry);
@@ -337,10 +333,6 @@ export default function AdCampaignStudio() {
       return;
     }
 
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsImprovingIdea(true);
     try {
       const result = await AIService.improveAdCopy(postTopic, isCustomIndustry && customIndustryVal ? customIndustryVal : brandProfile.industry);
@@ -358,10 +350,6 @@ export default function AdCampaignStudio() {
     if (!postTopic.trim()) {
       alert("يرجى كتابة موضوع الإعلان.");
       return;
-    }
-
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
     }
 
     setIsGenerating(true);

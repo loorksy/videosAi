@@ -332,8 +332,8 @@ export default function CharacterCreate() {
             </h3>
             <p className="text-muted-foreground mt-2">
               {step === 'analyzing'
-                ? 'يقوم Gemini باستخراج السمات البصرية'
-                : 'يقوم Nano Banana برسم الزوايا المختلفة'}
+                ? 'يقوم محرك fal.ai باستخراج السمات البصرية'
+                : 'يقوم محرك fal.ai برسم الزوايا المختلفة'}
             </p>
           </div>
         </div>

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Dna, ChevronRight, Loader2, Save, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { AIService } from '../lib/aiService';
-import { MissingApiKeyError } from '../lib/aiProvider';
-import { ApiKeyMissing } from '../components/ApiKeyMissing';
 import { db, Character } from '../lib/db';
 import { CustomSelect } from '../components/CustomSelect';
 
@@ -67,11 +65,6 @@ export default function HybridCharacterCreate() {
   ];
 
   const generateCharacter = async () => {
-    // Check API Key for Pro models
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsGenerating(true);
     try {
       const prompt = `Create a highly creative, surreal hybrid character design. 

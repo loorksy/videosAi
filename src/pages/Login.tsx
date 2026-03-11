@@ -31,13 +31,6 @@ export default function Login() {
         throw new Error(data.error || 'Failed to login');
       }
 
-      // Sync settings on login
-      if (data.settings) {
-        localStorage.setItem('AI_PROVIDER', data.settings.provider || 'gemini');
-        if (data.settings.gemini_key) localStorage.setItem('GEMINI_API_KEY', data.settings.gemini_key);
-        if (data.settings.kie_key) localStorage.setItem('KIE_API_KEY', data.settings.kie_key);
-      }
-
       login(data.token, data.user);
       navigate('/');
     } catch (err: any) {

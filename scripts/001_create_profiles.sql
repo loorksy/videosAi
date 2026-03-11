@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   is_approved BOOLEAN DEFAULT FALSE,
   is_admin BOOLEAN DEFAULT FALSE,
-  gemini_api_key TEXT,
   fal_api_key TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

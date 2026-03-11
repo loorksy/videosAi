@@ -208,11 +208,6 @@ export default function StoryboardView() {
   const runAutoPilot = async () => {
     if (!storyboard) return;
 
-    // Check API Key for Pro models
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      await window.aistudio.openSelectKey();
-    }
-
     setIsAutoPilotRunning(true);
     setAutoPilotStatus('بدء الإنتاج الشامل...');
     setSceneStatuses({});
