@@ -1,28 +1,49 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # تشغيل هذا السكربت على الـ VPS بعد الدخول عبر SSH
-# أو من جهازك: ssh user@72.60.83.140 'bash -s' < scripts/update-on-vps.sh
+# أو من جهازك: ssh user@your-vps 'bash -s' < scripts/update-on-vps.sh
 
-set -e
-cd /var/www/videosAi 2>/dev/null || cd ~/videosAi 2>/dev/null || cd "$(dirname "$0")/.." || { echo "حدد مسار المشروع على الـ VPS (مثلاً: cd /var/www/videosAi)"; exit 1; }
+set -euo pipefail
+
+PROJECT_DIR="${PROJECT_DIR:-/var/www/videosAi}"
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  PROJECT_DIR="$HOME/videosAi"
+fi
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+fi
+cd "$PROJECT_DIR"
 
 echo "==> المسار الحالي: $(pwd)"
-echo "==> سحب التحديثات من GitHub..."
-git fetch origin
-git pull origin main
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+echo "==> الفرع الحالي: $CURRENT_BRANCH"
 
-echo "==> تثبيت تبعيات Node (إن وجدت تغييرات)..."
-npm install --production=false
+echo "==> سحب آخر تحديثات Git..."
+git fetch --all --prune
+git pull --ff-only origin "$CURRENT_BRANCH"
 
-echo "==> تثبيت تبعيات Python للـ backend..."
-pip install -r backend/requirements.txt -q 2>/dev/null || python3 -m pip install -r backend/requirements.txt -q
+echo "==> تحديث تبعيات Node..."
+npm ci || npm install
 
-echo "==> إعادة بناء الواجهة (إن كنت تخدمها من dist)..."
-npm run build 2>/dev/null || true
+echo "==> تحديث بيئة Python..."
+if [[ ! -d backend/.venv ]]; then
+  python3 -m venv backend/.venv
+fi
+backend/.venv/bin/python -m pip install --upgrade pip setuptools wheel
+backend/.venv/bin/pip install -r backend/requirements.txt
 
-echo "==> إعادة تشغيل الخدمات (عدّل الأسماء حسب نظامك: systemd أو pm2)..."
-# إذا كنت تستخدم systemd:
-# sudo systemctl restart videosai-backend videosai-node videosai-frontend 2>/dev/null || true
-# إذا كنت تستخدم pm2:
-# pm2 restart all 2>/dev/null || true
+echo "==> إعادة بناء الواجهة..."
+npm run build
 
-echo "==> انتهى. تحقق من عمل الموقع."
+echo "==> إعادة تحميل الخدمات عبر PM2..."
+if command -v pm2 >/dev/null 2>&1; then
+  pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs --update-env
+  pm2 save
+else
+  echo "pm2 غير مثبت. شغّل scripts/setup-vps.sh أولاً."
+  exit 1
+fi
+
+echo "==> تم التحديث بنجاح."
+echo "اختبارات سريعة:"
+echo "  curl http://127.0.0.1:3011/api/health"
+echo "  curl http://127.0.0.1:8000/api/health"
