@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite preview --port=3000 --host=0.0.0.0",
+    "start:node": "tsx server/server.ts",
+    "start:python": "python3 -m uvicorn backend.server:app --host 127.0.0.1 --port 8000",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
